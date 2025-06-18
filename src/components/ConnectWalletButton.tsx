@@ -14,6 +14,7 @@ const WalletConnect: React.FC = () => {
     const { disconnect } = useDisconnect();
     const chainId  = useChainId();
     const chains = useChains();
+    console.log(chains)
     const [showModal, setShowModal] = useState(false);
     const [connecting, setConnecting] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);

@@ -1,40 +1,43 @@
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
+import { sepolia } from 'wagmi/chains';
+import { Modal, Button } from 'antd';
 
 const Pools: React.FC = () => {
     const [depositAmount, setDepositAmount] = useState('');
     const [withdrawAmount, setWithdrawAmount] = useState('');
     const [selectedPool, setSelectedPool] = useState('');
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [modalType, setModalType] = useState<'deposit' | 'withdraw'>('deposit');
+
 
     const pools = [
         {
-            id: 'eth-usdc',
-            name: 'ETH/USDC',
-            apy: '12.5%',
-            tvl: '$2.5M',
-            userPosition: '$1,250',
-            volume24h: '$125K',
-            tokens: ['ETH', 'USDC']
-        },
-        {
-            id: 'eth-usdt',
-            name: 'ETH/USDT',
+            id: 'Token A',
+            chainId: sepolia.id, 
+            name: 'Token A',
             apy: '8.3%',
+            address: "0xf11935eb67FE7C505e93Ed7751f8c59Fc3199121",
+            pool: "0x84911055429D2Aac0761153e2e33a3d37d26169d",
             tvl: '$1.8M',
             userPosition: '$0',
             volume24h: '$89K',
-            tokens: ['ETH', 'USDT']
-        },
-        {
-            id: 'link-eth',
-            name: 'LINK/ETH',
-            apy: '15.2%',
-            tvl: '$1.2M',
-            userPosition: '$450',
-            volume24h: '$67K',
-            tokens: ['LINK', 'ETH']
+            tokens: ['USDT']
         }
     ];
+
+    const showModal = (type: 'deposit' | 'withdraw') => {
+        setModalType(type);
+        setIsModalVisible(true);
+    };
+
+    const handleOk = () => {
+        setIsModalVisible(false);
+    };
+
+    const handleCancel = () => {
+        setIsModalVisible(false);
+    };
 
     return (
         <Layout>
@@ -164,14 +167,14 @@ const Pools: React.FC = () => {
                                         flex: 1,
                                         padding: '10px 16px',
                                         fontSize: '14px'
-                                    }}>
+                                    }} onClick={() => showModal('deposit')}>
                                         Deposit
                                     </button>
                                     <button className="button" style={{
                                         flex: 1,
                                         padding: '10px 16px',
                                         fontSize: '14px'
-                                    }}>
+                                    }} onClick={() => showModal('withdraw')}>
                                         Withdraw
                                     </button>
                                 </div>
@@ -180,27 +183,20 @@ const Pools: React.FC = () => {
                     </div>
 
                     {/* Pool Actions Section */}
-                    <div style={{
-                        background: 'rgba(255, 255, 255, 0.6)',
-                        backdropFilter: 'blur(10px)',
-                        borderRadius: '16px',
-                        padding: '24px',
-                        border: '1px solid var(--border-color)'
-                    }}>
-                        <h3 style={{
-                            marginBottom: '20px',
-                            fontSize: '20px',
-                            fontWeight: 600,
-                            color: 'var(--text-color)'
-                        }}>
-                            Quick Actions
-                        </h3>
-                        
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                            gap: '20px'
-                        }}>
+                    <Modal
+                        title={modalType === 'deposit' ? 'Deposit' : 'Withdraw'}
+                        open={isModalVisible}
+                        onOk={handleOk}
+                        onCancel={handleCancel}
+                        style={{
+                            background: 'rgba(255, 255, 255, 0.6)',
+                            backdropFilter: 'blur(10px)',
+                            borderRadius: '16px',
+                            padding: '24px',
+                            border: '1px solid var(--border-color)'
+                        }}
+                    >
+                        {modalType === 'deposit' ? (
                             <div>
                                 <label style={{
                                     display: 'block',
@@ -245,7 +241,7 @@ const Pools: React.FC = () => {
                                     Deposit to Pool
                                 </button>
                             </div>
-                            
+                        ) : (
                             <div>
                                 <label style={{
                                     display: 'block',
@@ -290,8 +286,8 @@ const Pools: React.FC = () => {
                                     Withdraw from Pool
                                 </button>
                             </div>
-                        </div>
-                    </div>
+                        )}
+                    </Modal>
                 </div>
             </div>
         </Layout>
