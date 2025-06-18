@@ -1,0 +1,392 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --background-color: #f3f2ef;
+  --card-background: rgba(255, 255, 255, 0.25);
+  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  --text-color: #1e1e1e;
+  --secondary-text: #7f8596;
+  --accent-color: #4166f5;
+  --input-background: #f1eee9;
+  --border-color: rgba(0, 0, 0, 0.05);
+  --button-color: #e9e7e2;
+  --tab-inactive: #677183;
+  --success-color: #22c55e;
+  --warning-color: #f59e0b;
+  --error-color: #ef4444;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+}
+
+body {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: var(--text-color);
+  line-height: 1.5;
+  padding: 0;
+  margin: 0;
+  min-height: 100vh;
+  padding-top: 80px;
+}
+
+.container {
+  max-width: 1200px;
+  width: 100%;
+  padding: 20px;
+  margin: 0 auto;
+}
+
+/* Glass Card Component */
+.glass-card {
+  background: var(--card-background);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 24px;
+  box-shadow: var(--card-shadow);
+  padding: 24px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border-color);
+}
+
+/* Layout Components */
+.main-layout {
+  display: grid;
+  grid-template-columns: 480px 1fr;
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.main-trading-panel {
+  width: 100%;
+  max-width: 480px;
+}
+
+.info-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 400px;
+}
+
+.info-card {
+  width: 100%;
+  min-height: 280px;
+}
+
+/* Button Styles */
+.button {
+  width: 100%;
+  padding: 16px;
+  background: var(--button-color);
+  border: none;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.button:hover {
+  background: #e0ddd8;
+}
+
+.button.primary {
+  background: var(--accent-color);
+  color: white;
+}
+
+.button.primary:hover {
+  background: #3658e1;
+}
+
+.button.secondary {
+  background: rgba(65, 102, 245, 0.1);
+  color: var(--accent-color);
+  border: 1px solid var(--accent-color);
+}
+
+.button.secondary:hover {
+  background: rgba(65, 102, 245, 0.2);
+}
+
+/* Form Elements */
+.input-card {
+  background: var(--input-background);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.amount-input {
+  font-size: 48px;
+  font-weight: 300;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-color);
+  outline: none;
+  margin-bottom: 8px;
+}
+
+.amount-value {
+  font-size: 18px;
+  color: var(--secondary-text);
+}
+
+.token-balance {
+  font-size: 16px;
+  color: var(--secondary-text);
+  text-align: right;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.select-container {
+  background: white;
+  border-radius: 16px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.token-select {
+  background: white;
+  border-radius: 16px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  margin-bottom: 16px;
+}
+
+.token-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #eee;
+  font-size: 12px;
+  color: #ccc;
+}
+
+.token-icon.placeholder {
+  background: #f0f0f0;
+  color: #999;
+  font-weight: 600;
+}
+
+/* Tab Navigation */
+.tab-navigation {
+  display: flex;
+  gap: 32px;
+  margin-bottom: 32px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 16px;
+}
+
+.tab {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--tab-inactive);
+  cursor: pointer;
+  position: relative;
+  padding-bottom: 8px;
+  transition: all 0.2s ease;
+}
+
+.tab.active {
+  color: var(--text-color);
+}
+
+.tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -17px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: var(--accent-color);
+}
+
+/* Health Indicator */
+.health-indicator {
+  margin: 24px 0;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.health-label {
+  font-size: 14px;
+  color: var(--secondary-text);
+  margin-bottom: 8px;
+}
+
+.health-bar {
+  width: 100%;
+  height: 8px;
+  background: #e5e5e5;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.health-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e 0%, #f59e0b 70%, #ef4444 100%);
+  transition: width 0.3s ease;
+}
+
+.health-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+  text-align: right;
+}
+
+/* Stats and Info */
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.stat-row:last-child {
+  margin-bottom: 0;
+}
+
+.stat-row span:first-child {
+  color: var(--secondary-text);
+}
+
+.stat-row span:last-child {
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin: 24px 0 16px 0;
+}
+
+/* Page System */
+.page {
+  display: none;
+}
+
+.page.active {
+  display: block;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .main-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .main-trading-panel {
+    max-width: 100%;
+  }
+  
+  .info-panel {
+    max-width: 100%;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+  
+  .info-card {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+  
+  .tab-navigation {
+    gap: 16px;
+  }
+  
+  .tab {
+    font-size: 20px;
+  }
+  
+  .amount-input {
+    font-size: 32px;
+  }
+  
+  body {
+    padding-top: 70px;
+  }
+}
+
+/* Animations */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Utilities */
+.text-success {
+  color: var(--success-color);
+}
+
+.text-warning {
+  color: var(--warning-color);
+}
+
+.text-error {
+  color: var(--error-color);
+}
+
+.health-good {
+  color: var(--success-color);
+}
+
+.health-warning {
+  color: var(--warning-color);
+}
+
+.health-danger {
+  color: var(--error-color);
+}
+
+/* Custom global styles can be added below */

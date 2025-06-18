@@ -1,0 +1,27 @@
+{
+  "name": "nextjs-linkport-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "13.5.6",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "tailwindcss": "^3.3.0",
+    "postcss": "^8.4.5",
+    "autoprefixer": "^10.4.2"
+  },
+  "devDependencies": {
+    "@types/react": "18.2.38",
+    "@types/react-dom": "18.2.17",
+    "@types/node": "20.9.0",
+    "typescript": "5.2.2",
+    "eslint": "8.54.0",
+    "eslint-config-next": "13.5.6"
+  }
+}
