@@ -1,15 +1,15 @@
-import { useState } from 'react';
+import { useState, FormEvent } from 'react';
 
 const AssetsPage = () => {
     const [loanAmount, setLoanAmount] = useState('');
     const [repayAmount, setRepayAmount] = useState('');
 
-    const handleLoan = async (e) => {
+    const handleLoan = async (e: FormEvent) => {
         e.preventDefault();
         // Logic to handle loaning assets
     };
 
-    const handleRepay = async (e) => {
+    const handleRepay = async (e: FormEvent) => {
         e.preventDefault();
         // Logic to handle repaying assets
     };

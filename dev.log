@@ -38,3 +38,6 @@ Do not add stylesheets using next/head (see <link rel="stylesheet"> tag with hre
 See more info here: https://nextjs.org/docs/messages/no-stylesheets-in-head-component
  ✓ Compiled /pools in 128ms (283 modules)
  ✓ Compiled /portfolio in 73ms (287 modules)
+ ⚠ Fast Refresh had to perform a full reload when ./node_modules/next/dist/client/index.js changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled in 526ms (285 modules)
+[?25h
