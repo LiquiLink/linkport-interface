@@ -10,9 +10,11 @@
   },
   "dependencies": {
     "recharts": "^2.15.3",
+    "@headlessui/react": "^1.7.14",
     "@wagmi/connectors": "^5.8.4",
     "@wagmi/core": "^2.17.2",
     "@walletconnect/ethereum-provider": "^2.21.1",
+    "@tanstack/react-query": "^4.29.3",
     "autoprefixer": "^10.4.2",
     "next": "13.5.6",
     "postcss": "^8.4.5",
