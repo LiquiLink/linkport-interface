@@ -1,26 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MultiAssetSelector from '../components/MultiAssetSelector';
 import ImprovedNetworkSelector from '../components/ImprovedNetworkSelector';
 import CrossChainAssetSelector from '../components/CrossChainAssetSelector';
+import { bsc, bscTestnet, sepolia } from 'wagmi/chains';
+import { useAccount, useChainId, useProof } from 'wagmi';
 import Dropdown from '../components/Dropdown';
-
-interface AssetAllocation {
-    id: string;
-    symbol: string;
-    amount: number;
-    value: number;
-    percentage: number;
-    color: string;
-}
-
-interface Asset {
-    id: string;
-    symbol: string;
-    name: string;
-    price: number;
-    balance: number;
-    icon: string;
-}
+import { poolList } from '../config';
+import { getUserPosition } from '@/utils/pool';
+import { formatUnits } from 'ethers';
+import { format } from 'path';
+import { Asset, AssetAllocation } from '../types';
 
 const Home: React.FC = () => {
     const [activeTab, setActiveTab] = useState('borrow');
@@ -28,8 +17,9 @@ const Home: React.FC = () => {
     const [bridgeAmount, setBridgeAmount] = useState('');
     
     // Lending related states
-    const [sourceChain, setSourceChain] = useState('ethereum'); // Collateral source chain
-    const [targetChain, setTargetChain] = useState('optimism'); // Borrowing target chain
+    const [sourceChain, setSourceChain] = useState(sepolia.id); // Collateral source chain
+    const [assetOptions, setAssetOptions] = useState([]); // Assets available for collateral
+    const [targetChain, setTargetChain] = useState(''); // Borrowing target chain
     const [collateralAsset, setCollateralAsset] = useState('eth');
     const [selectedAssets, setSelectedAssets] = useState<AssetAllocation[]>([]);
 
@@ -39,31 +29,35 @@ const Home: React.FC = () => {
     const [bridgeAsset, setBridgeAsset] = useState('eth');
     const [bridgeTargetAssets, setBridgeTargetAssets] = useState<AssetAllocation[]>([]);
 
+    const { address } = useAccount()
+    const chainId = useChainId();
+
     // Dropdown options definition
     const chainOptions = [
-        { value: 'ethereum', label: 'Ethereum', icon: 'ETH', description: 'Layer 1 - High Security' },
-        { value: 'optimism', label: 'Optimism', icon: 'OP', description: 'Layer 2 - Low Fees' },
-        { value: 'arbitrum', label: 'Arbitrum', icon: 'ARB', description: 'Layer 2 - Fast Confirmation' },
-        { value: 'polygon', label: 'Polygon', icon: 'POLY', description: 'Sidechain - High TPS' },
-        { value: 'avalanche', label: 'Avalanche', icon: 'AVAX', description: 'Layer 1 - Rich Ecosystem' }
+        { value: sepolia.id, label: 'Ethereum Sepolia', icon: 'ETH', description: 'Layer 1 - High Security'},
+        { value: bscTestnet.id, label: 'BNB Testnet', icon: 'BNB', description: 'Binance Smart Chain'}
     ];
 
-    const assetOptions = [
-        { value: 'eth', label: 'ETH', icon: 'ETH', description: 'Ethereum Native Token' },
-        { value: 'weth', label: 'WETH', icon: 'WETH', description: 'Wrapped Ethereum' },
-        { value: 'usdc', label: 'USDC', icon: 'USDC', description: 'USD Coin' },
-        { value: 'usdt', label: 'USDT', icon: 'USDT', description: 'Tether USD' },
-        { value: 'dai', label: 'DAI', icon: 'DAI', description: 'Dai Stablecoin' }
-    ];
+    async function fetchPools(chainId: any) {
+        const sourceAssetsPromises = poolList.filter(pool => {
+            return pool.chainId === chainId 
+        }).map(async (pool) => {
+            const balance = await getUserPosition(pool, address);
+            return {
+                value: pool.id,
+                label: pool.name,
+                icon: pool.name.toUpperCase(),
+                description: pool.name
+            };
+        });
+        const resolvedAssets = await Promise.all(sourceAssetsPromises);
+        setAssetOptions(resolvedAssets);
+    }
 
-    const sourceAsset: Asset = {
-        id: 'eth',
-        symbol: 'ETH',
-        name: 'Ethereum',
-        price: 3000,
-        balance: 0.0123,
-        icon: 'ETH'
-    };
+    useEffect(() => {
+        fetchPools(sourceChain);
+    }, [sourceChain])
+
 
     const handleTabChange = (tab: string) => {
         setActiveTab(tab);
@@ -131,7 +125,7 @@ const Home: React.FC = () => {
                             {/* Step 1: Collateral Source Chain */}
                             <div className="section-title">Step 1: Select Collateral Source Chain</div>
                             <Dropdown
-                                options={chainOptions.filter(c => ['ethereum', 'polygon', 'avalanche'].includes(c.value))}
+                                options={chainOptions}
                                 value={sourceChain}
                                 onChange={setSourceChain}
                                 placeholder="Select collateral chain"
@@ -153,9 +147,9 @@ const Home: React.FC = () => {
                                     <i className="fas fa-wallet"></i>
                                 </div>
                             </div>
-
+w
                             <Dropdown
-                                options={assetOptions.filter(a => ['eth', 'weth'].includes(a.value))}
+                                options={assetOptions}
                                 value={collateralAsset}
                                 onChange={setCollateralAsset}
                                 placeholder="Select collateral asset"

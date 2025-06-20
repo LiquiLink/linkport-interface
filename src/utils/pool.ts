@@ -1,0 +1,35 @@
+import { readContract } from 'wagmi/actions';
+import LiquidityPoolABI from '../abi/LiquidityPool.json';
+import { config } from '../config';
+import { BigNumberish } from 'ethers';
+import { getBalance, getTotalSupply } from './balance';
+
+
+export async function getPoolTvl(pool: any) : Promise<BigNumberish> {
+
+    const balance = await getBalance(pool.address, pool.pool);
+    const totalLoans  = await readContract(config, {
+        address: pool.pool,
+        abi: LiquidityPoolABI,
+        functionName: 'totalLoans',
+        args: [],
+    });
+
+    const tvl = balance + totalLoans
+    return  tvl as BigNumberish;
+}
+
+export async function getUserPosition(pool: any, user: any) : Promise<BigNumberish> {
+    console.log("getUserPosition", pool.name, pool, user);
+    const shares  = await getBalance(pool.pool, user);
+
+    console.log("shares", pool.name, shares);
+    const totalSupply  = await getTotalSupply(pool.pool);
+
+    const tvl = await getPoolTvl(pool);
+
+    const userPosition = tvl ? (shares * tvl / totalSupply) :0; 
+
+    return userPosition as BigNumberish;
+}
+

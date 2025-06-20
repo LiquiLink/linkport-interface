@@ -1,31 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { Asset, AssetAllocation, CrossChainAssetSelectorProps } from '../utils/types';
 
-interface Asset {
-    id: string;
-    symbol: string;
-    name: string;
-    price: number;
-    balance: number;
-    icon: string;
-}
-
-interface AssetAllocation {
-    id: string;
-    symbol: string;
-    amount: number;
-    value: number;
-    percentage: number;
-    color: string;
-}
-
-interface CrossChainAssetSelectorProps {
-    sourceChain: string;
-    targetChain: string;
-    sourceAsset: Asset | null;
-    sourceAmount: number;
-    onTargetAssetsChange: (assets: AssetAllocation[]) => void;
-}
 
 const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({ 
     sourceChain, 

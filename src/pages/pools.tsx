@@ -7,8 +7,9 @@ import { useAccount, useChainId, useBalance, useReadContract, useWriteContract }
 import { readContract } from 'wagmi/actions';
 import LiquidityPoolABI  from '../abi/LiquidityPool.json';
 import ERC20ABI from '../abi/ERC20.json';
-import { format } from 'path';
-import { config } from  '../config';
+import { config, poolList } from  '../config';
+import { getBalance, getTotalSupply } from '../utils/balance';
+import { getPoolTvl, getUserPosition } from '../utils/pool';
 
 const Pools: React.FC = () => {
     const [depositAmount, setDepositAmount] = useState('');
@@ -20,6 +21,7 @@ const Pools: React.FC = () => {
     const [withdrawing, setWithdrawing] = useState(false);
     const { address } = useAccount();
     const [pools, setPools] = useState([]);
+    const chainId = useChainId();
 
     const showModal = (type: 'deposit' | 'withdraw', pool: any) => {
         setSelectedPool(pool);
@@ -30,59 +32,6 @@ const Pools: React.FC = () => {
     const { writeContract: writeDeposit, isPending: isDepositPending } = useWriteContract();
     const { writeContract: writeWithdraw, isPending: isWithdrawPending } = useWriteContract();
     const { writeContract: writeApprove, isPending: isApprovePending } = useWriteContract();
-
-    async function getPoolTvl(pool: any) : Promise<BigNumberish> {
-        const balance  = await readContract(config, {
-            address: pool.address as `0x${string}`,
-            abi: ERC20ABI,
-            functionName: 'balanceOf',
-            args: [pool.pool],
-        });
-
-
-        const totalLoans  = await readContract(config, {
-            address: pool.pool,
-            abi: LiquidityPoolABI,
-            functionName: 'totalLoans',
-            args: [],
-        });
-
-        const tvl = balance + totalLoans
-        return  tvl as BigNumberish;
-    }
-
-    async function getUserShares(pool: any) : Promise<BigNumberish> {
-        const shares  = await readContract(config, {
-            address: pool.pool,
-            abi: LiquidityPoolABI,
-            functionName: 'balanceOf',
-            args: [address],
-        })
-        return shares as BigNumberish
-    }
-    
-    async function getTotalSupply(pool: any) : Promise<BigNumberish> {
-
-        const totalSupply  = await readContract(config, {
-            address: pool.pool,
-            abi: LiquidityPoolABI,
-            functionName: 'totalSupply',
-            args: [],
-        })
-        return totalSupply as BigNumberish;
-    }
-
-    async function getUserPosition(pool: any) : Promise<BigNumberish> {
-        const shares  = await getUserShares(pool);
-
-        const totalSupply  = await getTotalSupply(pool);
-
-        const tvl = await getPoolTvl(pool);
-
-        const userPosition = (shares * tvl / totalSupply) 
-
-        return userPosition as BigNumberish;
-    }
 
 
     const { data: allowance } = useReadContract({
@@ -147,24 +96,15 @@ const Pools: React.FC = () => {
 
     useEffect(() => {
         async function fetchPools() {
-            const poolList = [
-                {
-                    id: 'Token A',
-                    chainId: sepolia.id, 
-                    name: 'Token A',
-                    apy: '8.3%',
-                    address: "0xf11935eb67FE7C505e93Ed7751f8c59Fc3199121",
-                    pool: "0x84911055429D2Aac0761153e2e33a3d37d26169d",
-                    volume24h: '$89K',
-                    tokens: ['USDT']
-                }
-          ];
           const poolsWithData = await Promise.all(
-            poolList.map(async (pool) => {
-              const shares  = await getUserShares(pool);
-              const totalSupply  = await getTotalSupply(pool);
+            poolList.filter( pool => {
+                if (pool.chainId == chainId) return true;
+                return false;
+             }
+            ).map(async (pool) => {
+              const shares  = await getBalance(pool.pool, address);
               const tvl = await getPoolTvl(pool);
-              const userPosition = (shares * tvl / totalSupply) 
+              const userPosition = getUserPosition(pool, address);
               return {
                 ...pool,
                 tvl: tvl ? formatUnits(tvl, 18) : '$0',
