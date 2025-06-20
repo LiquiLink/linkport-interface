@@ -1,33 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-
-interface AssetAllocation {
-    id: string;
-    symbol: string;
-    amount: number;
-    value: number;
-    percentage: number;
-    color: string;
-}
-
-interface Asset {
-    id: string;
-    symbol: string;
-    name: string;
-    price: number;
-    balance: number;
-    icon: string;
-}
-
-interface MultiAssetSelectorProps {
-    selectedChain: string;
-    onAssetsChange: (assets: AssetAllocation[]) => void;
-}
+import { poolList } from '../config'; 
+import { getBalance } from '../utils/balance';
+import { formatUnits } from 'ethers';
+import { Asset, AssetAllocation, MultiAssetSelectorProps  } from '../utils/types';
 
 const MultiAssetSelector: React.FC<MultiAssetSelectorProps> = ({ selectedChain, onAssetsChange }) => {
     const [selectedAssets, setSelectedAssets] = useState<AssetAllocation[]>([]);
     const [showAddAsset, setShowAddAsset] = useState(false);
+    const [availableAssets, setAvailableAssets] = useState<Asset[]>([]);
 
+    /*
     // Available asset data
     const availableAssets: Asset[] = [
         { id: 'usdc', symbol: 'USDC', name: 'USD Coin', price: 1, balance: 5000, icon: 'USDC' },
@@ -39,6 +22,29 @@ const MultiAssetSelector: React.FC<MultiAssetSelectorProps> = ({ selectedChain, 
         { id: 'aave', symbol: 'AAVE', name: 'Aave', price: 100, balance: 50, icon: 'AAVE' },
         { id: 'uni', symbol: 'UNI', name: 'Uniswap', price: 7, balance: 300, icon: 'UNI' }
     ];
+    */
+   console.log("MultiAssetSelector", selectedChain);
+    async function fetchPools() {
+        const poolsWithData = await Promise.all(
+        poolList.filter( pool => {
+            if (pool.chainId == selectedChain) return true;
+            return false;
+            }
+        ).map(async (pool) => {
+            const balance = await getBalance(pool.address, pool.pool, pool.chainId);
+            return {
+            ...pool,
+            balance: formatUnits(balance, 18),
+            price: 1,
+            };
+        })
+        );
+        setAvailableAssets(poolsWithData);
+    }
+
+    useEffect(() => {
+        fetchPools();
+    }, [selectedChain]);
 
     const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316'];
 

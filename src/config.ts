@@ -1,9 +1,9 @@
-import { mainnet, sepolia, bscTestnet, bsc} from 'wagmi/chains';
+import { sepolia, bscTestnet } from 'wagmi/chains';
 import { injected, walletConnect, metaMask  } from 'wagmi/connectors';
 import { createConfig, http } from 'wagmi';
 
 export const config = createConfig({
-  chains: [mainnet, sepolia],
+  chains: [bscTestnet, sepolia],
   connectors: [
     injected(),
     metaMask(),
@@ -12,7 +12,7 @@ export const config = createConfig({
     }),
   ],
   transports: {
-    [mainnet.id]: http(),
+    [bscTestnet.id]: http(),
     [sepolia.id]: http(),
   },
 });
@@ -55,7 +55,7 @@ export const poolList = [
     {
         id: 'bscLink',
         chainId: bscTestnet.id, 
-        name: 'Token A',
+        name: 'LINK',
         apy: '8.3%',
         isNative: false,
         address: "0xf11935eb67FE7C505e93Ed7751f8c59Fc3199121",
@@ -66,7 +66,7 @@ export const poolList = [
     {
         id: 'bscUSDT',
         chainId: bscTestnet.id, 
-        name: 'Token A',
+        name: 'USDT',
         apy: '8.3%',
         isNative: false,
         address: "0x5016F623414b344a5C26ffDa4e61956c9a41Ca1e",

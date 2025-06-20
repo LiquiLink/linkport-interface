@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
-import { sepolia } from 'wagmi/chains';
 import { BigNumberish, ethers, formatUnits } from 'ethers';
-import { Modal, Button } from 'antd';
-import { useAccount, useChainId, useBalance, useReadContract, useWriteContract } from 'wagmi';
-import { readContract } from 'wagmi/actions';
+import { Modal } from 'antd';
+import { useAccount, useChainId, useReadContract, useWriteContract } from 'wagmi';
 import LiquidityPoolABI  from '../abi/LiquidityPool.json';
 import ERC20ABI from '../abi/ERC20.json';
-import { config, poolList } from  '../config';
-import { getBalance, getTotalSupply } from '../utils/balance';
+import { poolList } from  '../config';
+import { getBalance } from '../utils/balance';
 import { getPoolTvl, getUserPosition } from '../utils/pool';
 
 const Pools: React.FC = () => {
@@ -102,7 +100,7 @@ const Pools: React.FC = () => {
                 return false;
              }
             ).map(async (pool) => {
-              const shares  = await getBalance(pool.pool, address);
+              const shares  = await getBalance(pool.pool, address, pool.chainId);
               const tvl = await getPoolTvl(pool);
               const userPosition = getUserPosition(pool, address);
               return {

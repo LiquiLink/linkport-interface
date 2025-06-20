@@ -20,7 +20,7 @@ const Home: React.FC = () => {
     const [sourceChain, setSourceChain] = useState(sepolia.id); // Collateral source chain
     const [assetOptions, setAssetOptions] = useState([]); // Assets available for collateral
     const [targetChain, setTargetChain] = useState(''); // Borrowing target chain
-    const [collateralAsset, setCollateralAsset] = useState('eth');
+    const [collateralAsset, setCollateralAsset] = useState();
     const [selectedAssets, setSelectedAssets] = useState<AssetAllocation[]>([]);
 
     // Cross-chain related states
@@ -47,10 +47,14 @@ const Home: React.FC = () => {
                 value: pool.id,
                 label: pool.name,
                 icon: pool.name.toUpperCase(),
+                balance: balance,
+                amount: balance ? formatUnits(balance, 18) : '0',
                 description: pool.name
             };
         });
         const resolvedAssets = await Promise.all(sourceAssetsPromises);
+        console.log("Resolved Assets", resolvedAssets);
+        setCollateralAsset(resolvedAssets[0])
         setAssetOptions(resolvedAssets);
     }
 
@@ -83,6 +87,15 @@ const Home: React.FC = () => {
     const handleAssetsChange = (assets: AssetAllocation[]) => {
         setSelectedAssets(assets);
     };
+
+    const handleSourceAssetsChange = (asset: Asset) => {
+        for (const a of assetOptions) {
+            if (a.value === asset.value) {
+                setCollateralAsset(a);
+                break;
+            }
+        }
+    }
 
     const handleBridgeTargetAssetsChange = (assets: AssetAllocation[]) => {
         setBridgeTargetAssets(assets);
@@ -143,22 +156,22 @@ const Home: React.FC = () => {
                                 />
                                 <div className="amount-value">${calculateUSDValue(collateralAmount)}</div>
                                 <div className="token-balance">
-                                    <span>Balance: 0.0123</span>
+                                    <span>Balance: {collateralAsset ? collateralAsset.amount : '0'}</span>
                                     <i className="fas fa-wallet"></i>
                                 </div>
                             </div>
 w
                             <Dropdown
                                 options={assetOptions}
-                                value={collateralAsset}
-                                onChange={setCollateralAsset}
+                                value={collateralAsset ? collateralAsset.value : ''}
+                                onChange={handleSourceAssetsChange}
                                 placeholder="Select collateral asset"
                             />
 
                             {/* Step 2: Borrowing Target Chain */}
                             <div className="section-title">Step 2: Select Borrowing Target Chain</div>
                             <Dropdown
-                                options={chainOptions.filter(c => ['optimism', 'arbitrum', 'polygon', 'avalanche'].includes(c.value))}
+                                options={chainOptions.filter(c => c.value !== sourceChain)}
                                 value={targetChain}
                                 onChange={setTargetChain}
                                 placeholder="Select borrowing chain"
@@ -248,8 +261,8 @@ w
                                         color: 'var(--secondary-text)'
                                     }}>Deposit Source Chain</label>
                                     <Dropdown
-                                        options={chainOptions.filter(c => ['ethereum', 'polygon', 'avalanche'].includes(c.value))}
-                                        value={bridgeSourceChain}
+                                        options={chainOptions}
+                                        value={sourceChain}
                                         onChange={setBridgeSourceChain}
                                         placeholder="Select source chain"
                                     />
@@ -277,8 +290,8 @@ w
                                         color: 'var(--secondary-text)'
                                     }}>Borrow Target Chain</label>
                                     <Dropdown
-                                        options={chainOptions.filter(c => ['optimism', 'arbitrum', 'polygon', 'avalanche'].includes(c.value))}
-                                        value={bridgeTargetChain}
+                                        options={chainOptions.filter(c => c.value !== sourceChain)}
+                                        value={targetChain}
                                         onChange={setBridgeTargetChain}
                                         placeholder="Select target chain"
                                     />
@@ -297,14 +310,14 @@ w
                                 />
                                 <div className="amount-value">${calculateUSDValue(bridgeAmount)}</div>
                                 <div className="token-balance">
-                                    <span>Balance: 0.0123</span>
+                                    <span>Balance: {collateralAsset ? collateralAsset.amount : "0"}</span>
                                     <i className="fas fa-wallet"></i>
                                 </div>
                             </div>
 
                             <Dropdown
-                                options={assetOptions.filter(a => ['eth', 'weth', 'usdc'].includes(a.value))}
-                                value={bridgeAsset}
+                                options={assetOptions}
+                                value={collateralAsset}
                                 onChange={setBridgeAsset}
                                 placeholder="Select asset"
                             />
@@ -360,9 +373,9 @@ w
                     {activeTab === 'bridge' && (
                         <div className="glass-card">
                             <CrossChainAssetSelector
-                                sourceChain={bridgeSourceChain}
-                                targetChain={bridgeTargetChain}
-                                sourceAsset={sourceAsset}
+                                sourceChain={sourceChain}
+                                targetChain={targetChain}
+                                sourceAsset={[]}
                                 sourceAmount={parseFloat(bridgeAmount) || 0}
                                 onTargetAssetsChange={handleBridgeTargetAssetsChange}
                             />

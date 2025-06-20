@@ -23,3 +23,8 @@ export interface CrossChainAssetSelectorProps {
     sourceAmount: number;
     onTargetAssetsChange: (assets: AssetAllocation[]) => void;
 }
+
+export interface MultiAssetSelectorProps {
+    selectedChain: string;
+    onAssetsChange: (assets: AssetAllocation[]) => void;
+}

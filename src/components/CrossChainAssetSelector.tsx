@@ -24,6 +24,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
         { id: 'uni', symbol: 'UNI', name: 'Uniswap', price: 7, balance: 300, icon: 'UNI' }
     ];
 
+
     const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316'];
 
     const calculateAllocation = (assets: AssetAllocation[]): AssetAllocation[] => {
@@ -33,6 +34,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
             percentage: totalValue > 0 ? (asset.value / totalValue) * 100 : 0
         }));
     };
+
 
     const addTargetAsset = (assetId: string) => {
         const asset = availableTargetAssets.find(a => a.id === assetId);
