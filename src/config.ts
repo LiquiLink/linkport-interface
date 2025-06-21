@@ -45,13 +45,13 @@ export const poolList = [
     {
         id: 'sepoliaETH',
         chainId: sepolia.id, 
-        name: 'WETH',
+        name: 'ETH',
         apy: '8.3%',
-        isNative: false,
+        isNative: true,
         address: "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14",
         pool: "0x470e9EF1701aCECb5E025bdCfad847A113995cbE",
         volume24h: '$89K',
-        tokens: ['WETH']
+        tokens: ['USDT']
     },
     {
         id: 'bscLink',
@@ -78,12 +78,12 @@ export const poolList = [
     {
         id: 'bscBNB',
         chainId: bscTestnet.id, 
-        name: 'WBNB',
+        name: 'BNB',
         apy: '8.3%',
-        isNative: false,
+        isNative: true,
         address: "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd",
         pool: "0xceEFa3Cc535aC86F7F4e7B8D0E677bd2f08E025d",
         volume24h: '$89K',
-        tokens: ['WBNB']
+        tokens: ['BNB']
     },
 ];

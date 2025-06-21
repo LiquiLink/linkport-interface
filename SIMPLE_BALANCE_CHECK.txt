@@ -1,0 +1,43 @@
+====================================
+💡 简单余额检查方法
+====================================
+
+方法1: 直接访问区块浏览器
+🔗 打开这个链接查看你的真实余额:
+https://testnet.bscscan.com/address/0xe28D37E094AC43Fc264bAb5263b3694b985B39df
+
+方法2: 使用浏览器控制台 (无需粘贴代码)
+1. 按 F12 打开开发者工具
+2. 切换到 Console 标签
+3. 手动输入以下命令 (一行一行输入):
+
+fetch('https://data-seed-prebsc-1-s1.binance.org:8545', {
+  method: 'POST',
+  headers: {'Content-Type': 'application/json'},
+  body: JSON.stringify({
+    jsonrpc: '2.0',
+    method: 'eth_getBalance',
+    params: ['0xe28D37E094AC43Fc264bAb5263b3694b985B39df', 'latest'],
+    id: 1
+  })
+}).then(r => r.json()).then(d => {
+  const wei = BigInt(d.result);
+  const bnb = Number(wei) / 1e18;
+  console.log('BNB 余额:', bnb.toFixed(6), 'BNB');
+});
+
+方法3: 在应用中查看调试器
+刷新页面后，右上角会显示 "🔍 余额调试器 (详细版)"
+
+====================================
+🎯 预期结果对比:
+====================================
+
+如果应用显示: 0.5499 (所有代币都一样)
+但真实余额是: 不同的数值
+→ 说明应用有bug，正在读取错误的数据
+
+如果两者一致:
+→ 说明余额读取正常
+
+==================================== 
