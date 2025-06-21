@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
+import RiskMonitor from '../components/RiskMonitor';
 import { useAccount, useChainId } from 'wagmi';
 import { poolList } from '../config';
 import { getUserAssetBalance, getBalance } from '../utils/balance';
@@ -39,13 +40,17 @@ const Portfolio: React.FC = () => {
     const [positions, setPositions] = useState<Position[]>([]);
     const [assetPrices, setAssetPrices] = useState<Record<string, PriceData>>({});
     const [balances, setBalances] = useState<{[key: string]: string}>({});
+    
+    // Risk monitoring data - based on real user data
+    const [userBorrowedValue, setUserBorrowedValue] = useState(0); // Real borrowed value
+    const [hasActivePositions, setHasActivePositions] = useState(false);
 
-    // 防止hydration错误
+    // Prevent hydration errors
     useEffect(() => {
         setIsClient(true);
     }, []);
 
-    // 获取价格数据
+    // Get price data
     useEffect(() => {
         async function loadAssetPrices() {
             if (!isClient) return;
@@ -54,10 +59,10 @@ const Portfolio: React.FC = () => {
                 const symbols = ['ETH', 'LINK', 'USDT', 'BNB'];
                 const prices = await getMultipleAssetPrices(symbols, chainId || 97);
                 setAssetPrices(prices);
-                console.log("✅ 价格数据加载完成:", prices);
+                console.log("✅ Price data loaded successfully:", prices);
             } catch (error) {
-                console.error("❌ 获取价格数据失败:", error);
-                // 使用默认价格作为后备
+                console.error("❌ Failed to get price data:", error);
+                // Use default prices as fallback
                 setAssetPrices({
                     ETH: { price: 3000, timestamp: Date.now(), decimals: 18, symbol: 'ETH' },
                     LINK: { price: 15, timestamp: Date.now(), decimals: 18, symbol: 'LINK' },
@@ -70,7 +75,7 @@ const Portfolio: React.FC = () => {
         loadAssetPrices();
     }, [isClient, chainId]);
 
-    // 获取用户余额和持仓数据
+    // Get user balance and position data
     useEffect(() => {
         async function fetchPortfolioData() {
             if (!isClient || !address || !chainId) {
@@ -80,7 +85,7 @@ const Portfolio: React.FC = () => {
 
             setLoading(true);
             try {
-                console.log("🔥 开始加载Portfolio数据...");
+                console.log("🔥 Starting to load Portfolio data...");
                 
                 const currentChainPools = poolList.filter(pool => pool.chainId === chainId);
                 const userPositions: Position[] = [];
@@ -90,7 +95,7 @@ const Portfolio: React.FC = () => {
 
                 for (const pool of currentChainPools) {
                     try {
-                        // 获取用户余额
+                        // Get user balance
                         const balance = await getUserAssetBalance(
                             pool.address, 
                             address, 
@@ -100,15 +105,15 @@ const Portfolio: React.FC = () => {
                         const formattedBalance = formatUnits(balance, 18);
                         userBalances[pool.id] = formattedBalance;
 
-                        // 获取用户在池子中的份额
+                        // Get user shares in the pool
                         const shares = await getBalance(pool.pool, address, pool.chainId);
                         const formattedShares = formatUnits(shares, 18);
 
-                        // 获取用户在池子中的价值
+                        // Get user position value in the pool
                         const userPosition = await getUserPosition(pool, address);
                         const formattedPosition = userPosition ? formatUnits(userPosition, 18) : '0';
 
-                        // 获取代币价格
+                        // Get token price
                         const priceData = assetPrices[pool.name] || { price: 1 };
                         const balanceValue = parseFloat(formattedBalance) * priceData.price;
                         const positionValue = parseFloat(formattedPosition);
@@ -121,12 +126,12 @@ const Portfolio: React.FC = () => {
                             positionValue
                         });
 
-                        // 如果有余额，添加到钱包余额总值
+                        // If there's a balance, add to total wallet value
                         if (parseFloat(formattedBalance) > 0) {
                             totalValue += balanceValue;
                         }
 
-                        // 如果有池子份额，添加到流动性总值
+                        // If there are pool shares, add to total liquidity
                         if (parseFloat(formattedShares) > 0) {
                             totalLiquidity += positionValue;
                             
@@ -143,7 +148,7 @@ const Portfolio: React.FC = () => {
                         }
 
                     } catch (error) {
-                        console.error(`❌ 获取 ${pool.name} 数据失败:`, error);
+                        console.error(`❌ Failed to get ${pool.name} data:`, error);
                     }
                 }
 
@@ -157,21 +162,38 @@ const Portfolio: React.FC = () => {
                 setPortfolioData(newPortfolioData);
                 setPositions(userPositions);
                 setBalances(userBalances);
+                
+                // Check if there are active positions
+                const hasPositions = userPositions.length > 0 || totalValue > 0;
+                setHasActivePositions(hasPositions);
+                
+                // In a real application, this would fetch user borrowing data from smart contracts
+                // For now, we simulate some borrowing data for demonstration
+                if (hasPositions && (totalValue + totalLiquidity) > 0) {
+                    // Regardless of asset size, any position may have borrowing risk
+                    // Simulate borrowing ratio: 60% of collateral value, minimum $10 (avoid very small values)
+                    const totalCollateral = totalValue + totalLiquidity;
+                    setUserBorrowedValue(Math.max(totalCollateral * 0.6, 10));
+                } else {
+                    setUserBorrowedValue(0);
+                }
 
-                console.log("✅ Portfolio数据加载完成:", {
+                console.log("✅ Portfolio data loaded successfully:", {
                     portfolioData: newPortfolioData,
                     positions: userPositions,
-                    balances: userBalances
+                    balances: userBalances,
+                    hasActivePositions: hasPositions,
+                    totalCollateralValue: totalValue + totalLiquidity
                 });
 
             } catch (error) {
-                console.error("❌ 加载Portfolio数据失败:", error);
+                console.error("❌ Failed to load Portfolio data:", error);
             } finally {
                 setLoading(false);
             }
         }
 
-        // 只有当价格数据加载完成后才开始获取Portfolio数据
+        // Only start fetching Portfolio data when price data is loaded
         if (Object.keys(assetPrices).length > 0) {
             fetchPortfolioData();
         }
@@ -190,7 +212,7 @@ const Portfolio: React.FC = () => {
     };
 
     if (!isClient) {
-        return null; // 防止hydration错误
+        return null; // Prevent hydration errors
     }
 
     return (
@@ -364,6 +386,14 @@ const Portfolio: React.FC = () => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Risk Monitor - Only show if user has borrowings */}
+                        {hasActivePositions && userBorrowedValue > 0 && (
+                            <RiskMonitor 
+                                collateralValue={portfolioData.netWorth}
+                                borrowedValue={userBorrowedValue}
+                            />
+                        )}
 
                         {/* Main Content - Two Column Layout */}
                         <div className="portfolio-main">

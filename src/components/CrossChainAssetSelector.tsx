@@ -14,10 +14,10 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
     const [showAddAsset, setShowAddAsset] = useState(false);
     const [inputValues, setInputValues] = useState<{ [key: string]: string }>({});
 
-    // 智能资产排序函数
+    // Smart asset sorting function
     const sortAssets = (assets: Asset[]) => {
         return [...assets].sort((a, b) => {
-            // 1. 主流资产优先级
+            // 1. Mainstream asset priority
             const mainAssets = ['ETH', 'USDC', 'USDT', 'DAI', 'WETH', 'BNB'];
             const aPriority = mainAssets.indexOf(a.symbol?.toUpperCase()) !== -1 ? 0 : 1;
             const bPriority = mainAssets.indexOf(b.symbol?.toUpperCase()) !== -1 ? 0 : 1;
@@ -26,20 +26,20 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                 return aPriority - bPriority;
             }
             
-            // 2. 按余额排序
+            // 2. Sort by balance
             const aBalance = parseFloat(a.balance || '0');
             const bBalance = parseFloat(b.balance || '0');
             
-            // 有余额的排在前面
+            // Assets with balance come first
             if (aBalance > 0 && bBalance === 0) return -1;
             if (aBalance === 0 && bBalance > 0) return 1;
             
-            // 都有余额时，按余额降序
+            // When both have balance, sort by balance descending
             if (aBalance > 0 && bBalance > 0) {
                 return bBalance - aBalance;
             }
             
-            // 3. 余额都为0时，按字母顺序
+            // 3. When both have zero balance, sort alphabetically
             return (a.symbol || '').localeCompare(b.symbol || '');
         });
     };
@@ -511,6 +511,132 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                         <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--accent-color)' }}>
                             {formatValue(getTotalBridgeValue())}
                         </span>
+                    </div>
+                </div>
+            )}
+
+            {/* Risk Indicator */}
+            {getTotalBridgeValue() > 0 && sourceAmount > 0 && (
+                <div style={{
+                    background: (() => {
+                        const collateralValue = sourceAmount * (sourceAsset?.price || 3000);
+                        const borrowValue = getTotalBridgeValue();
+                        const ratio = (collateralValue / borrowValue) * 100;
+                        
+                        if (ratio < 130) return 'linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.05))';
+                        if (ratio < 150) return 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.05))';
+                        return 'linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(21, 128, 61, 0.05))';
+                    })(),
+                    border: (() => {
+                        const collateralValue = sourceAmount * (sourceAsset?.price || 3000);
+                        const borrowValue = getTotalBridgeValue();
+                        const ratio = (collateralValue / borrowValue) * 100;
+                        
+                        if (ratio < 130) return '2px solid #ef4444';
+                        if (ratio < 150) return '2px solid #f59e0b';
+                        return '2px solid #22c55e';
+                    })(),
+                    borderRadius: '12px',
+                    padding: '16px'
+                }}>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        marginBottom: '12px'
+                    }}>
+                        <div style={{ fontSize: '24px' }}>
+                            {(() => {
+                                const collateralValue = sourceAmount * (sourceAsset?.price || 3000);
+                                const borrowValue = getTotalBridgeValue();
+                                const ratio = (collateralValue / borrowValue) * 100;
+                                
+                                if (ratio < 130) return '🚨';
+                                if (ratio < 150) return '⚠️';
+                                return '✅';
+                            })()}
+                        </div>
+                        <div>
+                            <div style={{
+                                fontSize: '16px',
+                                fontWeight: 600,
+                                color: (() => {
+                                    const collateralValue = sourceAmount * (sourceAsset?.price || 3000);
+                                    const borrowValue = getTotalBridgeValue();
+                                    const ratio = (collateralValue / borrowValue) * 100;
+                                    
+                                    if (ratio < 130) return '#ef4444';
+                                    if (ratio < 150) return '#f59e0b';
+                                    return '#22c55e';
+                                })()
+                            }}>
+                                Collateral Ratio: {(() => {
+                                    const collateralValue = sourceAmount * (sourceAsset?.price || 3000);
+                                    const borrowValue = getTotalBridgeValue();
+                                    return ((collateralValue / borrowValue) * 100).toFixed(1);
+                                })()}%
+                            </div>
+                            <div style={{
+                                fontSize: '14px',
+                                color: '#6b7280',
+                                marginTop: '4px'
+                            }}>
+                                {(() => {
+                                    const collateralValue = sourceAmount * (sourceAsset?.price || 3000);
+                                    const borrowValue = getTotalBridgeValue();
+                                    const ratio = (collateralValue / borrowValue) * 100;
+                                    
+                                    if (ratio < 130) return 'DANGER: Position at risk of liquidation!';
+                                    if (ratio < 150) return 'WARNING: Low collateral ratio detected';
+                                    return 'SAFE: Healthy collateral ratio';
+                                })()}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* Progress Bar */}
+                    <div>
+                        <div style={{
+                            height: '6px',
+                            background: '#f3f4f6',
+                            borderRadius: '3px',
+                            overflow: 'hidden',
+                            position: 'relative'
+                        }}>
+                            {/* Liquidation threshold line */}
+                            <div style={{
+                                position: 'absolute',
+                                left: 'calc(130px / 3)', // Rough position for 130% on a 300% scale
+                                width: '2px',
+                                height: '100%',
+                                background: '#ef4444',
+                                zIndex: 2
+                            }}></div>
+                            
+                            {/* Progress fill */}
+                            <div style={{
+                                height: '100%',
+                                background: (() => {
+                                    const collateralValue = sourceAmount * (sourceAsset?.price || 3000);
+                                    const borrowValue = getTotalBridgeValue();
+                                    const ratio = (collateralValue / borrowValue) * 100;
+                                    
+                                    if (ratio < 130) return '#ef4444';
+                                    if (ratio < 150) return '#f59e0b';
+                                    return '#22c55e';
+                                })(),
+                                width: `${Math.min(((sourceAmount * (sourceAsset?.price || 3000)) / getTotalBridgeValue()) * 100 / 3, 100)}%`,
+                                borderRadius: '3px',
+                                transition: 'width 0.3s ease'
+                            }}></div>
+                        </div>
+                        <div style={{
+                            fontSize: '10px',
+                            color: '#ef4444',
+                            marginTop: '4px'
+                        }}>
+                            ↑ Liquidation at 130%
+                        </div>
                     </div>
                 </div>
             )}
