@@ -1,303 +1,197 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Modal } from 'antd';
+import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Layout from '../components/Layout';
-import { useAccount, useReadContract, useWriteContract } from 'wagmi';
+import { BigNumberish, ethers, formatUnits } from 'ethers';
+import { useAccount, useChainId, useReadContract, useWriteContract } from 'wagmi';
 import LiquidityPoolABI  from '../abi/LiquidityPool.json';
 import ERC20ABI from '../abi/ERC20.json';
-import { poolList } from '../config';
-import { ethers } from 'ethers';
-import { getBalance, getPoolTvl, getUserPosition } from '../utils/pool';
-import { formatUnits } from 'ethers';
-import { getUserAssetBalance } from '../utils/balance';
+import { poolList } from  '../config';
+import { getBalance, getUserAssetBalance } from '../utils/balance';
+import { getPoolTvl, getUserPosition } from '../utils/pool';
+
+// 动态导入BalanceDebugger，禁用SSR
+const BalanceDebugger = dynamic(() => import('../components/BalanceDebugger'), {
+    ssr: false
+});
 
 const Pools: React.FC = () => {
-    const { address, chainId } = useAccount();
-    const [pools, setPools] = useState<any[]>([]);
-    const [isModalVisible, setIsModalVisible] = useState(false);
-    const [modalType, setModalType] = useState<'deposit' | 'withdraw'>('deposit');
-    const [selectedPool, setSelectedPool] = useState<any>(null);
     const [depositAmount, setDepositAmount] = useState('');
     const [withdrawAmount, setWithdrawAmount] = useState('');
+    const [selectedPool, setSelectedPool] = useState<any>();
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [modalType, setModalType] = useState<'deposit' | 'withdraw'>('deposit');
     const [depositing, setDepositing] = useState(false);
     const [withdrawing, setWithdrawing] = useState(false);
-    const [userBalance, setUserBalance] = useState('0');
-    const [loading, setLoading] = useState(false);
-    const [forceClose, setForceClose] = useState(0);
-    const [notification, setNotification] = useState<{
-        type: 'success' | 'error' | 'info';
-        message: string;
-        hash?: string;
-    } | null>(null);
+    const [realBalance, setRealBalance] = useState<string>('0');
+    const [isClient, setIsClient] = useState(false);
+    const [poolsLoading, setPoolsLoading] = useState(true);
 
-    const showModal = async (type: 'deposit' | 'withdraw', pool: any) => {
-        console.log('Opening modal for pool:', pool.name, 'type:', type);
-        console.log('User address:', address);
-        console.log('Chain ID:', chainId);
-        
-        setModalType(type);
-        setSelectedPool(pool);
-        setLoading(true);
-        
-        // Get user balance
-        try {
-            let balance;
-            if (type === 'deposit') {
-                // Get original token balance
-                console.log('Getting token balance for:', pool.address);
-                balance = await getUserAssetBalance(pool.address, address, chainId, false);
-                console.log('Token balance result:', balance);
-            } else {
-                // Get LP token balance
-                console.log('Getting LP balance for:', pool.pool);
-                balance = await getBalance(pool.pool, address, chainId);
-                console.log('LP balance result:', balance);
+    const { address } = useAccount();
+    const [pools, setPools] = useState<any[]>([]);
+    const chainId = useChainId();
+
+    // 防止hydration错误
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+    // 获取选中池子的真实余额
+    useEffect(() => {
+        async function fetchRealBalance() {
+            if (!isClient || !address || !selectedPool) {
+                setRealBalance('0');
+                return;
             }
             
-            if (balance && balance !== '0') {
+            try {
+                console.log("🔥 获取真实余额:", selectedPool.name);
+                const balance = await getUserAssetBalance(
+                    selectedPool.address, 
+                    address, 
+                    selectedPool.chainId, 
+                    selectedPool.isNative
+                );
                 const formattedBalance = formatUnits(balance, 18);
-                console.log('Formatted balance:', formattedBalance);
-                setUserBalance(formattedBalance);
-            } else {
-                console.log('Balance is 0 or null');
-                setUserBalance('0');
+                setRealBalance(formattedBalance);
+                console.log(`✅ ${selectedPool.name} 真实余额:`, formattedBalance);
+            } catch (error) {
+                console.error("❌ 获取真实余额失败:", error);
+                setRealBalance('0');
             }
-        } catch (error) {
-            console.error('Error fetching balance:', error);
-            setUserBalance('0');
         }
         
-        setLoading(false);
-        setForceClose(0);
+        fetchRealBalance();
+    }, [isClient, address, selectedPool]);
+
+    const showModal = (type: 'deposit' | 'withdraw', pool: any) => {
+        console.log('showModal called:', type, pool.name);
+        setSelectedPool(pool);
+        setModalType(type);
         setIsModalVisible(true);
+        console.log('Modal state set to:', true);
     };
 
-    const { writeContract: writeDeposit, isPending: isDepositPending, data: depositHash } = useWriteContract();
-    const { writeContract: writeWithdraw, isPending: isWithdrawPending, data: withdrawHash } = useWriteContract();
-    const { writeContract: writeApprove, isPending: isApprovePending, data: approveHash } = useWriteContract();
+    const { writeContract: writeDeposit, isPending: isDepositPending } = useWriteContract();
+    const { writeContract: writeWithdraw, isPending: isWithdrawPending } = useWriteContract();
+    const { writeContract: writeApprove, isPending: isApprovePending } = useWriteContract();
 
 
     const { data: allowance } = useReadContract({
-        address: selectedPool?.address as `0x${string}`,
+        address: selectedPool?.address,
         abi: ERC20ABI,
         functionName: 'allowance',
-        args: [address as `0x${string}`, selectedPool?.pool as `0x${string}`],
-        query: { enabled: !!address && !!selectedPool && !!selectedPool.address && !!selectedPool.pool},
+        args: [address, selectedPool?.pool],
+        query: { enabled: !!address && !!selectedPool},
     });
 
     const handleOk = () => {
         setIsModalVisible(false);
-    }
+    };
 
     const handlePool = async () => {
+        if (!selectedPool) return;
         if (modalType === 'deposit') {
             setDepositing(true);
-            console.log('=== DEPOSIT TRANSACTION START ===');
-            console.log('Deposit Amount:', depositAmount);
-            console.log('Selected Pool:', selectedPool);
-            console.log('Token Address:', selectedPool?.address);
-            console.log('User Address:', address);
-            console.log('Chain ID:', chainId);
-            console.log('Current Time:', new Date().toISOString());
-            
             try {
-                const depositAmountWei = ethers.parseUnits(depositAmount, 18);
-                console.log('Deposit Amount in Wei:', depositAmountWei.toString());
-
-                // All tokens are handled as ERC20
-                console.log('Current allowance from hook:', allowance?.toString());
-                const currentAllowance = allowance ? BigInt(allowance.toString()) : BigInt(0);
-                const requiredAmount = BigInt(depositAmountWei.toString());
-                
-                console.log('Allowance check:', {
-                    currentAllowance: currentAllowance.toString(),
-                    requiredAmount: requiredAmount.toString(),
-                    sufficient: currentAllowance >= requiredAmount
-                });
-                
-                if (currentAllowance < requiredAmount) {
-                    console.log('Insufficient allowance, approving token transfer...');
-                    console.log('Current allowance:', currentAllowance.toString());
-                    console.log('Required amount:', requiredAmount.toString());
-                    console.log('Token address:', selectedPool.address);
-                    console.log('Pool address:', selectedPool.pool);
-                    
-                    try {
-                        const approvalTx = await writeApprove({
-                            address: selectedPool.address as `0x${string}`,
+                if (selectedPool.isNative) {
+                    // Deposit native token (ETH/BNB)
+                    await writeDeposit({
+                        address: selectedPool.pool,
+                        abi: LiquidityPoolABI,
+                        functionName: 'depositNative',
+                        args: [],
+                        value: ethers.parseUnits(depositAmount), // Send native token value
+                    });
+                } else {
+                    // Deposit ERC20 token
+                    if (!allowance || (allowance as BigNumberish) < (ethers.parseUnits(depositAmount) as BigNumberish)) {
+                        await writeApprove({
+                            address: selectedPool.address,
                             abi: ERC20ABI,
                             functionName: 'approve',
-                            args: [selectedPool.pool as `0x${string}`, requiredAmount],
-                        });
-                        console.log('Approval transaction sent:', approvalTx);
-                        
-                        setNotification({
-                            type: 'info',
-                            message: 'Approval transaction sent. Please wait for confirmation and then try deposit again.'
-                        });
-                    } catch (approveError) {
-                        console.error('Approval transaction error:', approveError);
-                        setNotification({
-                            type: 'error',
-                            message: 'Approval failed: ' + (approveError as Error).message
+                            args: [selectedPool.pool, ethers.parseUnits(depositAmount)],
                         });
                     }
-                    
-                    // Wait for approval completion before deposit
-                    console.log('Approval transaction sent, waiting for confirmation...');
-                    return; // User needs to click deposit button again
-                }
-
-                console.log('Depositing to pool...');
-                console.log('Pool contract:', selectedPool.pool);
-                console.log('Deposit amount:', depositAmountWei.toString());
-                
-                try {
-                    const depositTx = await writeDeposit({
-                        address: selectedPool.pool as `0x${string}`,
+                    await writeDeposit({
+                        address: selectedPool.pool,
                         abi: LiquidityPoolABI,
                         functionName: 'deposit',
-                        args: [depositAmountWei],
-                    });
-                    console.log('Deposit transaction sent:', depositTx);
-                } catch (txError) {
-                    console.error('Deposit transaction error:', txError);
-                    setNotification({
-                        type: 'error',
-                        message: 'Deposit failed: ' + (txError as Error).message
+                        args: [ethers.parseUnits(depositAmount)],
                     });
                 }
-            } catch (error) {
-                console.error('Deposit error:', error);
             } finally {
                 setDepositing(false);
             }
         } else {
+            setWithdrawing(true);
             try {
-                setWithdrawing(true);
-                const withdrawAmountWei = ethers.parseUnits(withdrawAmount, 18);
-                console.log('Withdraw Amount in Wei:', withdrawAmountWei.toString());
-                
-                // Handle withdraw logic
-                await writeWithdraw({
-                    address: selectedPool.pool as `0x${string}`,
-                    abi: LiquidityPoolABI,
-                    functionName: 'withdraw',
-                    args: [withdrawAmountWei],
-                });
-            } catch (error) {
-                console.error('Withdraw error:', error);
+                if (selectedPool.isNative) {
+                    // Withdraw native token (ETH/BNB)
+                    await writeWithdraw({
+                        address: selectedPool.pool,
+                        abi: LiquidityPoolABI,
+                        functionName: 'withdrawNative',
+                        args: [ethers.parseUnits(withdrawAmount)],
+                    });
+                } else {
+                    // Withdraw ERC20 token
+                    await writeWithdraw({
+                        address: selectedPool.pool,
+                        abi: LiquidityPoolABI,
+                        functionName: 'withdraw',
+                        args: [ethers.parseUnits(withdrawAmount)],
+                    });
+                }
             } finally {
                 setWithdrawing(false);
             }
         }
-        // Modal will close automatically after successful transaction
+        setIsModalVisible(false);
     };
 
-    const handleCancel = useCallback(() => {
-        console.log('handleCancel called, current modal state:', isModalVisible);
-        
-        // Set state immediately
+    const handleCancel = () => {
         setIsModalVisible(false);
         setDepositAmount('');
         setWithdrawAmount('');
-        setUserBalance('0');
-        setLoading(false);
-        
-        console.log('Modal close initiated');
-        
-        // Ensure state is correctly set
-        setTimeout(() => {
-            setIsModalVisible(false);
-            console.log('Force close modal');
-        }, 10);
-    }, [isModalVisible]);
+    };
     const isAmountValid = true;
-
-    // Handle successful transaction callbacks
-    useEffect(() => {
-        if (depositHash) {
-            console.log('Deposit transaction successful:', depositHash);
-            setNotification({
-                type: 'success',
-                message: 'Deposit successful!',
-                hash: depositHash
-            });
-            setDepositAmount('');
-            setIsModalVisible(false);
-            setForceClose(prev => prev + 1);
-            // Refresh pools data
-            setTimeout(() => {
-                window.location.reload();
-            }, 3000);
-        }
-    }, [depositHash]);
-
-    useEffect(() => {
-        if (withdrawHash) {
-            console.log('Withdraw transaction successful:', withdrawHash);
-            setNotification({
-                type: 'success',
-                message: 'Withdraw successful!',
-                hash: withdrawHash
-            });
-            setWithdrawAmount('');
-            setIsModalVisible(false);
-            setForceClose(prev => prev + 1);
-            // Refresh pools data
-            setTimeout(() => {
-                window.location.reload();
-            }, 3000);
-        }
-    }, [withdrawHash]);
-
-    useEffect(() => {
-        if (approveHash) {
-            console.log('Approval transaction successful:', approveHash);
-            setNotification({
-                type: 'success',
-                message: 'Approval successful! You can now deposit.',
-                hash: approveHash
-            });
-        }
-    }, [approveHash]);
-
-    // Auto close notification
-    useEffect(() => {
-        if (notification) {
-            const timer = setTimeout(() => {
-                setNotification(null);
-            }, 5000); // Auto close after 5 seconds
-            
-            return () => clearTimeout(timer);
-        }
-    }, [notification]);
 
     useEffect(() => {
         async function fetchPools() {
-          const poolsWithData = await Promise.all(
-            poolList.filter( pool => {
-                if (pool.chainId == chainId) return true;
-                return false;
-             }
-            ).map(async (pool) => {
-              const shares  = await getBalance(pool.pool, address, pool.chainId);
-              const tvl = await getPoolTvl(pool);
-              const userPosition = await getUserPosition(pool, address);
-              return {
-                ...pool,
-                tvl: tvl ? formatUnits(tvl, 18) : '$0',
-                userPosition: userPosition ? formatUnits(userPosition, 18) : '0',
-                shares: shares ? formatUnits(shares, 18) : '0',
-              };
-            })
-          );
-          setPools(poolsWithData);
+          if (!isClient) return;
+          
+          setPoolsLoading(true);
+          try {
+            const poolsWithData = await Promise.all(
+              poolList.filter( pool => {
+                  if (pool.chainId == chainId) return true;
+                  return false;
+               }
+              ).map(async (pool) => {
+                const shares  = await getBalance(pool.pool, address, pool.chainId);
+                const tvl = await getPoolTvl(pool);
+                const userPosition = await getUserPosition(pool, address);
+                return {
+                  ...pool,
+                  tvl: tvl ? formatUnits(tvl, 18) : '$0',
+                  userPosition: userPosition && userPosition.toString() !== '0' ? formatUnits(userPosition, 18) : '0',
+                  shares: shares ? formatUnits(shares, 18) : '0',
+                };
+              })
+            );
+            setPools(poolsWithData);
+          } catch (error) {
+            console.error("Failed to fetch pools:", error);
+          } finally {
+            setPoolsLoading(false);
+          }
         }
         fetchPools();
-      }, []);
+      }, [isClient, chainId, address]);
 
     return (
         <Layout>
+            <BalanceDebugger />
             <div className="container">
                 <div className="glass-card" style={{ maxWidth: '800px', margin: '0 auto' }}>
                     <h2 style={{ 
@@ -314,7 +208,17 @@ const Pools: React.FC = () => {
                         gap: '20px',
                         marginBottom: '24px'
                     }}>
-                        {pools.map((pool) => (
+                        {poolsLoading ? (
+                            <div style={{
+                                background: 'rgba(255, 255, 255, 0.6)',
+                                borderRadius: '16px',
+                                padding: '20px',
+                                textAlign: 'center',
+                                color: 'var(--secondary-text)'
+                            }}>
+                                加载中...
+                            </div>
+                        ) : pools.map((pool) => (
                             <div key={pool.id} style={{
                                 background: 'rgba(255, 255, 255, 0.6)',
                                 backdropFilter: 'blur(10px)',
@@ -441,402 +345,284 @@ const Pools: React.FC = () => {
 
                 </div>
 
-                {/* Pool Actions Section */}
-                <Modal
-                    key={`modal-${forceClose}`}
-                    open={isModalVisible}
-                    onCancel={() => {
-                        console.log('Modal onCancel triggered');
-                        setIsModalVisible(false);
-                        setForceClose(prev => prev + 1);
-                    }}
-                    footer={null}
-                    centered
-                    width={480}
-                    wrapClassName="custom-modal"
-                    closable={false}
-                    maskClosable={true}
-                    keyboard={true}
-                    destroyOnClose={true}
-                    style={{
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                    }}
-                    bodyStyle={{
-                        background: 'rgba(255, 255, 255, 0.95)',
-                        backdropFilter: 'blur(20px)',
-                        borderRadius: '20px',
-                        padding: '0',
-                    }}
-                >
-                    <div style={{ position: 'relative' }}>
-                        {/* Close Button */}
-                        <button
-                            type="button"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                console.log('Close button clicked - forcing close');
-                                console.log('Current modal state:', isModalVisible);
-                                setIsModalVisible(false);
-                                setForceClose(prev => prev + 1);
-                                console.log('After setting false, state should be:', false);
-                            }}
-                            style={{
-                                position: 'absolute',
-                                top: '16px',
-                                right: '16px',
-                                background: 'rgba(0, 0, 0, 0.1)',
-                                border: 'none',
-                                borderRadius: '50%',
-                                width: '40px',
-                                height: '40px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                color: '#666',
-                                fontSize: '24px',
-                                fontWeight: 'bold',
-                                zIndex: 99999,
-                                userSelect: 'none'
-                            }}
-                        >
-                            ×
-                        </button>
-                        
-                        {/* Custom Header */}
+                {/* Custom Modal */}
+                {isModalVisible && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000
+                    }} onClick={handleCancel}>
                         <div style={{
-                            display: 'flex',
-                            justifyContent: 'flex-start',
-                            alignItems: 'center',
-                            padding: '24px 24px 16px 24px',
-                            borderBottom: '1px solid rgba(0, 0, 0, 0.08)'
-                        }}>
-                            <div>
-                                <h3 style={{
-                                    margin: 0,
-                                    fontSize: '20px',
-                                    fontWeight: 600,
-                                    color: 'var(--text-color)'
-                                }}>
-                                    {modalType === 'deposit' ? 'Deposit' : 'Withdraw'}
-                                </h3>
-                                <p style={{
-                                    margin: '4px 0 0 0',
-                                    fontSize: '14px',
-                                    color: 'var(--secondary-text)'
-                                }}>
-                                    {selectedPool?.name} Pool
-                                </p>
-                            </div>
-                        </div>
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            backdropFilter: 'blur(20px)',
+                            borderRadius: '20px',
+                            padding: '24px',
+                            width: '400px',
+                            maxWidth: '90vw',
+                            position: 'relative',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)'
+                        }} onClick={(e) => e.stopPropagation()}>
+                            
+                            {/* Close Button */}
+                            <button
+                                onClick={handleCancel}
+                                style={{
+                                    position: 'absolute',
+                                    top: '16px',
+                                    right: '16px',
+                                    background: 'rgba(0, 0, 0, 0.1)',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '32px',
+                                    height: '32px',
+                                    cursor: 'pointer',
+                                    fontSize: '18px',
+                                    color: '#666'
+                                }}
+                            >
+                                ×
+                            </button>
 
-                        {/* Content */}
-                        <div style={{ padding: '20px 24px 24px 24px' }}>
+                            {/* Title */}
+                            <h3 style={{
+                                margin: '0 0 20px 0',
+                                fontSize: '20px',
+                                fontWeight: 600,
+                                color: '#1e1e1e'
+                            }}>
+                                {modalType === 'deposit' ? 'Deposit' : 'Withdraw'} - {selectedPool?.name} Pool
+                            </h3>
+
                             {modalType === 'deposit' ? (
-                                <>
-                                    {/* Balance Info */}
+                                <div>
+                                    {/* Balance Display */}
                                     <div style={{
-                                        background: 'rgba(65, 102, 245, 0.08)',
+                                        backgroundColor: 'rgba(65, 102, 245, 0.08)',
                                         borderRadius: '12px',
                                         padding: '16px',
-                                        marginBottom: '20px',
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center'
+                                        marginBottom: '20px'
                                     }}>
-                                        <div>
-                                            <div style={{
-                                                fontSize: '12px',
-                                                color: 'var(--secondary-text)',
-                                                marginBottom: '4px'
-                                            }}>
-                                                Your Balance
-                                            </div>
-                                            <div style={{
-                                                fontSize: '16px',
-                                                fontWeight: 600,
-                                                color: 'var(--text-color)'
-                                            }}>
-                                                {loading ? 'Loading...' : `${parseFloat(userBalance).toFixed(4)} ${selectedPool?.tokens?.[0] || 'TOKEN'}`}
-                                            </div>
+                                        <div style={{
+                                            fontSize: '14px',
+                                            color: '#7f8596',
+                                            marginBottom: '4px'
+                                        }}>
+                                            Your Balance
                                         </div>
-                                        <button
-                                            onClick={() => setDepositAmount(userBalance)}
-                                            style={{
-                                                background: 'var(--accent-color)',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '8px',
-                                                padding: '6px 12px',
-                                                fontSize: '12px',
-                                                fontWeight: 500,
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            MAX
-                                        </button>
+                                        <div style={{
+                                            fontSize: '18px',
+                                            fontWeight: 600,
+                                            color: '#1e1e1e'
+                                        }}>
+                                            {isClient ? realBalance : '0.000000'} {selectedPool?.name || 'TOKEN'}
+                                        </div>
                                     </div>
 
-                                    {/* Amount Input */}
+                                    {/* Deposit Amount */}
                                     <div style={{ marginBottom: '20px' }}>
                                         <label style={{
                                             display: 'block',
-                                            marginBottom: '12px',
+                                            marginBottom: '8px',
                                             fontSize: '14px',
-                                            color: 'var(--text-color)',
-                                            fontWeight: 500
+                                            fontWeight: 500,
+                                            color: '#1e1e1e'
                                         }}>
                                             Deposit Amount
                                         </label>
-                                        <div style={{
-                                            background: 'rgba(241, 238, 233, 0.8)',
-                                            borderRadius: '16px',
-                                            padding: '20px',
-                                            border: '2px solid transparent',
-                                            transition: 'all 0.2s ease'
-                                        }}>
+                                        
+                                        <div style={{ position: 'relative' }}>
                                             <input
                                                 type="text"
                                                 placeholder="0.00"
                                                 value={depositAmount}
                                                 onChange={(e) => setDepositAmount(e.target.value)}
                                                 style={{
-                                                    fontSize: '28px',
-                                                    fontWeight: 300,
                                                     width: '100%',
-                                                    border: 'none',
-                                                    background: 'transparent',
-                                                    color: 'var(--text-color)',
+                                                    padding: '16px',
+                                                    paddingRight: '60px',
+                                                    fontSize: '18px',
+                                                    border: '2px solid #e9e7e2',
+                                                    borderRadius: '12px',
                                                     outline: 'none',
-                                                    marginBottom: '8px'
+                                                    background: '#f1eee9'
                                                 }}
                                             />
-                                            <div style={{
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center'
-                                            }}>
-                                                <div style={{
-                                                    fontSize: '14px',
-                                                    color: 'var(--secondary-text)'
-                                                }}>
-                                                    ≈ ${(parseFloat(depositAmount) * 3000 || 0).toFixed(2)}
-                                                </div>
-                                                <div style={{
+                                            <button
+                                                onClick={() => setDepositAmount(isClient ? realBalance : '0')}
+                                                style={{
+                                                    position: 'absolute',
+                                                    right: '8px',
+                                                    top: '50%',
+                                                    transform: 'translateY(-50%)',
+                                                    background: '#4166f5',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    borderRadius: '8px',
+                                                    padding: '6px 12px',
                                                     fontSize: '12px',
-                                                    color: 'var(--secondary-text)'
-                                                }}>
-                                                    {selectedPool?.tokens?.[0] || 'TOKEN'}
-                                                </div>
-                                            </div>
+                                                    fontWeight: 500,
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                MAX
+                                            </button>
                                         </div>
                                     </div>
 
-                                    {/* Pool Info */}
-                                    <div style={{
-                                        background: 'rgba(255, 255, 255, 0.6)',
-                                        borderRadius: '12px',
-                                        padding: '16px',
-                                        marginBottom: '24px'
-                                    }}>
-                                        <div style={{
-                                            display: 'grid',
-                                            gridTemplateColumns: '1fr 1fr',
-                                            gap: '16px'
-                                        }}>
-                                            <div>
-                                                <div style={{
-                                                    fontSize: '12px',
-                                                    color: 'var(--secondary-text)',
-                                                    marginBottom: '4px'
-                                                }}>
-                                                    Pool APY
-                                                </div>
-                                                <div style={{
-                                                    fontSize: '16px',
-                                                    fontWeight: 600,
-                                                    color: 'var(--success-color)'
-                                                }}>
-                                                    {selectedPool?.apy || '8.3%'}
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div style={{
-                                                    fontSize: '12px',
-                                                    color: 'var(--secondary-text)',
-                                                    marginBottom: '4px'
-                                                }}>
-                                                    Pool TVL
-                                                </div>
-                                                <div style={{
-                                                    fontSize: '16px',
-                                                    fontWeight: 600,
-                                                    color: 'var(--text-color)'
-                                                }}>
-                                                    {selectedPool?.tvl || '$0'}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Action Button */}
-                                    <button
+                                    {/* Deposit Button */}
+                                    <button 
                                         onClick={handlePool}
-                                        disabled={!isAmountValid || !depositAmount || parseFloat(depositAmount) <= 0}
-                                        className="button"
+                                        disabled={!depositAmount || depositing}
                                         style={{
                                             width: '100%',
                                             padding: '16px',
+                                            backgroundColor: depositAmount && !depositing ? '#4166f5' : '#ccc',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '12px',
                                             fontSize: '16px',
                                             fontWeight: 600,
-                                            background: depositing ? 'var(--disabled-color)' : 'var(--accent-color)',
-                                            cursor: depositing ? 'not-allowed' : 'pointer',
-                                            opacity: depositing ? 0.6 : 1
+                                            cursor: depositAmount && !depositing ? 'pointer' : 'not-allowed'
                                         }}
                                     >
-                                        {depositing ? 'Depositing...' : 'Deposit'}
+                                        {depositing ? 'Depositing...' : 'Deposit to Pool'}
                                     </button>
-                                </>
+                                </div>
                             ) : (
-                                <>
-                                    {/* Withdraw form */}
+                                <div>
+                                    {/* Available to Withdraw Display */}
                                     <div style={{
-                                        background: 'rgba(65, 102, 245, 0.08)',
+                                        backgroundColor: 'rgba(239, 68, 68, 0.08)',
                                         borderRadius: '12px',
                                         padding: '16px',
-                                        marginBottom: '20px',
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center'
+                                        marginBottom: '16px'
                                     }}>
-                                        <div>
-                                            <div style={{
-                                                fontSize: '12px',
-                                                color: 'var(--secondary-text)',
-                                                marginBottom: '4px'
-                                            }}>
-                                                Your LP Balance
-                                            </div>
-                                            <div style={{
-                                                fontSize: '16px',
-                                                fontWeight: 600,
-                                                color: 'var(--text-color)'
-                                            }}>
-                                                {loading ? 'Loading...' : `${parseFloat(userBalance).toFixed(4)} LP`}
-                                            </div>
+                                        <div style={{
+                                            fontSize: '14px',
+                                            color: '#7f8596',
+                                            marginBottom: '4px'
+                                        }}>
+                                            Available to Withdraw
                                         </div>
-                                        <button
-                                            onClick={() => setWithdrawAmount(userBalance)}
-                                            style={{
-                                                background: 'var(--accent-color)',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '8px',
-                                                padding: '6px 12px',
-                                                fontSize: '12px',
-                                                fontWeight: 500,
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            MAX
-                                        </button>
+                                        <div style={{
+                                            fontSize: '18px',
+                                            fontWeight: 600,
+                                            color: '#1e1e1e'
+                                        }}>
+                                            {selectedPool ? 
+                                                (pools.find(p => p.id === selectedPool.id)?.shares || '0') 
+                                                : '0'
+                                            } {selectedPool?.name || 'TOKEN'}
+                                        </div>
                                     </div>
 
+                                    {/* Current Wallet Balance Display */}
+                                    <div style={{
+                                        backgroundColor: 'rgba(65, 102, 245, 0.08)',
+                                        borderRadius: '12px',
+                                        padding: '16px',
+                                        marginBottom: '20px'
+                                    }}>
+                                        <div style={{
+                                            fontSize: '14px',
+                                            color: '#7f8596',
+                                            marginBottom: '4px'
+                                        }}>
+                                            Current Wallet Balance
+                                        </div>
+                                        <div style={{
+                                            fontSize: '18px',
+                                            fontWeight: 600,
+                                            color: '#1e1e1e'
+                                        }}>
+                                            {isClient ? realBalance : '0.000000'} {selectedPool?.name || 'TOKEN'}
+                                        </div>
+                                    </div>
+
+                                    {/* Withdraw content */}
                                     <div style={{ marginBottom: '20px' }}>
                                         <label style={{
                                             display: 'block',
-                                            marginBottom: '12px',
+                                            marginBottom: '8px',
                                             fontSize: '14px',
-                                            color: 'var(--text-color)',
-                                            fontWeight: 500
+                                            fontWeight: 500,
+                                            color: '#1e1e1e'
                                         }}>
                                             Withdraw Amount
                                         </label>
-                                        <div style={{
-                                            background: 'rgba(241, 238, 233, 0.8)',
-                                            borderRadius: '16px',
-                                            padding: '20px',
-                                            border: '2px solid transparent',
-                                            transition: 'all 0.2s ease'
-                                        }}>
+                                        
+                                        <div style={{ position: 'relative' }}>
                                             <input
                                                 type="text"
                                                 placeholder="0.00"
                                                 value={withdrawAmount}
                                                 onChange={(e) => setWithdrawAmount(e.target.value)}
                                                 style={{
-                                                    fontSize: '28px',
-                                                    fontWeight: 300,
                                                     width: '100%',
-                                                    border: 'none',
-                                                    background: 'transparent',
-                                                    color: 'var(--text-color)',
+                                                    padding: '16px',
+                                                    paddingRight: '60px',
+                                                    fontSize: '18px',
+                                                    border: '2px solid #e9e7e2',
+                                                    borderRadius: '12px',
                                                     outline: 'none',
-                                                    marginBottom: '8px'
+                                                    background: '#f1eee9'
                                                 }}
                                             />
-                                            <div style={{
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center'
-                                            }}>
-                                                <div style={{
-                                                    fontSize: '14px',
-                                                    color: 'var(--secondary-text)'
-                                                }}>
-                                                    LP Tokens
-                                                </div>
-                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    const availableToWithdraw = selectedPool ? 
+                                                        (pools.find(p => p.id === selectedPool.id)?.shares || '0') 
+                                                        : '0';
+                                                    setWithdrawAmount(availableToWithdraw);
+                                                }}
+                                                style={{
+                                                    position: 'absolute',
+                                                    right: '8px',
+                                                    top: '50%',
+                                                    transform: 'translateY(-50%)',
+                                                    background: '#ef4444',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    borderRadius: '8px',
+                                                    padding: '6px 12px',
+                                                    fontSize: '12px',
+                                                    fontWeight: 500,
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                MAX
+                                            </button>
                                         </div>
                                     </div>
 
-                                    <button
+                                    <button 
                                         onClick={handlePool}
-                                        disabled={!withdrawAmount || parseFloat(withdrawAmount) <= 0}
-                                        className="button"
+                                        disabled={!withdrawAmount || withdrawing}
                                         style={{
                                             width: '100%',
                                             padding: '16px',
+                                            backgroundColor: withdrawAmount && !withdrawing ? '#4166f5' : '#ccc',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '12px',
                                             fontSize: '16px',
                                             fontWeight: 600,
-                                            background: withdrawing ? 'var(--disabled-color)' : 'var(--accent-color)',
-                                            cursor: withdrawing ? 'not-allowed' : 'pointer',
-                                            opacity: withdrawing ? 0.6 : 1
+                                            cursor: withdrawAmount && !withdrawing ? 'pointer' : 'not-allowed'
                                         }}
                                     >
-                                        {withdrawing ? 'Withdrawing...' : 'Withdraw'}
+                                        {withdrawing ? 'Withdrawing...' : 'Withdraw from Pool'}
                                     </button>
-                                </>
+                                </div>
                             )}
                         </div>
-                    </div>
-                </Modal>
-
-                {/* Notification */}
-                {notification && (
-                    <div style={{
-                        position: 'fixed',
-                        top: '20px',
-                        right: '20px',
-                        background: notification.type === 'success' ? '#10B981' : 
-                                   notification.type === 'error' ? '#EF4444' : '#3B82F6',
-                        color: 'white',
-                        padding: '16px 20px',
-                        borderRadius: '12px',
-                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
-                        zIndex: 10000,
-                        maxWidth: '400px',
-                        fontSize: '14px',
-                        fontWeight: 500
-                    }}>
-                        {notification.message}
-                        {notification.hash && (
-                            <div style={{ marginTop: '8px', fontSize: '12px', opacity: 0.9 }}>
-                                Transaction Hash: {notification.hash}
-                            </div>
-                        )}
                     </div>
                 )}
             </div>
@@ -844,4 +630,4 @@ const Pools: React.FC = () => {
     );
 };
 
-export default Pools; 
+export default Pools;

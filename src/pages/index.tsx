@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import MultiAssetSelector from '../components/MultiAssetSelector';
 import ImprovedNetworkSelector from '../components/ImprovedNetworkSelector';
 import CrossChainAssetSelector from '../components/CrossChainAssetSelector';
 import { bsc, bscTestnet, sepolia } from 'wagmi/chains';
 import { useAccount, useChainId, useProof } from 'wagmi';
+
+// 动态导入BalanceDebugger，禁用SSR
+const BalanceDebugger = dynamic(() => import('../components/BalanceDebugger'), {
+    ssr: false
+});
 import Dropdown from '../components/Dropdown';
 import { poolList } from '../config';
 import { getUserPosition } from '@/utils/pool';
@@ -322,6 +328,7 @@ const Home: React.FC = () => {
 
     return (
         <div className="container">
+            <BalanceDebugger />
             <div className="main-layout">
                 {/* Left Panel - Main Trading Interface */}
                 <div className="glass-card main-trading-panel">

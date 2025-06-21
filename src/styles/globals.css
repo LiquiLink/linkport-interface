@@ -567,17 +567,6 @@ body {
   }
 }
 
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(100px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
 .fade-in {
   animation: fadeIn 0.2s ease-out;
 }
@@ -626,46 +615,6 @@ body {
   background: rgba(255, 255, 255, 0.5);
 }
 
-/* Custom Modal Styles */
-.custom-modal {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.custom-modal .ant-modal {
-  position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  margin: 0 !important;
-}
-
-.custom-modal .ant-modal-content {
-  background: rgba(255, 255, 255, 0.95) !important;
-  backdrop-filter: blur(20px) !important;
-  border-radius: 16px !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
-}
-
-.custom-modal .ant-modal-header {
-  background: transparent !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 16px 16px 0 0 !important;
-}
-
-.custom-modal .ant-modal-title {
-  color: var(--text-color) !important;
-  font-weight: 600 !important;
-}
-
-.custom-modal .ant-modal-close {
-  color: var(--secondary-text) !important;
-}
-
-.custom-modal .ant-modal-close:hover {
-  color: var(--text-color) !important;
-}
-
 /* Custom global styles can be added below */
+
+/* Custom Modal styles are now inline in the component */
