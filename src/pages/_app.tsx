@@ -1,11 +1,9 @@
 import '../styles/globals.css';
-import { AppProps } from 'next/app';
+import type { AppProps } from 'next/app';
 import Layout from '../components/Layout';
-import { WagmiProvider, createConfig, http } from 'wagmi';
-import { mainnet, sepolia } from 'wagmi/chains';
-import { injected, walletConnect, metaMask  } from 'wagmi/connectors';
+import { WagmiProvider } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { config  } from '../config';
+import { config } from '../config';
 
 
 function MyApp({ Component, pageProps }: AppProps) {
