@@ -305,6 +305,13 @@ body {
   font-size: 10px;
 }
 
+/* Amount input placeholder styling */
+.amount-input-placeholder::placeholder {
+  color: #bbb;
+  font-style: italic;
+  opacity: 0.8;
+}
+
 /* Tab Navigation */
 .tab-navigation {
   display: flex;

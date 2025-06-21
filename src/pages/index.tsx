@@ -7,9 +7,12 @@ import { useAccount, useChainId, useProof } from 'wagmi';
 import Dropdown from '../components/Dropdown';
 import { poolList } from '../config';
 import { getUserPosition } from '@/utils/pool';
+import { getUserAssetBalance } from '../utils/balance';
 import { formatUnits } from 'ethers';
 import { format } from 'path';
-import { Asset, AssetAllocation } from '../types';
+import { Asset, AssetAllocation } from '../utils/types';
+import { getAssetPrice, getMultipleAssetPrices, formatPrice, PriceData } from '../utils/priceService';
+import { getNetworkStatus, getProtocolStats, getCongestionColor, NetworkStatus, ProtocolStats } from '../utils/networkService';
 
 const Home: React.FC = () => {
     const [activeTab, setActiveTab] = useState('borrow');
@@ -17,58 +20,244 @@ const Home: React.FC = () => {
     const [bridgeAmount, setBridgeAmount] = useState('');
     
     // Lending related states
-    const [sourceChain, setSourceChain] = useState(sepolia.id); // Collateral source chain
-    const [assetOptions, setAssetOptions] = useState([]); // Assets available for collateral
-    const [targetChain, setTargetChain] = useState(''); // Borrowing target chain
-    const [collateralAsset, setCollateralAsset] = useState();
+    const [sourceChain, setSourceChain] = useState<string>(sepolia.id.toString()); // Collateral source chain
+    const [assetOptions, setAssetOptions] = useState<any[]>([]); // Assets available for collateral
+    const [targetChain, setTargetChain] = useState<string>(''); // Borrowing target chain
+    const [collateralAsset, setCollateralAsset] = useState<any>(null);
     const [selectedAssets, setSelectedAssets] = useState<AssetAllocation[]>([]);
 
     // Cross-chain related states
-    const [bridgeSourceChain, setBridgeSourceChain] = useState('ethereum');
-    const [bridgeTargetChain, setBridgeTargetChain] = useState('optimism');
-    const [bridgeAsset, setBridgeAsset] = useState('eth');
+    const [bridgeSourceChain, setBridgeSourceChain] = useState<string>(sepolia.id.toString());
+    const [bridgeTargetChain, setBridgeTargetChain] = useState<string>('');
+    const [bridgeAsset, setBridgeAsset] = useState<any>(null);
+    const [bridgeAssetOptions, setBridgeAssetOptions] = useState<any[]>([]);
     const [bridgeTargetAssets, setBridgeTargetAssets] = useState<AssetAllocation[]>([]);
 
     const { address } = useAccount()
     const chainId = useChainId();
 
+    // 价格和网络状态
+    const [assetPrices, setAssetPrices] = useState<Record<string, PriceData>>({});
+    const [networkStatus, setNetworkStatus] = useState<NetworkStatus | null>(null);
+    const [protocolStats, setProtocolStats] = useState<ProtocolStats | null>(null);
+
     // Dropdown options definition
     const chainOptions = [
-        { value: sepolia.id, label: 'Ethereum Sepolia', icon: 'ETH', description: 'Layer 1 - High Security'},
-        { value: bscTestnet.id, label: 'BNB Testnet', icon: 'BNB', description: 'Binance Smart Chain'}
+        { value: sepolia.id.toString(), label: 'Ethereum Sepolia', icon: 'ETH', description: 'Layer 1 - High Security'},
+        { value: bscTestnet.id.toString(), label: 'BNB Testnet', icon: 'BNB', description: 'Binance Smart Chain'}
     ];
 
     async function fetchPools(chainId: any) {
+        console.log("Fetching pools for chainId:", chainId, "Type:", typeof chainId);
+        
+        const numericChainId = typeof chainId === 'string' ? parseInt(chainId) : chainId;
+        
         const sourceAssetsPromises = poolList.filter(pool => {
-            return pool.chainId === chainId 
+            return pool.chainId === numericChainId 
         }).map(async (pool) => {
-            const balance = await getUserPosition(pool, address);
+            // Only fetch balance if user is connected
+            let balance = null;
+            if (address) {
+                try {
+                    // 获取用户的原始资产余额，而不是流动性池份额
+                    balance = await getUserAssetBalance(
+                        pool.address, 
+                        address, 
+                        pool.chainId, 
+                        pool.isNative // 如果是原生ETH/BNB，使用原生余额读取
+                    );
+                    console.log(`User ${pool.name} balance:`, balance);
+                } catch (error) {
+                    console.log("Failed to get user asset balance:", error);
+                    balance = null;
+                }
+            }
+            
             return {
                 value: pool.id,
                 label: pool.name,
                 icon: pool.name.toUpperCase(),
                 balance: balance,
                 amount: balance ? formatUnits(balance, 18) : '0',
-                description: pool.name
+                description: `${pool.name} - Available: ${balance ? formatUnits(balance, 18).slice(0, 6) : '0'}`
             };
         });
+        
         const resolvedAssets = await Promise.all(sourceAssetsPromises);
         console.log("Resolved Assets", resolvedAssets);
-        setCollateralAsset(resolvedAssets[0])
-        setAssetOptions(resolvedAssets);
+        
+        // 去重并排序
+        const uniqueAssets = resolvedAssets.filter((asset, index, self) => 
+            index === self.findIndex(a => a.label === asset.label)
+        );
+        const sortedAssets = sortAssets(uniqueAssets);
+        
+        if (sortedAssets.length > 0) {
+            setCollateralAsset(sortedAssets[0]);
+            setAssetOptions(sortedAssets);
+        } else {
+            console.warn("No assets found for chainId:", numericChainId);
+            setAssetOptions([]);
+            setCollateralAsset(null);
+        }
     }
 
     useEffect(() => {
         fetchPools(sourceChain);
     }, [sourceChain])
 
+    // Function to fetch bridge asset options
+    async function fetchBridgePools(chainId: any) {
+        console.log("Fetching bridge pools for chainId:", chainId);
+        
+        const numericChainId = typeof chainId === 'string' ? parseInt(chainId) : chainId;
+        
+        const bridgeAssetsPromises = poolList.filter(pool => {
+            return pool.chainId === numericChainId 
+        }).map(async (pool) => {
+            let balance = null;
+            if (address) {
+                try {
+                    balance = await getUserAssetBalance(
+                        pool.address, 
+                        address, 
+                        pool.chainId, 
+                        pool.isNative
+                    );
+                    console.log(`User bridge ${pool.name} balance:`, balance);
+                } catch (error) {
+                    console.log("Failed to get user bridge asset balance:", error);
+                    balance = null;
+                }
+            }
+            
+            // Get price for the asset
+            const getAssetPrice = (assetName: string) => {
+                switch(assetName.toUpperCase()) {
+                    case 'ETH': return assetPrices.ETH?.price || 3000;
+                    case 'LINK': return assetPrices.LINK?.price || 15;
+                    case 'BNB': return assetPrices.BNB?.price || 500;
+                    case 'USDC':
+                    case 'USDT':
+                    case 'DAI': return 1;
+                    default: return 1;
+                }
+            };
+            
+            return {
+                value: pool.id,
+                label: pool.name,
+                icon: pool.name.toUpperCase(),
+                balance: balance,
+                amount: balance ? formatUnits(balance, 18) : '0',
+                price: getAssetPrice(pool.name), // 添加价格字段
+                description: `${pool.name} - Available: ${balance ? formatUnits(balance, 18).slice(0, 6) : '0'}`
+            };
+        });
+        
+        const resolvedBridgeAssets = await Promise.all(bridgeAssetsPromises);
+        console.log("Resolved Bridge Assets", resolvedBridgeAssets);
+        
+        // 去重并排序
+        const uniqueBridgeAssets = resolvedBridgeAssets.filter((asset, index, self) => 
+            index === self.findIndex(a => a.label === asset.label)
+        );
+        const sortedBridgeAssets = sortAssets(uniqueBridgeAssets);
+        
+        if (sortedBridgeAssets.length > 0) {
+            setBridgeAsset(sortedBridgeAssets[0]);
+            setBridgeAssetOptions(sortedBridgeAssets);
+        } else {
+            console.warn("No bridge assets found for chainId:", numericChainId);
+            setBridgeAssetOptions([]);
+            setBridgeAsset(null);
+        }
+    }
+
+    // Fetch bridge asset options when bridge source chain changes
+    useEffect(() => {
+        fetchBridgePools(bridgeSourceChain);
+    }, [bridgeSourceChain, address])
+
+    // 获取价格数据
+    useEffect(() => {
+        async function loadAssetPrices() {
+            if (sourceChain) {
+                const symbols = ['ETH', 'LINK', 'USDT', 'BNB'];
+                const prices = await getMultipleAssetPrices(symbols, parseInt(sourceChain));
+                setAssetPrices(prices);
+            }
+        }
+        loadAssetPrices();
+    }, [sourceChain]);
+
+    // 获取网络状态
+    useEffect(() => {
+        async function loadNetworkStatus() {
+            if (chainId) {
+                const status = await getNetworkStatus(chainId);
+                setNetworkStatus(status);
+            }
+        }
+        loadNetworkStatus();
+        
+        // 每30秒更新一次网络状态
+        const interval = setInterval(loadNetworkStatus, 30000);
+        return () => clearInterval(interval);
+    }, [chainId]);
+
+    // 获取协议统计数据
+    useEffect(() => {
+        async function loadProtocolStats() {
+            const stats = await getProtocolStats();
+            setProtocolStats(stats);
+        }
+        loadProtocolStats();
+        
+        // 每5分钟更新一次协议统计
+        const interval = setInterval(loadProtocolStats, 300000);
+        return () => clearInterval(interval);
+    }, []);
+
 
     const handleTabChange = (tab: string) => {
         setActiveTab(tab);
     };
 
-    const calculateUSDValue = (amount: string, price: number = 3000) => {
+    // 智能资产排序函数
+    const sortAssets = (assets: any[]) => {
+        return assets.sort((a, b) => {
+            // 1. 主流资产优先级
+            const mainAssets = ['ETH', 'USDC', 'USDT', 'DAI', 'WETH', 'BNB'];
+            const aPriority = mainAssets.indexOf(a.label?.toUpperCase()) !== -1 ? 0 : 1;
+            const bPriority = mainAssets.indexOf(b.label?.toUpperCase()) !== -1 ? 0 : 1;
+            
+            if (aPriority !== bPriority) {
+                return aPriority - bPriority;
+            }
+            
+            // 2. 按余额排序
+            const aBalance = parseFloat(a.amount || '0');
+            const bBalance = parseFloat(b.amount || '0');
+            
+            // 有余额的排在前面
+            if (aBalance > 0 && bBalance === 0) return -1;
+            if (aBalance === 0 && bBalance > 0) return 1;
+            
+            // 都有余额时，按余额降序
+            if (aBalance > 0 && bBalance > 0) {
+                return bBalance - aBalance;
+            }
+            
+            // 3. 余额都为0时，按字母顺序
+            return (a.label || '').localeCompare(b.label || '');
+        });
+    };
+
+    const calculateUSDValue = (amount: string, asset: string = 'ETH') => {
         const value = parseFloat(amount) || 0;
+        const priceData = assetPrices[asset];
+        const price = priceData ? priceData.price : (asset === 'ETH' ? 3000 : 1);
         return (value * price).toFixed(2);
     };
 
@@ -88,17 +277,24 @@ const Home: React.FC = () => {
         setSelectedAssets(assets);
     };
 
-    const handleSourceAssetsChange = (asset: Asset) => {
-        for (const a of assetOptions) {
-            if (a.value === asset.value) {
-                setCollateralAsset(a);
-                break;
-            }
+    const handleSourceAssetsChange = (assetId: string) => {
+        const selectedAsset = assetOptions.find(a => a.value === assetId);
+        if (selectedAsset) {
+            setCollateralAsset(selectedAsset);
+            console.log("Selected asset:", selectedAsset);
         }
     }
 
     const handleBridgeTargetAssetsChange = (assets: AssetAllocation[]) => {
         setBridgeTargetAssets(assets);
+    };
+
+    const handleBridgeSourceAssetsChange = (assetId: string) => {
+        const selectedAsset = bridgeAssetOptions.find(a => a.value === assetId);
+        if (selectedAsset) {
+            setBridgeAsset(selectedAsset);
+            console.log("Selected bridge asset:", selectedAsset);
+        }
     };
 
     const getChainName = (chainId: string) => {
@@ -109,6 +305,19 @@ const Home: React.FC = () => {
     const getChainIcon = (chainId: string) => {
         const chain = chainOptions.find(c => c.value === chainId);
         return chain ? chain.icon : 'ETH';
+    };
+
+    // MAX按钮处理函数
+    const handleMaxCollateral = () => {
+        if (collateralAsset && collateralAsset.amount) {
+            setCollateralAmount(collateralAsset.amount);
+        }
+    };
+
+    const handleMaxBridge = () => {
+        if (bridgeAsset && bridgeAsset.amount) {
+            setBridgeAmount(bridgeAsset.amount);
+        }
     };
 
     return (
@@ -144,23 +353,8 @@ const Home: React.FC = () => {
                                 placeholder="Select collateral chain"
                             />
 
-                            {/* Collateral Section */}
+                            {/* Collateral Asset Selection */}
                             <div className="section-title">Collateral Asset</div>
-                            <div className="input-card">
-                                <input
-                                    type="text"
-                                    className="amount-input"
-                                    placeholder="0.00"
-                                    value={collateralAmount}
-                                    onChange={(e) => setCollateralAmount(e.target.value)}
-                                />
-                                <div className="amount-value">${calculateUSDValue(collateralAmount)}</div>
-                                <div className="token-balance">
-                                    <span>Balance: {collateralAsset ? collateralAsset.amount : '0'}</span>
-                                    <i className="fas fa-wallet"></i>
-                                </div>
-                            </div>
-w
                             <Dropdown
                                 options={assetOptions}
                                 value={collateralAsset ? collateralAsset.value : ''}
@@ -168,13 +362,83 @@ w
                                 placeholder="Select collateral asset"
                             />
 
-                            {/* Step 2: Borrowing Target Chain */}
-                            <div className="section-title">Step 2: Select Borrowing Target Chain</div>
+                            {/* Collateral Amount Input */}
+                            {collateralAsset && (
+                                <div>
+                                    <div className="section-title">Collateral Amount</div>
+                                    <div className="input-card">
+                                        <input
+                                            type="text"
+                                            className="amount-input"
+                                            placeholder="Enter amount"
+                                            value={collateralAmount}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                // 严格的输入验证：只允许数字和小数点
+                                                if (value === '' || /^[0-9]*\.?[0-9]*$/.test(value)) {
+                                                    // 额外检查：不允许多个小数点
+                                                    const dotCount = (value.match(/\./g) || []).length;
+                                                    if (dotCount <= 1) {
+                                                        setCollateralAmount(value);
+                                                    }
+                                                }
+                                            }}
+                                            onKeyDown={(e) => {
+                                                // 阻止危险字符的输入
+                                                const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+                                                const isNumber = /^[0-9]$/.test(e.key);
+                                                const isDot = e.key === '.';
+                                                
+                                                if (!allowedKeys.includes(e.key) && !isNumber && !isDot) {
+                                                    e.preventDefault();
+                                                }
+                                                
+                                                // 防止输入多个小数点
+                                                if (isDot && collateralAmount.includes('.')) {
+                                                    e.preventDefault();
+                                                }
+                                            }}
+                                        />
+                                        <div className="amount-value">${calculateUSDValue(collateralAmount)}</div>
+                                        <div className="token-balance">
+                                            <span>Balance: {collateralAsset ? collateralAsset.amount : '0'}</span>
+                                            <button
+                                                onClick={handleMaxCollateral}
+                                                style={{
+                                                    background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                                                    border: 'none',
+                                                    borderRadius: '6px',
+                                                    color: 'white',
+                                                    padding: '4px 8px',
+                                                    fontSize: '12px',
+                                                    fontWeight: 600,
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s ease',
+                                                    boxShadow: '0 2px 4px rgba(59, 130, 246, 0.2)'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    (e.target as HTMLElement).style.transform = 'scale(1.05)';
+                                                    (e.target as HTMLElement).style.boxShadow = '0 4px 8px rgba(59, 130, 246, 0.3)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    (e.target as HTMLElement).style.transform = 'scale(1)';
+                                                    (e.target as HTMLElement).style.boxShadow = '0 2px 4px rgba(59, 130, 246, 0.2)';
+                                                }}
+                                            >
+                                                MAX
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Step 2: Lending Target Chain */}
+                            <div className="section-title">Step 2: Select Lending Target Chain</div>
                             <Dropdown
-                                options={chainOptions.filter(c => c.value !== sourceChain)}
+                                options={chainOptions}
                                 value={targetChain}
                                 onChange={setTargetChain}
-                                placeholder="Select borrowing chain"
+                                placeholder="Select lending chain"
                             />
 
                             {/* Cross-chain Info */}
@@ -191,12 +455,21 @@ w
                                     fontSize: '14px',
                                     color: 'var(--secondary-text)'
                                 }}>
-                                    <i className="fas fa-route" style={{ color: 'var(--accent-color)' }}></i>
-                                    <span>Cross-chain Path: {getChainName(sourceChain)} → {getChainName(targetChain)}</span>
+                                    {sourceChain === targetChain ? (
+                                        <>
+                                            <i className="fas fa-layer-group" style={{ color: 'var(--accent-color)' }}></i>
+                                            <span>Same Chain Lending on {getChainName(sourceChain)}</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <i className="fas fa-route" style={{ color: 'var(--accent-color)' }}></i>
+                                            <span>Cross-chain Path: {getChainName(sourceChain)} → {getChainName(targetChain)}</span>
+                                        </>
+                                    )}
                                 </div>
                             </div>
 
-                            {/* Borrowing Summary */}
+                            {/* Lending Summary */}
                             <div style={{
                                 background: 'rgba(255, 255, 255, 0.6)',
                                 borderRadius: '12px',
@@ -208,7 +481,7 @@ w
                                     <span>{selectedAssets.length} types</span>
                                 </div>
                                 <div className="stat-row compact">
-                                    <span>Total Borrowed</span>
+                                    <span>Total Lent</span>
                                     <span>${selectedAssets.reduce((sum, asset) => sum + asset.value, 0).toFixed(2)}</span>
                                 </div>
                                 <div className="stat-row compact">
@@ -229,15 +502,55 @@ w
                                 <div className="health-value">{calculateHealthFactor().toFixed(0)}%</div>
                             </div>
 
+                            {/* Health Factor Warning */}
+                            {calculateHealthFactor() <= 50 && selectedAssets.length > 0 && collateralAmount && (
+                                <div style={{
+                                    background: 'rgba(239, 68, 68, 0.1)',
+                                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                                    borderRadius: '12px',
+                                    padding: '12px',
+                                    marginBottom: '16px'
+                                }}>
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        color: '#dc2626'
+                                    }}>
+                                        <i className="fas fa-exclamation-triangle"></i>
+                                        <span style={{ fontSize: '14px', fontWeight: 500 }}>
+                                            Risk Too High - Health Factor: {calculateHealthFactor().toFixed(0)}%
+                                        </span>
+                                    </div>
+                                    <div style={{ 
+                                        fontSize: '12px', 
+                                        color: '#dc2626',
+                                        marginTop: '4px',
+                                        lineHeight: 1.4
+                                    }}>
+                                        Please reduce lending amount or increase collateral. Health factor must be above 50% to proceed.
+                                    </div>
+                                </div>
+                            )}
+
                             <button 
                                 className="button primary"
-                                disabled={selectedAssets.length === 0 || !collateralAmount}
+                                disabled={
+                                    selectedAssets.length === 0 || 
+                                    !collateralAmount || 
+                                    calculateHealthFactor() <= 50
+                                }
                                 style={{
-                                    opacity: selectedAssets.length === 0 || !collateralAmount ? 0.6 : 1,
-                                    cursor: selectedAssets.length === 0 || !collateralAmount ? 'not-allowed' : 'pointer'
+                                    opacity: (selectedAssets.length === 0 || !collateralAmount || calculateHealthFactor() <= 50) ? 0.6 : 1,
+                                    cursor: (selectedAssets.length === 0 || !collateralAmount || calculateHealthFactor() <= 50) ? 'not-allowed' : 'pointer'
                                 }}
                             >
-                                Execute Cross-Chain Lending ({selectedAssets.length} assets)
+                                {calculateHealthFactor() <= 50 && selectedAssets.length > 0 && collateralAmount ? 
+                                    'Risk Too High - Cannot Proceed' :
+                                    sourceChain === targetChain ? 
+                                        `Execute Same Chain Lending (${selectedAssets.length} assets)` :
+                                        `Execute Cross-Chain Lending (${selectedAssets.length} assets)`
+                                }
                             </button>
                         </div>
                     )}
@@ -245,114 +558,169 @@ w
                     {/* Bridge Mode */}
                     {activeTab === 'bridge' && (
                         <div className="trading-mode active">
-                            {/* Bridge Direction */}
-                            <div style={{
-                                display: 'grid',
-                                gridTemplateColumns: '1fr auto 1fr',
-                                gap: '12px',
-                                alignItems: 'center',
-                                marginBottom: '20px'
-                            }}>
-                                <div style={{ textAlign: 'center' }}>
-                                    <label style={{
-                                        display: 'block',
-                                        marginBottom: '6px',
-                                        fontSize: '13px',
-                                        color: 'var(--secondary-text)'
-                                    }}>Deposit Source Chain</label>
-                                    <Dropdown
-                                        options={chainOptions}
-                                        value={sourceChain}
-                                        onChange={setBridgeSourceChain}
-                                        placeholder="Select source chain"
-                                    />
-                                </div>
-
-                                <div style={{
-                                    width: '32px',
-                                    height: '32px',
-                                    borderRadius: '50%',
-                                    background: 'var(--accent-color)',
-                                    color: 'white',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: '14px'
-                                }}>
-                                    <i className="fas fa-arrow-right"></i>
-                                </div>
-
-                                <div style={{ textAlign: 'center' }}>
-                                    <label style={{
-                                        display: 'block',
-                                        marginBottom: '6px',
-                                        fontSize: '13px',
-                                        color: 'var(--secondary-text)'
-                                    }}>Borrow Target Chain</label>
-                                    <Dropdown
-                                        options={chainOptions.filter(c => c.value !== sourceChain)}
-                                        value={targetChain}
-                                        onChange={setBridgeTargetChain}
-                                        placeholder="Select target chain"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Bridge Asset & Amount */}
-                            <div className="section-title">Deposit Asset</div>
-                            <div className="input-card">
-                                <input
-                                    type="text"
-                                    className="amount-input"
-                                    placeholder="0.00"
-                                    value={bridgeAmount}
-                                    onChange={(e) => setBridgeAmount(e.target.value)}
-                                />
-                                <div className="amount-value">${calculateUSDValue(bridgeAmount)}</div>
-                                <div className="token-balance">
-                                    <span>Balance: {collateralAsset ? collateralAsset.amount : "0"}</span>
-                                    <i className="fas fa-wallet"></i>
-                                </div>
-                            </div>
-
+                            {/* Step 1: Bridge Source Chain */}
+                            <div className="section-title">Step 1: Select Source Chain</div>
                             <Dropdown
-                                options={assetOptions}
-                                value={collateralAsset}
-                                onChange={setBridgeAsset}
-                                placeholder="Select asset"
+                                options={chainOptions}
+                                value={bridgeSourceChain}
+                                onChange={setBridgeSourceChain}
+                                placeholder="Select source chain"
                             />
 
+                            {/* Source Asset Selection */}
+                            <div className="section-title">Source Asset</div>
+                            <Dropdown
+                                options={bridgeAssetOptions}
+                                value={bridgeAsset ? bridgeAsset.value : ''}
+                                onChange={handleBridgeSourceAssetsChange}
+                                placeholder="Select asset to bridge"
+                            />
+
+                            {/* Source Amount Input */}
+                            {bridgeAsset && (
+                                <div>
+                                    <div className="section-title">Source Amount</div>
+                                    <div className="input-card">
+                                        <input
+                                            type="text"
+                                            className="amount-input"
+                                            placeholder="Enter amount"
+                                            value={bridgeAmount}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                // 严格的输入验证：只允许数字和小数点
+                                                if (value === '' || /^[0-9]*\.?[0-9]*$/.test(value)) {
+                                                    // 额外检查：不允许多个小数点
+                                                    const dotCount = (value.match(/\./g) || []).length;
+                                                    if (dotCount <= 1) {
+                                                        setBridgeAmount(value);
+                                                    }
+                                                }
+                                            }}
+                                            onKeyDown={(e) => {
+                                                // 阻止危险字符的输入
+                                                const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+                                                const isNumber = /^[0-9]$/.test(e.key);
+                                                const isDot = e.key === '.';
+                                                
+                                                if (!allowedKeys.includes(e.key) && !isNumber && !isDot) {
+                                                    e.preventDefault();
+                                                }
+                                                
+                                                // 防止输入多个小数点
+                                                if (isDot && bridgeAmount.includes('.')) {
+                                                    e.preventDefault();
+                                                }
+                                            }}
+                                        />
+                                        <div className="amount-value">${calculateUSDValue(bridgeAmount)}</div>
+                                        <div className="token-balance">
+                                            <span>Balance: {bridgeAsset ? bridgeAsset.amount : '0'}</span>
+                                            <button
+                                                onClick={handleMaxBridge}
+                                                style={{
+                                                    background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                                                    border: 'none',
+                                                    borderRadius: '6px',
+                                                    color: 'white',
+                                                    padding: '4px 8px',
+                                                    fontSize: '12px',
+                                                    fontWeight: 600,
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s ease',
+                                                    boxShadow: '0 2px 4px rgba(59, 130, 246, 0.2)'
+                                                }}
+                                                onMouseEnter={(e) => {
+                                                    (e.target as HTMLElement).style.transform = 'scale(1.05)';
+                                                    (e.target as HTMLElement).style.boxShadow = '0 4px 8px rgba(59, 130, 246, 0.3)';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    (e.target as HTMLElement).style.transform = 'scale(1)';
+                                                    (e.target as HTMLElement).style.boxShadow = '0 2px 4px rgba(59, 130, 246, 0.2)';
+                                                }}
+                                            >
+                                                MAX
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Step 2: Target Chain */}
+                            <div className="section-title">Step 2: Select Target Chain</div>
+                            <Dropdown
+                                options={chainOptions.filter(c => c.value !== bridgeSourceChain)}
+                                value={bridgeTargetChain}
+                                onChange={setBridgeTargetChain}
+                                placeholder="Select target chain"
+                            />
+
+                            {/* Bridge Info */}
+                            {bridgeTargetChain && (
+                                <div style={{
+                                    background: 'rgba(255, 255, 255, 0.6)',
+                                    borderRadius: '12px',
+                                    padding: '12px',
+                                    marginBottom: '16px'
+                                }}>
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        fontSize: '14px',
+                                        color: 'var(--secondary-text)'
+                                    }}>
+                                        <i className="fas fa-bridge" style={{ color: 'var(--accent-color)' }}></i>
+                                        <span>Bridge Path: {getChainName(bridgeSourceChain)} → {getChainName(bridgeTargetChain)}</span>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Bridge Summary */}
-                            <div style={{
-                                marginBottom: '20px',
-                                padding: '14px',
-                                background: 'rgba(255, 255, 255, 0.6)',
-                                borderRadius: '12px',
-                                backdropFilter: 'blur(10px)'
-                            }}>
-                                <div className="stat-row compact">
-                                    <span>Bridge Time</span>
-                                    <span>~7 minutes</span>
+                            {bridgeAmount && bridgeTargetChain && (
+                                <div style={{
+                                    background: 'rgba(255, 255, 255, 0.6)',
+                                    borderRadius: '12px',
+                                    padding: '16px',
+                                    marginBottom: '16px'
+                                }}>
+                                    <div className="stat-row compact">
+                                        <span>Source Amount</span>
+                                        <span>{bridgeAmount} {bridgeAsset?.label}</span>
+                                    </div>
+                                    <div className="stat-row compact">
+                                        <span>Target Assets</span>
+                                        <span>{bridgeTargetAssets.length} types</span>
+                                    </div>
+                                    <div className="stat-row compact">
+                                        <span>Total Bridgeable</span>
+                                        <span>${bridgeTargetAssets.reduce((sum, asset) => sum + asset.value, 0).toFixed(2)}</span>
+                                    </div>
+                                    <div className="stat-row compact">
+                                        <span>Bridge Fee</span>
+                                        <span>~$2.50</span>
+                                    </div>
+                                    <div className="stat-row compact">
+                                        <span>Est. Time</span>
+                                        <span>~7 minutes</span>
+                                    </div>
                                 </div>
-                                <div className="stat-row compact">
-                                    <span>Bridge Fee</span>
-                                    <span>~$2.50</span>
-                                </div>
-                                <div className="stat-row compact">
-                                    <span>Total Borrowable Value</span>
-                                    <span>${bridgeTargetAssets.reduce((sum, asset) => sum + asset.value, 0).toFixed(2)}</span>
-                                </div>
-                            </div>
+                            )}
 
                             <button 
                                 className="button primary"
-                                disabled={bridgeTargetAssets.length === 0 || !bridgeAmount}
+                                disabled={
+                                    bridgeTargetAssets.length === 0 || 
+                                    !bridgeAmount || 
+                                    !bridgeTargetChain ||
+                                    !bridgeAsset
+                                }
                                 style={{
-                                    opacity: bridgeTargetAssets.length === 0 || !bridgeAmount ? 0.6 : 1,
-                                    cursor: bridgeTargetAssets.length === 0 || !bridgeAmount ? 'not-allowed' : 'pointer'
+                                    opacity: (bridgeTargetAssets.length === 0 || !bridgeAmount || !bridgeTargetChain || !bridgeAsset) ? 0.6 : 1,
+                                    cursor: (bridgeTargetAssets.length === 0 || !bridgeAmount || !bridgeTargetChain || !bridgeAsset) ? 'not-allowed' : 'pointer'
                                 }}
                             >
-                                Execute Cross-Chain Lending ({bridgeTargetAssets.length} assets)
+                                Execute Cross-Chain Bridge ({bridgeTargetAssets.length} assets)
                             </button>
                         </div>
                     )}
@@ -362,7 +730,7 @@ w
                 <div className="center-panel">
                     {activeTab === 'borrow' && (
                         <div className="glass-card">
-                            <div className="section-title large">Step 3: Select Borrowing Assets</div>
+                            <div className="section-title large">Step 3: Select Lending Assets</div>
                             <MultiAssetSelector 
                                 selectedChain={targetChain}
                                 onAssetsChange={handleAssetsChange}
@@ -372,10 +740,11 @@ w
                     
                     {activeTab === 'bridge' && (
                         <div className="glass-card">
+                            <div className="section-title large">Step 3: Select Target Assets</div>
                             <CrossChainAssetSelector
-                                sourceChain={sourceChain}
-                                targetChain={targetChain}
-                                sourceAsset={[]}
+                                sourceChain={bridgeSourceChain}
+                                targetChain={bridgeTargetChain}
+                                sourceAsset={bridgeAsset || { id: 'eth', symbol: 'ETH', name: 'Ethereum', price: assetPrices.ETH?.price || 3000, balance: '0', icon: 'ETH' }}
                                 sourceAmount={parseFloat(bridgeAmount) || 0}
                                 onTargetAssetsChange={handleBridgeTargetAssetsChange}
                             />
@@ -427,16 +796,24 @@ w
                             </h4>
                             <div style={{ display: 'grid', gap: '8px' }}>
                                 <div className="stat-row compact">
-                                    <span>Gas Fees</span>
-                                    <span style={{ color: '#22c55e' }}>Low</span>
+                                    <span>Gas Price</span>
+                                    <span>{networkStatus ? `${networkStatus.gasPriceGwei.standard} Gwei` : '20.00 Gwei'}</span>
                                 </div>
                                 <div className="stat-row compact">
                                     <span>Network Congestion</span>
-                                    <span style={{ color: '#f59e0b' }}>Medium</span>
+                                    <span style={{ 
+                                        color: networkStatus ? getCongestionColor(networkStatus.congestionLevel) : '#f59e0b' 
+                                    }}>
+                                        {networkStatus ? networkStatus.congestionLevel.charAt(0).toUpperCase() + networkStatus.congestionLevel.slice(1) : 'Medium'}
+                                    </span>
                                 </div>
                                 <div className="stat-row compact">
                                     <span>Est. Confirmation</span>
-                                    <span>~2 minutes</span>
+                                    <span>{networkStatus ? networkStatus.estimatedConfirmationTime : '~2 minutes'}</span>
+                                </div>
+                                <div className="stat-row compact">
+                                    <span>Block Time</span>
+                                    <span>{networkStatus ? `${networkStatus.blockTime}s` : '12s'}</span>
                                 </div>
                             </div>
                         </div>
@@ -453,8 +830,8 @@ w
                             </h4>
                             <div style={{ display: 'grid', gap: '8px' }}>
                                 <div className="stat-row compact">
-                                    <span>Transaction Fee</span>
-                                    <span>~$5.20</span>
+                                    <span>Gas Fee (Standard)</span>
+                                    <span>{networkStatus ? `$${((parseFloat(networkStatus.gasPriceGwei.standard) * 21000 / 1e9) * (assetPrices.ETH?.price || 3000)).toFixed(2)}` : '$5.20'}</span>
                                 </div>
                                 <div className="stat-row compact">
                                     <span>Bridge Fee</span>
@@ -464,6 +841,12 @@ w
                                     <span>Protocol Fee</span>
                                     <span>0.1%</span>
                                 </div>
+                                <div className="stat-row compact">
+                                    <span>Price Updates</span>
+                                    <span style={{ fontSize: '12px', color: 'var(--secondary-text)' }}>
+                                        {Object.keys(assetPrices).length > 0 ? 'Live Chainlink' : 'Loading...'}
+                                    </span>
+                                </div>
                                 <div style={{
                                     paddingTop: '8px',
                                     borderTop: '1px solid var(--border-color)',
@@ -471,8 +854,13 @@ w
                                     justifyContent: 'space-between',
                                     fontWeight: 600
                                 }}>
-                                    <span>Total Fee</span>
-                                    <span style={{ color: 'var(--accent-color)' }}>~$7.70</span>
+                                    <span>Est. Total Fee</span>
+                                    <span style={{ color: 'var(--accent-color)' }}>
+                                        {networkStatus ? 
+                                            `$${((parseFloat(networkStatus.gasPriceGwei.standard) * 21000 / 1e9) * (assetPrices.ETH?.price || 3000) + 2.5).toFixed(2)}` 
+                                            : '~$7.70'
+                                        }
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -489,15 +877,32 @@ w
                             <div style={{ display: 'grid', gap: '8px' }}>
                                 <div className="stat-row compact">
                                     <span>Total Value Locked</span>
-                                    <span>$2.5B</span>
+                                    <span>{protocolStats ? protocolStats.totalValueLocked : '$2.5B'}</span>
                                 </div>
                                 <div className="stat-row compact">
                                     <span>Active Users</span>
-                                    <span>125,432</span>
+                                    <span>{protocolStats ? protocolStats.totalUsers.toLocaleString() : '125,432'}</span>
                                 </div>
                                 <div className="stat-row compact">
                                     <span>Success Rate</span>
-                                    <span style={{ color: '#22c55e' }}>99.8%</span>
+                                    <span style={{ color: '#22c55e' }}>
+                                        {protocolStats ? `${protocolStats.successRate}%` : '99.8%'}
+                                    </span>
+                                </div>
+                                <div className="stat-row compact">
+                                    <span>Avg. Bridge Time</span>
+                                    <span>{protocolStats ? protocolStats.averageTransactionTime : '~7 minutes'}</span>
+                                </div>
+                                <div className="stat-row compact">
+                                    <span>Current Prices</span>
+                                    <div style={{ fontSize: '11px', color: 'var(--secondary-text)', textAlign: 'right' }}>
+                                        {assetPrices.ETH && (
+                                            <div>ETH: {formatPrice(assetPrices.ETH.price)}</div>
+                                        )}
+                                        {assetPrices.LINK && (
+                                            <div>LINK: {formatPrice(assetPrices.LINK.price)}</div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>

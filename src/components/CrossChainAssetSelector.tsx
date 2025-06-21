@@ -12,17 +12,50 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
 }) => {
     const [targetAssets, setTargetAssets] = useState<AssetAllocation[]>([]);
     const [showAddAsset, setShowAddAsset] = useState(false);
+    const [inputValues, setInputValues] = useState<{ [key: string]: string }>({});
 
-    const availableTargetAssets: Asset[] = [
-        { id: 'usdc', symbol: 'USDC', name: 'USD Coin', price: 1, balance: 5000, icon: 'USDC' },
-        { id: 'usdt', symbol: 'USDT', name: 'Tether', price: 1, balance: 3000, icon: 'USDT' },
-        { id: 'dai', symbol: 'DAI', name: 'Dai Stablecoin', price: 1, balance: 2000, icon: 'DAI' },
-        { id: 'weth', symbol: 'WETH', name: 'Wrapped Ethereum', price: 3000, balance: 1.5, icon: 'WETH' },
-        { id: 'wbtc', symbol: 'WBTC', name: 'Wrapped Bitcoin', price: 50000, balance: 0.1, icon: 'WBTC' },
-        { id: 'link', symbol: 'LINK', name: 'Chainlink', price: 15, balance: 200, icon: 'LINK' },
-        { id: 'aave', symbol: 'AAVE', name: 'Aave', price: 100, balance: 50, icon: 'AAVE' },
-        { id: 'uni', symbol: 'UNI', name: 'Uniswap', price: 7, balance: 300, icon: 'UNI' }
+    // 智能资产排序函数
+    const sortAssets = (assets: Asset[]) => {
+        return [...assets].sort((a, b) => {
+            // 1. 主流资产优先级
+            const mainAssets = ['ETH', 'USDC', 'USDT', 'DAI', 'WETH', 'BNB'];
+            const aPriority = mainAssets.indexOf(a.symbol?.toUpperCase()) !== -1 ? 0 : 1;
+            const bPriority = mainAssets.indexOf(b.symbol?.toUpperCase()) !== -1 ? 0 : 1;
+            
+            if (aPriority !== bPriority) {
+                return aPriority - bPriority;
+            }
+            
+            // 2. 按余额排序
+            const aBalance = parseFloat(a.balance || '0');
+            const bBalance = parseFloat(b.balance || '0');
+            
+            // 有余额的排在前面
+            if (aBalance > 0 && bBalance === 0) return -1;
+            if (aBalance === 0 && bBalance > 0) return 1;
+            
+            // 都有余额时，按余额降序
+            if (aBalance > 0 && bBalance > 0) {
+                return bBalance - aBalance;
+            }
+            
+            // 3. 余额都为0时，按字母顺序
+            return (a.symbol || '').localeCompare(b.symbol || '');
+        });
+    };
+
+    const unsortedAssets: Asset[] = [
+        { id: 'usdc', symbol: 'USDC', name: 'USD Coin', price: 1, balance: '5000', icon: 'USDC' },
+        { id: 'usdt', symbol: 'USDT', name: 'Tether', price: 1, balance: '3000', icon: 'USDT' },
+        { id: 'dai', symbol: 'DAI', name: 'Dai Stablecoin', price: 1, balance: '2000', icon: 'DAI' },
+        { id: 'weth', symbol: 'WETH', name: 'Wrapped Ethereum', price: 3000, balance: '1.5', icon: 'WETH' },
+        { id: 'wbtc', symbol: 'WBTC', name: 'Wrapped Bitcoin', price: 50000, balance: '0.1', icon: 'WBTC' },
+        { id: 'link', symbol: 'LINK', name: 'Chainlink', price: 15, balance: '200', icon: 'LINK' },
+        { id: 'aave', symbol: 'AAVE', name: 'Aave', price: 100, balance: '50', icon: 'AAVE' },
+        { id: 'uni', symbol: 'UNI', name: 'Uniswap', price: 7, balance: '300', icon: 'UNI' }
     ];
+
+    const availableTargetAssets: Asset[] = sortAssets(unsortedAssets);
 
 
     const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316'];
@@ -56,9 +89,18 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
         setShowAddAsset(false);
     };
 
-    const updateTargetAssetAmount = (assetId: string, amount: number) => {
+    const updateTargetAssetAmount = (assetId: string, inputValue: string) => {
         const asset = availableTargetAssets.find(a => a.id === assetId);
         if (!asset) return;
+
+        // Update input value state
+        setInputValues(prev => ({
+            ...prev,
+            [assetId]: inputValue
+        }));
+
+        // Convert to number for calculations
+        const amount = parseFloat(inputValue) || 0;
 
         const updatedAssets = targetAssets.map(a => 
             a.id === assetId 
@@ -76,6 +118,13 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
         const allocatedAssets = calculateAllocation(updatedAssets);
         setTargetAssets(allocatedAssets);
         onTargetAssetsChange(allocatedAssets);
+        
+        // Clean up input value
+        setInputValues(prev => {
+            const newValues = { ...prev };
+            delete newValues[assetId];
+            return newValues;
+        });
     };
 
     const formatValue = (value: number) => {
@@ -95,12 +144,12 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
         return chains[chainId] || chainId;
     };
 
-    const getTotalBorrowValue = () => {
+    const getTotalBridgeValue = () => {
         return targetAssets.reduce((sum, asset) => sum + asset.value, 0);
     };
 
-    const getMaxBorrowValue = () => {
-        return sourceAmount * (sourceAsset?.price || 0) * 0.75; // 75% LTV
+    const getMaxBridgeValue = () => {
+        return sourceAmount * (sourceAsset?.price || 0) * 0.8; // 80% maximum bridge ratio
     };
 
     const CustomTooltip = ({ active, payload }: any) => {
@@ -131,6 +180,21 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
             );
         }
         return null;
+    };
+
+    const handleInputChange = (assetId: string, value: string) => {
+        // Allow empty string, digits, and decimal point
+        if (value === '' || /^\d*\.?\d*$/.test(value)) {
+            updateTargetAssetAmount(assetId, value);
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        // Block invalid characters
+        const invalidChars = ['-', '+', 'e', 'E'];
+        if (invalidChars.includes(e.key)) {
+            e.preventDefault();
+        }
     };
 
     return (
@@ -168,7 +232,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                         fontSize: '12px',
                         fontWeight: 500
                     }}>
-                        Max Borrowable: {formatValue(getMaxBorrowValue())}
+                        Max Bridgeable: {formatValue(getMaxBridgeValue())}
                     </div>
                 </div>
             </div>
@@ -187,7 +251,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                     marginBottom: '16px'
                 }}>
                     <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>
-                        Target Chain Borrowing Assets ({getChainName(targetChain)})
+                        Target Chain Bridge Assets ({getChainName(targetChain)})
                     </h4>
                     <button
                         className="button secondary compact"
@@ -227,10 +291,11 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                         <input
-                                            type="number"
-                                            value={asset.amount}
-                                            onChange={(e) => updateTargetAssetAmount(asset.id, parseFloat(e.target.value) || 0)}
-                                            placeholder="0"
+                                            type="text"
+                                            value={inputValues[asset.id] || ''}
+                                            onChange={(e) => handleInputChange(asset.id, e.target.value)}
+                                            onKeyDown={handleKeyDown}
+                                            placeholder="Enter amount"
                                             style={{
                                                 width: '100px',
                                                 padding: '8px',
@@ -263,25 +328,25 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                     </div>
                 )}
 
-                {/* Borrowing Capacity */}
+                {/* Bridge Capacity */}
                 <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     padding: '12px',
-                    background: getTotalBorrowValue() > getMaxBorrowValue() 
+                    background: getTotalBridgeValue() > getMaxBridgeValue() 
                         ? 'rgba(239, 68, 68, 0.1)' 
                         : 'rgba(34, 197, 94, 0.1)',
                     borderRadius: '8px',
                     marginBottom: '16px'
                 }}>
-                    <span style={{ fontSize: '14px', fontWeight: 500 }}>Borrowing Capacity Utilization:</span>
+                    <span style={{ fontSize: '14px', fontWeight: 500 }}>Bridge Capacity Utilization:</span>
                     <span style={{ 
                         fontSize: '16px', 
                         fontWeight: 700,
-                        color: getTotalBorrowValue() > getMaxBorrowValue() ? '#ef4444' : '#22c55e'
+                        color: getTotalBridgeValue() > getMaxBridgeValue() ? '#ef4444' : '#22c55e'
                     }}>
-                        {((getTotalBorrowValue() / getMaxBorrowValue()) * 100).toFixed(1)}%
+                        {getMaxBridgeValue() > 0 ? ((getTotalBridgeValue() / getMaxBridgeValue()) * 100).toFixed(1) : 'Infinity'}%
                     </span>
                 </div>
 
@@ -321,7 +386,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                                 paddingBottom: '8px',
                                 borderBottom: '1px solid var(--border-color)'
                             }}>
-                                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>Select Borrowing Assets</h3>
+                                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>Select Bridge Assets</h3>
                                 <button
                                     onClick={() => setShowAddAsset(false)}
                                     style={{
@@ -384,7 +449,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                                                     Available: {asset.balance}
                                                 </div>
                                                 <div style={{ fontSize: '10px', color: 'var(--secondary-text)' }}>
-                                                    ${(asset.balance * asset.price).toLocaleString()}
+                                                    ${(parseFloat(asset.balance) * asset.price).toLocaleString()}
                                                 </div>
                                             </div>
                                         </div>
@@ -403,7 +468,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                     padding: '20px',
                     marginBottom: '20px'
                 }}>
-                    <h4 style={{ marginBottom: '16px', fontSize: '16px', fontWeight: 600 }}>Borrowing Asset Allocation</h4>
+                    <h4 style={{ marginBottom: '16px', fontSize: '16px', fontWeight: 600 }}>Bridge Asset Allocation</h4>
                     <div style={{ height: '300px' }}>
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
@@ -442,9 +507,9 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                         background: 'rgba(255, 255, 255, 0.8)',
                         borderRadius: '12px'
                     }}>
-                        <span style={{ fontWeight: 600 }}>Total Borrow Value:</span>
+                        <span style={{ fontWeight: 600 }}>Total Bridge Value:</span>
                         <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--accent-color)' }}>
-                            {formatValue(getTotalBorrowValue())}
+                            {formatValue(getTotalBridgeValue())}
                         </span>
                     </div>
                 </div>

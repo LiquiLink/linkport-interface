@@ -1,5 +1,5 @@
 import { sepolia, bscTestnet } from 'wagmi/chains';
-import { injected, walletConnect, metaMask  } from 'wagmi/connectors';
+import { injected, metaMask } from 'wagmi/connectors';
 import { createConfig, http } from 'wagmi';
 
 export const config = createConfig({
@@ -7,9 +7,10 @@ export const config = createConfig({
   connectors: [
     injected(),
     metaMask(),
-    walletConnect({ 
-      projectId: "da13eca5a1becbf3a758f71e70d1a6a5",
-    }),
+    // 暂时移除 WalletConnect 以避免 ESM 兼容性问题
+    // walletConnect({ 
+    //   projectId: "da13eca5a1becbf3a758f71e70d1a6a5",
+    // }),
   ],
   transports: {
     [bscTestnet.id]: http(),
