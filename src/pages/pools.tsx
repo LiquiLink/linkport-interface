@@ -45,41 +45,59 @@ const Pools: React.FC = () => {
     }
 
     const handlePool = async () => {
+        if (!selectedPool) return;
         if (modalType === 'deposit') {
-            setDepositing(true)
-            console.log('Deposit Amount:', depositAmount, allowance);
+            setDepositing(true);
             try {
-                if (allowance || (allowance as BigNumberish)  < (ethers.parseUnits(depositAmount) as BigNumberish)) {
-                    console.log('Approving token transfer...');
-                    await writeApprove({
-                        address: selectedPool.address,
-                        abi: ERC20ABI,
-                        functionName: 'approve',
-                        args: [selectedPool.pool, ethers.parseUnits(depositAmount)]
+                if (selectedPool.isNative) {
+                    // Deposit native token (ETH/BNB)
+                    await writeDeposit({
+                        address: selectedPool.pool,
+                        abi: LiquidityPoolABI,
+                        functionName: 'depositNative',
+                        args: [],
+                        value: ethers.parseUnits(depositAmount), // Send native token value
+                    });
+                } else {
+                    // Deposit ERC20 token
+                    if (!allowance || (allowance as BigNumberish) < (ethers.parseUnits(depositAmount) as BigNumberish)) {
+                        await writeApprove({
+                            address: selectedPool.address,
+                            abi: ERC20ABI,
+                            functionName: 'approve',
+                            args: [selectedPool.pool, ethers.parseUnits(depositAmount)],
+                        });
+                    }
+                    await writeDeposit({
+                        address: selectedPool.pool,
+                        abi: LiquidityPoolABI,
+                        functionName: 'deposit',
+                        args: [ethers.parseUnits(depositAmount)],
                     });
                 }
-                console.log('Depositing to pool...');
-
-                // Handle deposit logic
-                writeDeposit({
-                    address: selectedPool.pool,
-                    abi: LiquidityPoolABI,
-                    functionName: 'deposit',
-                    args: [ethers.parseUnits(depositAmount)],
-                });
             } finally {
-                setDepositing(false)
+                setDepositing(false);
             }
         } else {
+            setWithdrawing(true);
             try {
-                setWithdrawing(true);
-                // Handle withdraw logic
-                await writeWithdraw({
-                    address: selectedPool.pool,
-                    abi: LiquidityPoolABI,
-                    functionName: 'withdraw',
-                    args: [ethers.parseUnits(withdrawAmount)],
-                });
+                if (selectedPool.isNative) {
+                    // Withdraw native token (ETH/BNB)
+                    await writeWithdraw({
+                        address: selectedPool.pool,
+                        abi: LiquidityPoolABI,
+                        functionName: 'withdrawNative',
+                        args: [ethers.parseUnits(withdrawAmount)],
+                    });
+                } else {
+                    // Withdraw ERC20 token
+                    await writeWithdraw({
+                        address: selectedPool.pool,
+                        abi: LiquidityPoolABI,
+                        functionName: 'withdraw',
+                        args: [ethers.parseUnits(withdrawAmount)],
+                    });
+                }
             } finally {
                 setWithdrawing(false);
             }
