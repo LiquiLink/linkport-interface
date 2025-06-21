@@ -30,31 +30,31 @@ export interface TransactionFee {
   estimatedFeeUSD: string;
 }
 
-// 获取当前网络状态
+// Get current network status
 export async function getNetworkStatus(chainId: number): Promise<NetworkStatus> {
   try {
     const networkName = getNetworkName(chainId);
     
-    // 获取当前gas价格 (使用viem的公共RPC)
+    // Get current gas price (using viem's public RPC)
     const gasPrice = await getCurrentGasPrice(chainId);
     
-    // 计算不同优先级的gas价格
+    // Calculate different priority gas prices
     const slowGasPrice = Math.floor(gasPrice * 0.8);
     const standardGasPrice = gasPrice;
     const fastGasPrice = Math.floor(gasPrice * 1.2);
     
-    // 转换为Gwei
+    // Convert to Gwei
     const slowGwei = formatUnits(BigInt(slowGasPrice), 9);
     const standardGwei = formatUnits(BigInt(standardGasPrice), 9);
     const fastGwei = formatUnits(BigInt(fastGasPrice), 9);
     
-    // 计算网络拥堵程度
+    // Calculate network congestion level
     const congestionLevel = calculateCongestionLevel(gasPrice, chainId);
     
-    // 估计确认时间
+    // Estimate confirmation time
     const estimatedConfirmationTime = getEstimatedConfirmationTime(congestionLevel);
     
-    // 获取区块时间
+    // Get block time
     const blockTime = getBlockTime(chainId);
     
     return {
@@ -77,16 +77,16 @@ export async function getNetworkStatus(chainId: number): Promise<NetworkStatus> 
     
   } catch (error) {
     console.error('Error fetching network status:', error);
-    // 返回默认数据
+    // Return default data
     return getDefaultNetworkStatus(chainId);
   }
 }
 
-// 获取当前gas价格
+// Get current gas price
 async function getCurrentGasPrice(chainId: number): Promise<number> {
   try {
-    // 这里可以替换为实际的RPC调用
-    // 暂时使用模拟数据
+    // This can be replaced with actual RPC calls
+    // Using mock data for now
     const mockGasPrices: Record<number, number> = {
       [sepolia.id]: 20000000000, // 20 Gwei
       [bscTestnet.id]: 3000000000, // 3 Gwei
@@ -96,11 +96,11 @@ async function getCurrentGasPrice(chainId: number): Promise<number> {
     
   } catch (error) {
     console.error('Error fetching gas price:', error);
-    return 20000000000; // 默认20 Gwei
+    return 20000000000; // Default 20 Gwei
   }
 }
 
-// 计算网络拥堵程度
+// Calculate network congestion level
 function calculateCongestionLevel(gasPrice: number, chainId: number): 'low' | 'medium' | 'high' {
   const thresholds = {
     [sepolia.id]: { medium: 30000000000, high: 60000000000 }, // 30/60 Gwei
@@ -114,7 +114,7 @@ function calculateCongestionLevel(gasPrice: number, chainId: number): 'low' | 'm
   return 'low';
 }
 
-// 获取估计确认时间
+// Get estimated confirmation time
 function getEstimatedConfirmationTime(congestionLevel: 'low' | 'medium' | 'high'): string {
   switch (congestionLevel) {
     case 'low':
@@ -128,11 +128,11 @@ function getEstimatedConfirmationTime(congestionLevel: 'low' | 'medium' | 'high'
   }
 }
 
-// 获取区块时间
+// Get block time
 function getBlockTime(chainId: number): number {
   const blockTimes: Record<number, number> = {
-    [sepolia.id]: 12, // 12秒
-    [bscTestnet.id]: 3, // 3秒
+    [sepolia.id]: 12, // 12 seconds
+    [bscTestnet.id]: 3, // 3 seconds
   };
   
   return blockTimes[chainId] || 12;
@@ -216,8 +216,8 @@ export interface ProtocolStats {
 
 export async function getProtocolStats(): Promise<ProtocolStats> {
   try {
-    // 这里可以从智能合约或API获取真实数据
-    // 暂时返回模拟数据
+    // This can get real data from smart contracts or APIs
+    // Returning mock data for now
     return {
       totalValueLocked: '$2.5B',
       totalUsers: 125432,
@@ -243,16 +243,16 @@ export function formatGasPrice(gasPrice: number): string {
   return `${parseFloat(gwei).toFixed(2)} Gwei`;
 }
 
-// 获取拥堵程度颜色
+// Get congestion level color
 export function getCongestionColor(level: 'low' | 'medium' | 'high'): string {
   switch (level) {
     case 'low':
-      return '#22c55e'; // 绿色
+      return '#22c55e'; // Green
     case 'medium':
-      return '#f59e0b'; // 黄色
+      return '#f59e0b'; // Yellow
     case 'high':
-      return '#ef4444'; // 红色
+      return '#ef4444'; // Red
     default:
-      return '#6b7280'; // 灰色
+      return '#6b7280'; // Gray
   }
 } 

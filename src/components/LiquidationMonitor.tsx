@@ -16,14 +16,14 @@ const LiquidationMonitor: React.FC = () => {
     const { address } = useAccount();
     const [liquidationInfo, setLiquidationInfo] = useState<LiquidationInfo | null>(null);
 
-    // 模拟健康系数计算
+    // Mock health factor calculation
     const calculateHealthFactor = (collateralValue: number, debtValue: number): number => {
-        if (debtValue === 0) return 999; // 无债务时返回高健康系数
+        if (debtValue === 0) return 999; // Return high health factor when no debt
         const liquidationThreshold = 0.85; // 85%
         return (collateralValue * liquidationThreshold) / debtValue;
     };
 
-    // 确定风险等级
+    // Determine risk level
     const getRiskLevel = (healthFactor: number): 'safe' | 'warning' | 'danger' | 'critical' => {
         if (healthFactor >= 1.5) return 'safe';
         if (healthFactor >= 1.2) return 'warning';  
@@ -31,7 +31,7 @@ const LiquidationMonitor: React.FC = () => {
         return 'critical';
     };
 
-    // 获取风险颜色
+    // Get risk color
     const getRiskColor = (riskLevel: string): string => {
         switch (riskLevel) {
             case 'safe': return '#10b981';
@@ -42,12 +42,12 @@ const LiquidationMonitor: React.FC = () => {
         }
     };
 
-    // 模拟数据加载
+    // Mock data loading
     useEffect(() => {
         if (address) {
-            // 模拟从localStorage或合约读取数据
-            const mockCollateralValue = 3000; // $3000 抵押品
-            const mockDebtValue = 2400;       // $2400 债务
+            // Mock reading data from localStorage or contracts
+            const mockCollateralValue = 3000; // $3000 collateral
+            const mockDebtValue = 2400;       // $2400 debt
             
             const healthFactor = calculateHealthFactor(mockCollateralValue, mockDebtValue);
             const collateralRatio = mockCollateralValue / mockDebtValue;

@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import useTransactions from '../hooks/useTransactions';
 import { TransactionFilter } from '../utils/transactionStorage';
 import { useLiquidationDemo } from '../hooks/useLiquidationEvents';
+import { useToast } from '../components/Toast';
 
 const History: React.FC = () => {
     const { address, isConnected } = useAccount();
@@ -29,15 +30,17 @@ const History: React.FC = () => {
     const [showImportModal, setShowImportModal] = useState(false);
     const [importData, setImportData] = useState('');
     
-    // 清算演示功能
+    // Liquidation demo functionality
     const { createDemoLiquidation } = useLiquidationDemo();
+    
+    const { showToast, ToastContainer } = useToast();
 
-    // 防止hydration错误
+    // Prevent hydration errors
     useEffect(() => {
         setIsClient(true);
     }, []);
 
-    // 当过滤器改变时应用过滤
+    // Apply filter when filter changes
     useEffect(() => {
         if (!isClient) return;
         
@@ -147,21 +150,21 @@ const History: React.FC = () => {
         try {
             const success = await importTransactions(importData);
             if (success) {
-                alert('Transactions imported successfully!');
+                showToast('Transactions imported successfully!', 'success');
                 setImportData('');
                 setShowImportModal(false);
             } else {
-                alert('Failed to import transactions. Please check the data format.');
+                showToast('Failed to import transactions. Please check the data format.', 'error');
             }
         } catch (error) {
-            alert('Error importing transactions: ' + error);
+            showToast('Error importing transactions: ' + error, 'error');
         }
     };
 
 
 
     if (!isClient) {
-        return null; // 防止hydration错误
+        return null; // Prevent hydration errors
     }
 
     return (
@@ -924,6 +927,9 @@ const History: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* Toast Container for notifications */}
+            <ToastContainer />
         </Layout>
     );
 };
