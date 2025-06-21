@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
 import Layout from '../components/Layout';
 import { BigNumberish, ethers, formatUnits } from 'ethers';
 import { useAccount, useChainId, useReadContract, useWriteContract } from 'wagmi';
@@ -8,11 +7,6 @@ import ERC20ABI from '../abi/ERC20.json';
 import { poolList } from  '../config';
 import { getBalance, getUserAssetBalance } from '../utils/balance';
 import { getPoolTvl, getUserPosition } from '../utils/pool';
-
-// 动态导入BalanceDebugger，禁用SSR
-const BalanceDebugger = dynamic(() => import('../components/BalanceDebugger'), {
-    ssr: false
-});
 
 const Pools: React.FC = () => {
     const [depositAmount, setDepositAmount] = useState('');
@@ -191,7 +185,6 @@ const Pools: React.FC = () => {
 
     return (
         <Layout>
-            <BalanceDebugger />
             <div className="container">
                 <div className="glass-card" style={{ maxWidth: '800px', margin: '0 auto' }}>
                     <h2 style={{ 

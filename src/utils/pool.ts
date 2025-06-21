@@ -13,9 +13,9 @@ export async function getPoolTvl(pool: any) : Promise<BigNumberish> {
         abi: LiquidityPoolABI,
         functionName: 'totalLoans',
         args: [],
-    });
+    }) as BigNumberish;
 
-    const tvl = balance + totalLoans
+    const tvl = (balance as bigint) + (totalLoans as bigint);
     return  tvl as BigNumberish;
 }
 
@@ -28,7 +28,7 @@ export async function getUserPosition(pool: any, user: any) : Promise<BigNumberi
 
     const tvl = await getPoolTvl(pool);
 
-    const userPosition = tvl ? (shares * tvl / totalSupply) :0; 
+    const userPosition = tvl ? ((shares as bigint) * (tvl as bigint) / (totalSupply as bigint)) : BigInt(0); 
 
     return userPosition as BigNumberish;
 }
