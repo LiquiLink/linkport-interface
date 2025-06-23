@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAccount, useChainId } from 'wagmi';
 import Layout from '../components/Layout';
 import useTransactions from '../hooks/useTransactions';
@@ -30,6 +30,12 @@ const History: React.FC = () => {
     const [showImportModal, setShowImportModal] = useState(false);
     const [importData, setImportData] = useState('');
     
+    // Modal animation states
+    const [exportModalActive, setExportModalActive] = useState(false);
+    const [importModalActive, setImportModalActive] = useState(false);
+    const exportTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const importTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
     // Liquidation demo functionality
     const { createDemoLiquidation } = useLiquidationDemo();
     
@@ -64,6 +70,30 @@ const History: React.FC = () => {
 
         applyFilter(filter);
     }, [selectedFilter, selectedTimeframe, selectedStatus, chainId, isClient, applyFilter]);
+
+    // Handle Export Modal animation
+    useEffect(() => {
+        if (showExportModal) {
+            setExportModalActive(true);
+        } else if (exportModalActive) {
+            exportTimeoutRef.current = setTimeout(() => setExportModalActive(false), 200);
+        }
+        return () => {
+            if (exportTimeoutRef.current) clearTimeout(exportTimeoutRef.current);
+        };
+    }, [showExportModal]);
+
+    // Handle Import Modal animation
+    useEffect(() => {
+        if (showImportModal) {
+            setImportModalActive(true);
+        } else if (importModalActive) {
+            importTimeoutRef.current = setTimeout(() => setImportModalActive(false), 200);
+        }
+        return () => {
+            if (importTimeoutRef.current) clearTimeout(importTimeoutRef.current);
+        };
+    }, [showImportModal]);
 
     const getTransactionIcon = (type: string) => {
         switch (type) {
@@ -160,8 +190,6 @@ const History: React.FC = () => {
             showToast('Error importing transactions: ' + error, 'error');
         }
     };
-
-
 
     if (!isClient) {
         return null; // Prevent hydration errors
@@ -772,24 +800,43 @@ const History: React.FC = () => {
                 </div>
 
                 {/* Export Modal */}
-                {showExportModal && (
-                    <div style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: 'rgba(0, 0, 0, 0.5)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 1000
-                    }}>
-                        <div className="glass-card" style={{
-                            maxWidth: '400px',
-                            width: '90%',
-                            margin: '20px'
-                        }}>
+                {(showExportModal || exportModalActive) && (
+                    <div
+                        style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: 'rgba(255, 255, 255, 0.25)',
+                            backdropFilter: showExportModal ? 'blur(8px)' : 'blur(0px)',
+                            WebkitBackdropFilter: showExportModal ? 'blur(8px)' : 'blur(0px)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 1000,
+                            opacity: showExportModal ? 1 : 0,
+                            transition: 'opacity 0.2s ease, backdrop-filter 0.2s, -webkit-backdrop-filter 0.2s',
+                        }}
+                        onClick={() => setShowExportModal(false)}
+                    >
+                        <div
+                            className="glass-card"
+                            style={{
+                                maxWidth: '400px',
+                                width: '90%',
+                                margin: '20px',
+                                boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)',
+                                border: '1.5px solid var(--border-color)',
+                                background: 'rgba(255,255,255,0.7)',
+                                borderRadius: '20px',
+                                position: 'relative',
+                                transform: showExportModal ? 'scale(1)' : 'scale(0.96) translateY(20px)',
+                                opacity: showExportModal ? 1 : 0,
+                                transition: 'opacity 0.2s, transform 0.2s',
+                            }}
+                            onClick={e => e.stopPropagation()}
+                        >
                             <h3 style={{
                                 marginBottom: '16px',
                                 fontSize: '20px',
@@ -817,9 +864,10 @@ const History: React.FC = () => {
                                         padding: '12px 24px',
                                         borderRadius: '8px',
                                         border: '1px solid var(--border-color)',
-                                        background: 'white',
+                                        background: 'rgba(255,255,255,0.85)',
                                         color: 'var(--text-color)',
-                                        cursor: 'pointer'
+                                        cursor: 'pointer',
+                                        fontWeight: 500
                                     }}
                                 >
                                     Cancel
@@ -828,7 +876,13 @@ const History: React.FC = () => {
                                     onClick={handleExport}
                                     className="button primary"
                                     style={{
-                                        padding: '12px 24px'
+                                        padding: '12px 24px',
+                                        background: 'var(--accent-color)',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
                                     }}
                                 >
                                     Download JSON
@@ -839,24 +893,46 @@ const History: React.FC = () => {
                 )}
 
                 {/* Import Modal */}
-                {showImportModal && (
-                    <div style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: 'rgba(0, 0, 0, 0.5)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 1000
-                    }}>
-                        <div className="glass-card" style={{
-                            maxWidth: '500px',
-                            width: '90%',
-                            margin: '20px'
-                        }}>
+                {(showImportModal || importModalActive) && (
+                    <div
+                        style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: 'rgba(255, 255, 255, 0.25)',
+                            backdropFilter: showImportModal ? 'blur(8px)' : 'blur(0px)',
+                            WebkitBackdropFilter: showImportModal ? 'blur(8px)' : 'blur(0px)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 1000,
+                            opacity: showImportModal ? 1 : 0,
+                            transition: 'opacity 0.2s ease, backdrop-filter 0.2s, -webkit-backdrop-filter 0.2s',
+                        }}
+                        onClick={() => {
+                            setShowImportModal(false);
+                            setImportData('');
+                        }}
+                    >
+                        <div
+                            className="glass-card"
+                            style={{
+                                maxWidth: '500px',
+                                width: '90%',
+                                margin: '20px',
+                                boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)',
+                                border: '1.5px solid var(--border-color)',
+                                background: 'rgba(255,255,255,0.7)',
+                                borderRadius: '20px',
+                                position: 'relative',
+                                transform: showImportModal ? 'scale(1)' : 'scale(0.96) translateY(20px)',
+                                opacity: showImportModal ? 1 : 0,
+                                transition: 'opacity 0.2s, transform 0.2s',
+                            }}
+                            onClick={e => e.stopPropagation()}
+                        >
                             <h3 style={{
                                 marginBottom: '16px',
                                 fontSize: '20px',
@@ -883,7 +959,7 @@ const History: React.FC = () => {
                                     padding: '12px',
                                     borderRadius: '8px',
                                     border: '1px solid var(--border-color)',
-                                    background: 'white',
+                                    background: 'rgba(255,255,255,0.85)',
                                     fontSize: '14px',
                                     color: 'var(--text-color)',
                                     resize: 'vertical',
@@ -904,9 +980,10 @@ const History: React.FC = () => {
                                         padding: '12px 24px',
                                         borderRadius: '8px',
                                         border: '1px solid var(--border-color)',
-                                        background: 'white',
+                                        background: 'rgba(255,255,255,0.85)',
                                         color: 'var(--text-color)',
-                                        cursor: 'pointer'
+                                        cursor: 'pointer',
+                                        fontWeight: 500
                                     }}
                                 >
                                     Cancel
@@ -917,6 +994,12 @@ const History: React.FC = () => {
                                     className="button primary"
                                     style={{
                                         padding: '12px 24px',
+                                        background: 'var(--accent-color)',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        fontWeight: 600,
+                                        cursor: !importData.trim() ? 'not-allowed' : 'pointer',
                                         opacity: !importData.trim() ? 0.5 : 1
                                     }}
                                 >
