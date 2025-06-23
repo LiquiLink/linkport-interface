@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Asset, AssetAllocation, CrossChainAssetSelectorProps } from '../utils/types';
 
@@ -12,7 +12,20 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
 }) => {
     const [targetAssets, setTargetAssets] = useState<AssetAllocation[]>([]);
     const [showAddAsset, setShowAddAsset] = useState(false);
+    const [addAssetModalActive, setAddAssetModalActive] = useState(false);
+    const addAssetTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const [inputValues, setInputValues] = useState<{ [key: string]: string }>({});
+
+    useEffect(() => {
+        if (showAddAsset) {
+            setAddAssetModalActive(true);
+        } else if (addAssetModalActive) {
+            addAssetTimeoutRef.current = setTimeout(() => setAddAssetModalActive(false), 200);
+        }
+        return () => {
+            if (addAssetTimeoutRef.current) clearTimeout(addAssetTimeoutRef.current);
+        };
+    }, [showAddAsset]);
 
     // Smart asset sorting function
     const sortAssets = (assets: Asset[]) => {
@@ -351,33 +364,47 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                 </div>
 
                 {/* Add Asset Modal */}
-                {showAddAsset && (
-                    <div style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: 'rgba(0, 0, 0, 0.5)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 1000,
-                        padding: '60px 20px'
-                    }} onClick={() => setShowAddAsset(false)}>
-                        <div style={{
-                            background: 'rgba(255, 255, 255, 0.95)',
-                            backdropFilter: 'blur(20px)',
-                            borderRadius: '16px',
-                            padding: '16px',
-                            width: '100%',
-                            maxWidth: '360px',
-                            maxHeight: '50vh',
-                            overflowY: 'auto',
-                            position: 'relative',
-                            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.3)',
-                            margin: 'auto'
-                        }} onClick={(e) => e.stopPropagation()}>
+                {(showAddAsset || addAssetModalActive) && (
+                    <div
+                        style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: 'rgba(255, 255, 255, 0.25)',
+                            backdropFilter: showAddAsset ? 'blur(8px)' : 'blur(0px)',
+                            WebkitBackdropFilter: showAddAsset ? 'blur(8px)' : 'blur(0px)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 1000,
+                            opacity: showAddAsset ? 1 : 0,
+                            transition: 'opacity 0.2s, backdrop-filter 0.2s, -webkit-backdrop-filter 0.2s',
+                            padding: '60px 20px',
+                        }}
+                        onClick={() => setShowAddAsset(false)}
+                    >
+                        <div
+                            style={{
+                                background: 'rgba(255,255,255,0.7)',
+                                backdropFilter: 'blur(20px)',
+                                borderRadius: '20px',
+                                padding: '16px',
+                                width: '100%',
+                                maxWidth: '360px',
+                                maxHeight: '50vh',
+                                overflowY: 'auto',
+                                position: 'relative',
+                                boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)',
+                                margin: 'auto',
+                                border: '1.5px solid var(--border-color)',
+                                transform: showAddAsset ? 'scale(1)' : 'scale(0.96) translateY(20px)',
+                                opacity: showAddAsset ? 1 : 0,
+                                transition: 'opacity 0.2s, transform 0.2s',
+                            }}
+                            onClick={e => e.stopPropagation()}
+                        >
                             <div style={{
                                 display: 'flex',
                                 justifyContent: 'space-between',
