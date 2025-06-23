@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Asset, AssetAllocation, CrossChainAssetSelectorProps } from '../utils/types';
+import ReactDOM from 'react-dom';
 
 
 const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({ 
@@ -352,18 +353,22 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
 
                 {/* Add Asset Modal */}
                 {showAddAsset && (
+                  ReactDOM.createPortal(
                     <div style={{
                         position: 'fixed',
                         top: 0,
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        background: 'rgba(0, 0, 0, 0.5)',
+                        background: 'rgba(255, 255, 255, 0.25)',
+                        backdropFilter: 'blur(8px)',
+                        WebkitBackdropFilter: 'blur(8px)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         zIndex: 1000,
-                        padding: '60px 20px'
+                        padding: '60px 20px',
+                        transition: 'opacity 0.2s ease, backdrop-filter 0.2s, -webkit-backdrop-filter 0.2s',
                     }} onClick={() => setShowAddAsset(false)}>
                         <div style={{
                             background: 'rgba(255, 255, 255, 0.95)',
@@ -456,7 +461,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                                     ))}
                             </div>
                         </div>
-                    </div>
+                    </div>, document.body)
                 )}
             </div>
 
