@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Asset, AssetAllocation, CrossChainAssetSelectorProps } from '../utils/types';
 
@@ -210,464 +211,471 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
         }
     };
 
-    return (
-        <div>
-            {/* Source Asset Display */}
-            <div style={{
-                background: 'rgba(59, 130, 246, 0.1)',
-                border: '1px solid rgba(59, 130, 246, 0.3)',
-                borderRadius: '12px',
-                padding: '16px',
-                marginBottom: '20px'
-            }}>
-                <h4 style={{ marginBottom: '12px', fontSize: '16px', fontWeight: 600, color: '#3b82f6' }}>
-                    Source Chain Collateral ({getChainName(sourceChain)})
-                </h4>
-                <div style={{
+    let addAssetModalPortal: React.ReactPortal | null = null;
+    if (showAddAsset || addAssetModalActive) {
+        addAssetModalPortal = ReactDOM.createPortal(
+            <div
+                style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(255, 255, 255, 0.25)',
+                    backdropFilter: showAddAsset ? 'blur(8px)' : 'blur(0px)',
+                    WebkitBackdropFilter: showAddAsset ? 'blur(8px)' : 'blur(0px)',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '12px'
-                }}>
-                    <div className="token-icon placeholder">{sourceAsset?.icon || 'ETH'}</div>
-                    <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '16px', fontWeight: 600 }}>
-                            {sourceAmount} {sourceAsset?.symbol || 'ETH'}
-                        </div>
-                        <div style={{ fontSize: '14px', color: 'var(--secondary-text)' }}>
-                            Value: {formatValue(sourceAmount * (sourceAsset?.price || 3000))}
-                        </div>
-                    </div>
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    opacity: showAddAsset ? 1 : 0,
+                    transition: 'opacity 0.2s, backdrop-filter 0.2s, -webkit-backdrop-filter 0.2s',
+                }}
+                onClick={() => setShowAddAsset(false)}
+            >
+                <div
+                    style={{
+                        background: 'rgba(255,255,255,0.7)',
+                        backdropFilter: 'blur(20px)',
+                        borderRadius: '20px',
+                        padding: '32px 24px',
+                        width: '100%',
+                        maxWidth: '480px',
+                        maxHeight: '90vh',
+                        overflowY: 'auto',
+                        position: 'relative',
+                        boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)',
+                        margin: '0',
+                        border: '1.5px solid var(--border-color)',
+                        transform: showAddAsset ? 'scale(1)' : 'scale(0.96) translateY(20px)',
+                        opacity: showAddAsset ? 1 : 0,
+                        transition: 'opacity 0.2s, transform 0.2s',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'flex-start',
+                    }}
+                    onClick={e => e.stopPropagation()}
+                >
                     <div style={{
-                        background: 'rgba(34, 197, 94, 0.1)',
-                        color: '#22c55e',
-                        padding: '4px 8px',
-                        borderRadius: '6px',
-                        fontSize: '12px',
-                        fontWeight: 500
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '12px',
+                        paddingBottom: '8px',
+                        borderBottom: '1px solid var(--border-color)'
                     }}>
-                        Max Bridgeable: {formatValue(getMaxBridgeValue())}
-                    </div>
-                </div>
-            </div>
-
-            {/* Target Assets Selector */}
-            <div style={{
-                background: 'rgba(255, 255, 255, 0.6)',
-                borderRadius: '16px',
-                padding: '20px',
-                marginBottom: '20px'
-            }}>
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '16px'
-                }}>
-                    <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>
-                        Target Chain Bridge Assets ({getChainName(targetChain)})
-                    </h4>
-                    <button
-                        className="button secondary compact"
-                        onClick={() => setShowAddAsset(true)}
-                    >
-                        + Add Asset
-                    </button>
-                </div>
-
-                {/* Selected Target Assets */}
-                {targetAssets.length > 0 && (
-                    <div style={{ display: 'grid', gap: '12px', marginBottom: '20px' }}>
-                        {targetAssets.map((asset) => {
-                            const assetInfo = availableTargetAssets.find(a => a.id === asset.id);
-                            return (
-                                <div key={asset.id} style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '12px',
-                                    padding: '16px',
-                                    background: 'rgba(255, 255, 255, 0.8)',
-                                    borderRadius: '12px',
-                                    border: '1px solid var(--border-color)'
-                                }}>
-                                    <div style={{
-                                        width: '12px',
-                                        height: '12px',
-                                        borderRadius: '50%',
-                                        background: asset.color
-                                    }}></div>
-                                    <div className="token-icon placeholder">{asset.symbol}</div>
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ fontSize: '14px', fontWeight: 600 }}>{asset.symbol}</div>
-                                        <div style={{ fontSize: '12px', color: 'var(--secondary-text)' }}>
-                                            {assetInfo?.name}
-                                        </div>
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <input
-                                            type="text"
-                                            value={inputValues[asset.id] || ''}
-                                            onChange={(e) => handleInputChange(asset.id, e.target.value)}
-                                            onKeyDown={handleKeyDown}
-                                            placeholder="Enter amount"
-                                            style={{
-                                                width: '100px',
-                                                padding: '8px',
-                                                borderRadius: '8px',
-                                                border: '1px solid var(--border-color)',
-                                                background: 'rgba(255, 255, 255, 0.9)',
-                                                fontSize: '14px'
-                                            }}
-                                        />
-                                        <div style={{ fontSize: '12px', color: 'var(--secondary-text)', minWidth: '60px' }}>
-                                            {formatValue(asset.value)}
-                                        </div>
-                                        <button
-                                            onClick={() => removeTargetAsset(asset.id)}
-                                            style={{
-                                                background: 'none',
-                                                border: 'none',
-                                                color: '#ef4444',
-                                                cursor: 'pointer',
-                                                padding: '4px',
-                                                borderRadius: '4px'
-                                            }}
-                                        >
-                                            <i className="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-
-                {/* Bridge Capacity */}
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '12px',
-                    background: getTotalBridgeValue() > getMaxBridgeValue() 
-                        ? 'rgba(239, 68, 68, 0.1)' 
-                        : 'rgba(34, 197, 94, 0.1)',
-                    borderRadius: '8px',
-                    marginBottom: '16px'
-                }}>
-                    <span style={{ fontSize: '14px', fontWeight: 500 }}>Bridge Capacity Utilization:</span>
-                    <span style={{ 
-                        fontSize: '16px', 
-                        fontWeight: 700,
-                        color: getTotalBridgeValue() > getMaxBridgeValue() ? '#ef4444' : '#22c55e'
-                    }}>
-                        {getMaxBridgeValue() > 0 ? ((getTotalBridgeValue() / getMaxBridgeValue()) * 100).toFixed(1) : 'Infinity'}%
-                    </span>
-                </div>
-
-                {/* Add Asset Modal */}
-                {(showAddAsset || addAssetModalActive) && (
-                    <div
-                        style={{
-                            position: 'fixed',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            background: 'rgba(255, 255, 255, 0.25)',
-                            backdropFilter: showAddAsset ? 'blur(8px)' : 'blur(0px)',
-                            WebkitBackdropFilter: showAddAsset ? 'blur(8px)' : 'blur(0px)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            zIndex: 1000,
-                            opacity: showAddAsset ? 1 : 0,
-                            transition: 'opacity 0.2s, backdrop-filter 0.2s, -webkit-backdrop-filter 0.2s',
-                            padding: '60px 20px',
-                        }}
-                        onClick={() => setShowAddAsset(false)}
-                    >
-                        <div
+                        <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>Select Bridge Assets</h3>
+                        <button
+                            onClick={() => setShowAddAsset(false)}
                             style={{
-                                background: 'rgba(255,255,255,0.7)',
-                                backdropFilter: 'blur(20px)',
-                                borderRadius: '20px',
-                                padding: '16px',
-                                width: '100%',
-                                maxWidth: '360px',
-                                maxHeight: '50vh',
-                                overflowY: 'auto',
-                                position: 'relative',
-                                boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)',
-                                margin: 'auto',
-                                border: '1.5px solid var(--border-color)',
-                                transform: showAddAsset ? 'scale(1)' : 'scale(0.96) translateY(20px)',
-                                opacity: showAddAsset ? 1 : 0,
-                                transition: 'opacity 0.2s, transform 0.2s',
-                            }}
-                            onClick={e => e.stopPropagation()}
-                        >
-                            <div style={{
+                                background: 'none',
+                                border: 'none',
+                                fontSize: '18px',
+                                cursor: 'pointer',
+                                color: 'var(--secondary-text)',
+                                padding: '2px',
+                                borderRadius: '4px',
+                                lineHeight: 1,
+                                width: '24px',
+                                height: '24px',
                                 display: 'flex',
-                                justifyContent: 'space-between',
                                 alignItems: 'center',
-                                marginBottom: '12px',
-                                paddingBottom: '8px',
-                                borderBottom: '1px solid var(--border-color)'
-                            }}>
-                                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>Select Bridge Assets</h3>
-                                <button
-                                    onClick={() => setShowAddAsset(false)}
+                                justifyContent: 'center'
+                            }}
+                        >
+                            ×
+                        </button>
+                    </div>
+                    <div style={{ display: 'grid', gap: '6px' }}>
+                        {availableTargetAssets
+                            .filter(asset => !targetAssets.find(ta => ta.id === asset.id))
+                            .map(asset => (
+                                <div key={asset.id}
                                     style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        fontSize: '18px',
-                                        cursor: 'pointer',
-                                        color: 'var(--secondary-text)',
-                                        padding: '2px',
-                                        borderRadius: '4px',
-                                        lineHeight: 1,
-                                        width: '24px',
-                                        height: '24px',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        justifyContent: 'center'
+                                        gap: '10px',
+                                        padding: '10px',
+                                        background: 'rgba(255, 255, 255, 0.8)',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--border-color)',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        fontSize: '13px'
+                                    }}
+                                    onClick={() => addTargetAsset(asset.id)}
+                                    onMouseEnter={(e) => {
+                                        const target = e.currentTarget as HTMLElement;
+                                        target.style.background = 'rgba(59, 130, 246, 0.1)';
+                                        target.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        const target = e.currentTarget as HTMLElement;
+                                        target.style.background = 'rgba(255, 255, 255, 0.8)';
+                                        target.style.borderColor = 'var(--border-color)';
                                     }}
                                 >
-                                    ×
-                                </button>
-                            </div>
-                            <div style={{ display: 'grid', gap: '6px' }}>
-                                {availableTargetAssets
-                                    .filter(asset => !targetAssets.find(ta => ta.id === asset.id))
-                                    .map(asset => (
-                                        <div key={asset.id}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '10px',
-                                                padding: '10px',
-                                                background: 'rgba(255, 255, 255, 0.8)',
-                                                borderRadius: '8px',
-                                                border: '1px solid var(--border-color)',
-                                                cursor: 'pointer',
-                                                transition: 'all 0.2s ease',
-                                                fontSize: '13px'
-                                            }}
-                                            onClick={() => addTargetAsset(asset.id)}
-                                            onMouseEnter={(e) => {
-                                                const target = e.currentTarget as HTMLElement;
-                                                target.style.background = 'rgba(59, 130, 246, 0.1)';
-                                                target.style.borderColor = 'rgba(59, 130, 246, 0.3)';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                const target = e.currentTarget as HTMLElement;
-                                                target.style.background = 'rgba(255, 255, 255, 0.8)';
-                                                target.style.borderColor = 'var(--border-color)';
-                                            }}
-                                        >
-                                            <div className="token-icon small">{asset.icon}</div>
-                                            <div style={{ flex: 1 }}>
-                                                <div style={{ fontSize: '13px', fontWeight: 600 }}>{asset.symbol}</div>
-                                                <div style={{ fontSize: '11px', color: 'var(--secondary-text)' }}>
-                                                    {asset.name}
-                                                </div>
-                                            </div>
-                                            <div style={{ textAlign: 'right' }}>
-                                                <div style={{ fontSize: '11px', fontWeight: 600 }}>
-                                                    Available: {asset.balance}
-                                                </div>
-                                                <div style={{ fontSize: '10px', color: 'var(--secondary-text)' }}>
-                                                    ${(parseFloat(asset.balance) * asset.price).toLocaleString()}
-                                                </div>
-                                            </div>
+                                    <div className="token-icon small">{asset.icon}</div>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontSize: '13px', fontWeight: 600 }}>{asset.symbol}</div>
+                                        <div style={{ fontSize: '11px', color: 'var(--secondary-text)' }}>
+                                            {asset.name}
                                         </div>
-                                    ))}
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div style={{ fontSize: '11px', fontWeight: 600 }}>
+                                            Available: {asset.balance}
+                                        </div>
+                                        <div style={{ fontSize: '10px', color: 'var(--secondary-text)' }}>
+                                            ${(parseFloat(asset.balance) * asset.price).toLocaleString()}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                    </div>
+                </div>
+            </div>, document.body
+        );
+    }
+
+    return (
+        <>
+            <div>
+                {/* Source Asset Display */}
+                <div style={{
+                    background: 'rgba(59, 130, 246, 0.1)',
+                    border: '1px solid rgba(59, 130, 246, 0.3)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginBottom: '20px'
+                }}>
+                    <h4 style={{ marginBottom: '12px', fontSize: '16px', fontWeight: 600, color: '#3b82f6' }}>
+                        Source Chain Collateral ({getChainName(sourceChain)})
+                    </h4>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px'
+                    }}>
+                        <div className="token-icon placeholder">{sourceAsset?.icon || 'ETH'}</div>
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '16px', fontWeight: 600 }}>
+                                {sourceAmount} {sourceAsset?.symbol || 'ETH'}
+                            </div>
+                            <div style={{ fontSize: '14px', color: 'var(--secondary-text)' }}>
+                                Value: {formatValue(sourceAmount * (sourceAsset?.price || 3000))}
                             </div>
                         </div>
+                        <div style={{
+                            background: 'rgba(34, 197, 94, 0.1)',
+                            color: '#22c55e',
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            fontWeight: 500
+                        }}>
+                            Max Bridgeable: {formatValue(getMaxBridgeValue())}
+                        </div>
                     </div>
-                )}
-            </div>
+                </div>
 
-            {/* Pie Chart */}
-            {targetAssets.length > 0 && targetAssets.some(asset => asset.value > 0) && (
+                {/* Target Assets Selector */}
                 <div style={{
                     background: 'rgba(255, 255, 255, 0.6)',
                     borderRadius: '16px',
                     padding: '20px',
                     marginBottom: '20px'
                 }}>
-                    <h4 style={{ marginBottom: '16px', fontSize: '16px', fontWeight: 600 }}>Bridge Asset Allocation</h4>
-                    <div style={{ height: '300px' }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={targetAssets.filter(asset => asset.value > 0)}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={120}
-                                    paddingAngle={2}
-                                    dataKey="value"
-                                >
-                                    {targetAssets.filter(asset => asset.value > 0).map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                                <Tooltip content={<CustomTooltip />} />
-                                <Legend
-                                    verticalAlign="bottom"
-                                    height={36}
-                                    formatter={(value, entry: any) => (
-                                        <span style={{ color: 'var(--text-color)' }}>
-                                            {value} ({entry.payload.percentage.toFixed(1)}%)
-                                        </span>
-                                    )}
-                                />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
                     <div style={{
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        marginTop: '16px',
-                        padding: '16px',
-                        background: 'rgba(255, 255, 255, 0.8)',
-                        borderRadius: '12px'
+                        marginBottom: '16px'
                     }}>
-                        <span style={{ fontWeight: 600 }}>Total Bridge Value:</span>
-                        <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--accent-color)' }}>
-                            {formatValue(getTotalBridgeValue())}
+                        <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>
+                            Target Chain Bridge Assets ({getChainName(targetChain)})
+                        </h4>
+                        <button
+                            className="button secondary compact"
+                            onClick={() => setShowAddAsset(true)}
+                        >
+                            + Add Asset
+                        </button>
+                    </div>
+
+                    {/* Selected Target Assets */}
+                    {targetAssets.length > 0 && (
+                        <div style={{ display: 'grid', gap: '12px', marginBottom: '20px' }}>
+                            {targetAssets.map((asset) => {
+                                const assetInfo = availableTargetAssets.find(a => a.id === asset.id);
+                                return (
+                                    <div key={asset.id} style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '12px',
+                                        padding: '16px',
+                                        background: 'rgba(255, 255, 255, 0.8)',
+                                        borderRadius: '12px',
+                                        border: '1px solid var(--border-color)'
+                                    }}>
+                                        <div style={{
+                                            width: '12px',
+                                            height: '12px',
+                                            borderRadius: '50%',
+                                            background: asset.color
+                                        }}></div>
+                                        <div className="token-icon placeholder">{asset.symbol}</div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontSize: '14px', fontWeight: 600 }}>{asset.symbol}</div>
+                                            <div style={{ fontSize: '12px', color: 'var(--secondary-text)' }}>
+                                                {assetInfo?.name}
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <input
+                                                type="text"
+                                                value={inputValues[asset.id] || ''}
+                                                onChange={(e) => handleInputChange(asset.id, e.target.value)}
+                                                onKeyDown={handleKeyDown}
+                                                placeholder="Enter amount"
+                                                style={{
+                                                    width: '100px',
+                                                    padding: '8px',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid var(--border-color)',
+                                                    background: 'rgba(255, 255, 255, 0.9)',
+                                                    fontSize: '14px'
+                                                }}
+                                            />
+                                            <div style={{ fontSize: '12px', color: 'var(--secondary-text)', minWidth: '60px' }}>
+                                                {formatValue(asset.value)}
+                                            </div>
+                                            <button
+                                                onClick={() => removeTargetAsset(asset.id)}
+                                                style={{
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    color: '#ef4444',
+                                                    cursor: 'pointer',
+                                                    padding: '4px',
+                                                    borderRadius: '4px'
+                                                }}
+                                            >
+                                                <i className="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {/* Bridge Capacity */}
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '12px',
+                        background: getTotalBridgeValue() > getMaxBridgeValue() 
+                            ? 'rgba(239, 68, 68, 0.1)' 
+                            : 'rgba(34, 197, 94, 0.1)',
+                        borderRadius: '8px',
+                        marginBottom: '16px'
+                    }}>
+                        <span style={{ fontSize: '14px', fontWeight: 500 }}>Bridge Capacity Utilization:</span>
+                        <span style={{ 
+                            fontSize: '16px', 
+                            fontWeight: 700,
+                            color: getTotalBridgeValue() > getMaxBridgeValue() ? '#ef4444' : '#22c55e'
+                        }}>
+                            {getMaxBridgeValue() > 0 ? ((getTotalBridgeValue() / getMaxBridgeValue()) * 100).toFixed(1) : 'Infinity'}%
                         </span>
                     </div>
                 </div>
-            )}
 
-            {/* Risk Indicator */}
-            {getTotalBridgeValue() > 0 && sourceAmount > 0 && (
-                <div style={{
-                    background: (() => {
-                        const collateralValue = sourceAmount * (sourceAsset?.price || 3000);
-                        const borrowValue = getTotalBridgeValue();
-                        const ratio = (collateralValue / borrowValue) * 100;
-                        
-                        if (ratio < 130) return 'linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.05))';
-                        if (ratio < 150) return 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.05))';
-                        return 'linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(21, 128, 61, 0.05))';
-                    })(),
-                    border: (() => {
-                        const collateralValue = sourceAmount * (sourceAsset?.price || 3000);
-                        const borrowValue = getTotalBridgeValue();
-                        const ratio = (collateralValue / borrowValue) * 100;
-                        
-                        if (ratio < 130) return '2px solid #ef4444';
-                        if (ratio < 150) return '2px solid #f59e0b';
-                        return '2px solid #22c55e';
-                    })(),
-                    borderRadius: '12px',
-                    padding: '16px'
-                }}>
+                {/* Pie Chart */}
+                {targetAssets.length > 0 && targetAssets.some(asset => asset.value > 0) && (
                     <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        marginBottom: '12px'
+                        background: 'rgba(255, 255, 255, 0.6)',
+                        borderRadius: '16px',
+                        padding: '20px',
+                        marginBottom: '20px'
                     }}>
-                        <div style={{ fontSize: '24px' }}>
-                            {(() => {
-                                const collateralValue = sourceAmount * (sourceAsset?.price || 3000);
-                                const borrowValue = getTotalBridgeValue();
-                                const ratio = (collateralValue / borrowValue) * 100;
-                                
-                                if (ratio < 130) return '🚨';
-                                if (ratio < 150) return '⚠️';
-                                return '✅';
-                            })()}
+                        <h4 style={{ marginBottom: '16px', fontSize: '16px', fontWeight: 600 }}>Bridge Asset Allocation</h4>
+                        <div style={{ height: '300px' }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={targetAssets.filter(asset => asset.value > 0)}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={60}
+                                        outerRadius={120}
+                                        paddingAngle={2}
+                                        dataKey="value"
+                                    >
+                                        {targetAssets.filter(asset => asset.value > 0).map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Legend
+                                        verticalAlign="bottom"
+                                        height={36}
+                                        formatter={(value, entry: any) => (
+                                            <span style={{ color: 'var(--text-color)' }}>
+                                                {value} ({entry.payload.percentage.toFixed(1)}%)
+                                            </span>
+                                        )}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
                         </div>
-                        <div>
-                            <div style={{
-                                fontSize: '16px',
-                                fontWeight: 600,
-                                color: (() => {
-                                    const collateralValue = sourceAmount * (sourceAsset?.price || 3000);
-                                    const borrowValue = getTotalBridgeValue();
-                                    const ratio = (collateralValue / borrowValue) * 100;
-                                    
-                                    if (ratio < 130) return '#ef4444';
-                                    if (ratio < 150) return '#f59e0b';
-                                    return '#22c55e';
-                                })()
-                            }}>
-                                Collateral Ratio: {(() => {
-                                    const collateralValue = sourceAmount * (sourceAsset?.price || 3000);
-                                    const borrowValue = getTotalBridgeValue();
-                                    return ((collateralValue / borrowValue) * 100).toFixed(1);
-                                })()}%
-                            </div>
-                            <div style={{
-                                fontSize: '14px',
-                                color: '#6b7280',
-                                marginTop: '4px'
-                            }}>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginTop: '16px',
+                            padding: '16px',
+                            background: 'rgba(255, 255, 255, 0.8)',
+                            borderRadius: '12px'
+                        }}>
+                            <span style={{ fontWeight: 600 }}>Total Bridge Value:</span>
+                            <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--accent-color)' }}>
+                                {formatValue(getTotalBridgeValue())}
+                            </span>
+                        </div>
+                    </div>
+                )}
+
+                {/* Risk Indicator */}
+                {getTotalBridgeValue() > 0 && sourceAmount > 0 && (
+                    <div style={{
+                        background: (() => {
+                            const collateralValue = sourceAmount * (sourceAsset?.price || 3000);
+                            const borrowValue = getTotalBridgeValue();
+                            const ratio = (collateralValue / borrowValue) * 100;
+                            
+                            if (ratio < 130) return 'linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(220, 38, 38, 0.05))';
+                            if (ratio < 150) return 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.05))';
+                            return 'linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(21, 128, 61, 0.05))';
+                        })(),
+                        border: (() => {
+                            const collateralValue = sourceAmount * (sourceAsset?.price || 3000);
+                            const borrowValue = getTotalBridgeValue();
+                            const ratio = (collateralValue / borrowValue) * 100;
+                            
+                            if (ratio < 130) return '2px solid #ef4444';
+                            if (ratio < 150) return '2px solid #f59e0b';
+                            return '2px solid #22c55e';
+                        })(),
+                        borderRadius: '12px',
+                        padding: '16px'
+                    }}>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            marginBottom: '12px'
+                        }}>
+                            <div style={{ fontSize: '24px' }}>
                                 {(() => {
                                     const collateralValue = sourceAmount * (sourceAsset?.price || 3000);
                                     const borrowValue = getTotalBridgeValue();
                                     const ratio = (collateralValue / borrowValue) * 100;
                                     
-                                    if (ratio < 130) return 'DANGER: Position at risk of liquidation!';
-                                    if (ratio < 150) return 'WARNING: Low collateral ratio detected';
-                                    return 'SAFE: Healthy collateral ratio';
+                                    if (ratio < 130) return '🚨';
+                                    if (ratio < 150) return '⚠️';
+                                    return '✅';
                                 })()}
+                            </div>
+                            <div>
+                                <div style={{
+                                    fontSize: '16px',
+                                    fontWeight: 600,
+                                    color: (() => {
+                                        const collateralValue = sourceAmount * (sourceAsset?.price || 3000);
+                                        const borrowValue = getTotalBridgeValue();
+                                        const ratio = (collateralValue / borrowValue) * 100;
+                                        
+                                        if (ratio < 130) return '#ef4444';
+                                        if (ratio < 150) return '#f59e0b';
+                                        return '#22c55e';
+                                    })()
+                                }}>
+                                    Collateral Ratio: {(() => {
+                                        const collateralValue = sourceAmount * (sourceAsset?.price || 3000);
+                                        const borrowValue = getTotalBridgeValue();
+                                        return ((collateralValue / borrowValue) * 100).toFixed(1);
+                                    })()}%
+                                </div>
+                                <div style={{
+                                    fontSize: '14px',
+                                    color: '#6b7280',
+                                    marginTop: '4px'
+                                }}>
+                                    {(() => {
+                                        const collateralValue = sourceAmount * (sourceAsset?.price || 3000);
+                                        const borrowValue = getTotalBridgeValue();
+                                        const ratio = (collateralValue / borrowValue) * 100;
+                                        
+                                        if (ratio < 130) return 'DANGER: Position at risk of liquidation!';
+                                        if (ratio < 150) return 'WARNING: Low collateral ratio detected';
+                                        return 'SAFE: Healthy collateral ratio';
+                                    })()}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* Progress Bar */}
+                        <div>
+                            <div style={{
+                                height: '6px',
+                                background: '#f3f4f6',
+                                borderRadius: '3px',
+                                overflow: 'hidden',
+                                position: 'relative'
+                            }}>
+                                {/* Liquidation threshold line */}
+                                <div style={{
+                                    position: 'absolute',
+                                    left: 'calc(130px / 3)', // Rough position for 130% on a 300% scale
+                                    width: '2px',
+                                    height: '100%',
+                                    background: '#ef4444',
+                                    zIndex: 2
+                                }}></div>
+                                
+                                {/* Progress fill */}
+                                <div style={{
+                                    height: '100%',
+                                    background: (() => {
+                                        const collateralValue = sourceAmount * (sourceAsset?.price || 3000);
+                                        const borrowValue = getTotalBridgeValue();
+                                        const ratio = (collateralValue / borrowValue) * 100;
+                                        
+                                        if (ratio < 130) return '#ef4444';
+                                        if (ratio < 150) return '#f59e0b';
+                                        return '#22c55e';
+                                    })(),
+                                    width: `${Math.min(((sourceAmount * (sourceAsset?.price || 3000)) / getTotalBridgeValue()) * 100 / 3, 100)}%`,
+                                    borderRadius: '3px',
+                                    transition: 'width 0.3s ease'
+                                }}></div>
+                            </div>
+                            <div style={{
+                                fontSize: '10px',
+                                color: '#ef4444',
+                                marginTop: '4px'
+                            }}>
+                                ↑ Liquidation at 130%
                             </div>
                         </div>
                     </div>
-                    
-                    {/* Progress Bar */}
-                    <div>
-                        <div style={{
-                            height: '6px',
-                            background: '#f3f4f6',
-                            borderRadius: '3px',
-                            overflow: 'hidden',
-                            position: 'relative'
-                        }}>
-                            {/* Liquidation threshold line */}
-                            <div style={{
-                                position: 'absolute',
-                                left: 'calc(130px / 3)', // Rough position for 130% on a 300% scale
-                                width: '2px',
-                                height: '100%',
-                                background: '#ef4444',
-                                zIndex: 2
-                            }}></div>
-                            
-                            {/* Progress fill */}
-                            <div style={{
-                                height: '100%',
-                                background: (() => {
-                                    const collateralValue = sourceAmount * (sourceAsset?.price || 3000);
-                                    const borrowValue = getTotalBridgeValue();
-                                    const ratio = (collateralValue / borrowValue) * 100;
-                                    
-                                    if (ratio < 130) return '#ef4444';
-                                    if (ratio < 150) return '#f59e0b';
-                                    return '#22c55e';
-                                })(),
-                                width: `${Math.min(((sourceAmount * (sourceAsset?.price || 3000)) / getTotalBridgeValue()) * 100 / 3, 100)}%`,
-                                borderRadius: '3px',
-                                transition: 'width 0.3s ease'
-                            }}></div>
-                        </div>
-                        <div style={{
-                            fontSize: '10px',
-                            color: '#ef4444',
-                            marginTop: '4px'
-                        }}>
-                            ↑ Liquidation at 130%
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
+                )}
+            </div>
+            {addAssetModalPortal}
+        </>
     );
 };
 

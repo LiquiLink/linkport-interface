@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Asset, AssetAllocation } from '../utils/types';
 import { useAccount } from 'wagmi';
@@ -195,6 +196,133 @@ const MultiAssetSelector: React.FC<MultiAssetSelectorProps> = ({
     color: asset.color
   }));
 
+  let addAssetModalPortal: React.ReactPortal | null = null;
+  if (showAddAsset || addAssetModalActive) {
+    addAssetModalPortal = ReactDOM.createPortal(
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(255, 255, 255, 0.25)',
+          backdropFilter: showAddAsset ? 'blur(8px)' : 'blur(0px)',
+          WebkitBackdropFilter: showAddAsset ? 'blur(8px)' : 'blur(0px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          opacity: showAddAsset ? 1 : 0,
+          transition: 'opacity 0.2s, backdrop-filter 0.2s, -webkit-backdrop-filter 0.2s',
+        }}
+        onClick={() => setShowAddAsset(false)}
+      >
+        <div
+          style={{
+            background: 'rgba(255,255,255,0.7)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: '20px',
+            padding: '32px 24px',
+            width: '100%',
+            maxWidth: '480px',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            position: 'relative',
+            boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)',
+            margin: '0',
+            border: '1.5px solid var(--border-color)',
+            transform: showAddAsset ? 'scale(1)' : 'scale(0.96) translateY(20px)',
+            opacity: showAddAsset ? 1 : 0,
+            transition: 'opacity 0.2s, transform 0.2s',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-start',
+          }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '12px',
+            paddingBottom: '8px',
+            borderBottom: '1px solid var(--border-color)'
+          }}>
+            <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>Select Assets to Add</h3>
+            <button
+              onClick={() => setShowAddAsset(false)}
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: '18px',
+                cursor: 'pointer',
+                color: 'var(--secondary-text)',
+                padding: '2px',
+                borderRadius: '4px',
+                lineHeight: 1,
+                width: '24px',
+                height: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              ×
+            </button>
+          </div>
+          <div style={{ display: 'grid', gap: '6px' }}>
+            {availableAssets
+              .filter(asset => !selectedAssets.find(sa => sa.id === asset.id))
+              .map(asset => (
+                <div key={asset.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '10px',
+                    background: 'rgba(255, 255, 255, 0.8)',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    fontSize: '13px'
+                  }}
+                  onClick={() => addAsset(asset.id)}
+                  onMouseEnter={(e) => {
+                    const target = e.currentTarget as HTMLElement;
+                    target.style.background = 'rgba(59, 130, 246, 0.1)';
+                    target.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    const target = e.currentTarget as HTMLElement;
+                    target.style.background = 'rgba(255, 255, 255, 0.8)';
+                    target.style.borderColor = 'var(--border-color)';
+                  }}
+                >
+                  <div className="token-icon small">{asset.icon}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '13px', fontWeight: 600 }}>{asset.symbol}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--secondary-text)' }}>
+                      {asset.name}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 600 }}>
+                      Balance: {asset.balance}
+                    </div>
+                    <div style={{ fontSize: '10px', color: 'var(--secondary-text)' }}>
+                      ${(asset.balance * asset.price).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      </div>, document.body
+    );
+  }
+
   if (!selectedChain) {
     return (
       <div style={{ 
@@ -209,388 +337,268 @@ const MultiAssetSelector: React.FC<MultiAssetSelectorProps> = ({
   }
 
   return (
-    <div>
-      <div style={{
-        background: 'rgba(255, 255, 255, 0.9)',
-        borderRadius: '16px',
-        padding: '20px',
-        marginBottom: '20px',
-        backdropFilter: 'blur(10px)',
-        border: '1px solid var(--border-color)'
-      }}>
-        <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 600 }}>
-          Multi-Asset Borrowing Pool
-        </h3>
+    <>
+      <div>
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.9)',
+          borderRadius: '16px',
+          padding: '20px',
+          marginBottom: '20px',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid var(--border-color)'
+        }}>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 600 }}>
+            Multi-Asset Borrowing Pool
+          </h3>
 
-        {/* Selected Assets List */}
-        <div style={{ marginBottom: '16px' }}>
-          {selectedAssets.length === 0 ? (
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '40px 20px',
-              color: 'var(--secondary-text)',
-              fontSize: '14px'
-            }}>
-              <i className="fas fa-plus-circle" style={{ fontSize: '24px', marginBottom: '8px', opacity: 0.5 }}></i>
-              <div>Click the button below to add borrowing assets</div>
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gap: '12px' }}>
-              {selectedAssets.map((asset) => {
-                const assetInfo = availableAssets.find(a => a.id === asset.id);
-                return (
-                  <div key={asset.id} style={{
-                    background: 'rgba(255, 255, 255, 0.8)',
-                    borderRadius: '12px',
-                    padding: '16px',
-                    border: '1px solid var(--border-color)'
-                  }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      marginBottom: '12px'
+          {/* Selected Assets List */}
+          <div style={{ marginBottom: '16px' }}>
+            {selectedAssets.length === 0 ? (
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '40px 20px',
+                color: 'var(--secondary-text)',
+                fontSize: '14px'
+              }}>
+                <i className="fas fa-plus-circle" style={{ fontSize: '24px', marginBottom: '8px', opacity: 0.5 }}></i>
+                <div>Click the button below to add borrowing assets</div>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gap: '12px' }}>
+                {selectedAssets.map((asset) => {
+                  const assetInfo = availableAssets.find(a => a.id === asset.id);
+                  return (
+                    <div key={asset.id} style={{
+                      background: 'rgba(255, 255, 255, 0.8)',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      border: '1px solid var(--border-color)'
                     }}>
-                      <div
-                        style={{
-                          width: '12px',
-                          height: '12px',
-                          borderRadius: '50%',
-                          backgroundColor: asset.color
-                        }}
-                      ></div>
-                      <div className="token-icon small">{asset.symbol}</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '14px', fontWeight: 600 }}>{asset.symbol}</div>
-                        <div style={{ fontSize: '12px', color: 'var(--secondary-text)' }}>
-                          {assetInfo?.name}
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        marginBottom: '12px'
+                      }}>
+                        <div
+                          style={{
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            backgroundColor: asset.color
+                          }}
+                        ></div>
+                        <div className="token-icon small">{asset.symbol}</div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '14px', fontWeight: 600 }}>{asset.symbol}</div>
+                          <div style={{ fontSize: '12px', color: 'var(--secondary-text)' }}>
+                            {assetInfo?.name}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => removeAsset(asset.id)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--secondary-text)',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            borderRadius: '4px'
+                          }}
+                          onMouseEnter={(e) => {
+                            (e.target as HTMLElement).style.background = 'rgba(239, 68, 68, 0.1)';
+                            (e.target as HTMLElement).style.color = '#ef4444';
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.target as HTMLElement).style.background = 'none';
+                            (e.target as HTMLElement).style.color = 'var(--secondary-text)';
+                          }}
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </div>
+                      
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '12px', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          placeholder="Enter amount"
+                          value={inputValues[asset.id] || ''}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            
+                            // 严格的输入验证：只允许数字和小数点
+                            if (value === '' || /^[0-9]*\.?[0-9]*$/.test(value)) {
+                              // 额外检查：不允许多个小数点
+                              const dotCount = (value.match(/\./g) || []).length;
+                              if (dotCount <= 1) {
+                                // 更新显示值
+                                setInputValues(prev => ({ ...prev, [asset.id]: value }));
+                                
+                                // 更新实际数值
+                                const num = value === '' ? 0 : parseFloat(value) || 0;
+                                updateAssetAmount(asset.id, num);
+                              }
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            // 阻止危险字符的输入
+                            const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+                            const isNumber = /^[0-9]$/.test(e.key);
+                            const isDot = e.key === '.';
+                            
+                            if (!allowedKeys.includes(e.key) && !isNumber && !isDot) {
+                              e.preventDefault();
+                            }
+                            
+                            // 防止输入多个小数点
+                            if (isDot && (inputValues[asset.id] || '').includes('.')) {
+                              e.preventDefault();
+                            }
+                          }}
+                          style={{
+                            border: '1px solid var(--border-color)',
+                            borderRadius: '8px',
+                            padding: '8px 12px',
+                            fontSize: '14px',
+                            background: 'white',
+                            color: 'var(--text-color)'
+                          }}
+                          className="amount-input-placeholder"
+                        />
+                        <div style={{ textAlign: 'right', minWidth: '80px' }}>
+                          <div style={{ fontSize: '12px', fontWeight: 600 }}>
+                            ${asset.value.toFixed(2)}
+                          </div>
+                          <div style={{ fontSize: '10px', color: 'var(--secondary-text)' }}>
+                            {asset.percentage.toFixed(1)}%
+                          </div>
                         </div>
                       </div>
-                      <button
-                        onClick={() => removeAsset(asset.id)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: 'var(--secondary-text)',
-                          cursor: 'pointer',
-                          padding: '4px',
-                          borderRadius: '4px'
-                        }}
-                        onMouseEnter={(e) => {
-                          (e.target as HTMLElement).style.background = 'rgba(239, 68, 68, 0.1)';
-                          (e.target as HTMLElement).style.color = '#ef4444';
-                        }}
-                        onMouseLeave={(e) => {
-                          (e.target as HTMLElement).style.background = 'none';
-                          (e.target as HTMLElement).style.color = 'var(--secondary-text)';
-                        }}
-                      >
-                        <i className="fas fa-times"></i>
-                      </button>
                     </div>
-                    
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '12px', alignItems: 'center' }}>
-                      <input
-                        type="text"
-                        placeholder="Enter amount"
-                        value={inputValues[asset.id] || ''}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          
-                          // 严格的输入验证：只允许数字和小数点
-                          if (value === '' || /^[0-9]*\.?[0-9]*$/.test(value)) {
-                            // 额外检查：不允许多个小数点
-                            const dotCount = (value.match(/\./g) || []).length;
-                            if (dotCount <= 1) {
-                              // 更新显示值
-                              setInputValues(prev => ({ ...prev, [asset.id]: value }));
-                              
-                              // 更新实际数值
-                              const num = value === '' ? 0 : parseFloat(value) || 0;
-                              updateAssetAmount(asset.id, num);
-                            }
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          // 阻止危险字符的输入
-                          const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
-                          const isNumber = /^[0-9]$/.test(e.key);
-                          const isDot = e.key === '.';
-                          
-                          if (!allowedKeys.includes(e.key) && !isNumber && !isDot) {
-                            e.preventDefault();
-                          }
-                          
-                          // 防止输入多个小数点
-                          if (isDot && (inputValues[asset.id] || '').includes('.')) {
-                            e.preventDefault();
-                          }
-                        }}
-                        style={{
-                          border: '1px solid var(--border-color)',
-                          borderRadius: '8px',
-                          padding: '8px 12px',
-                          fontSize: '14px',
-                          background: 'white',
-                          color: 'var(--text-color)'
-                        }}
-                        className="amount-input-placeholder"
-                      />
-                      <div style={{ textAlign: 'right', minWidth: '80px' }}>
-                        <div style={{ fontSize: '12px', fontWeight: 600 }}>
-                          ${asset.value.toFixed(2)}
-                        </div>
-                        <div style={{ fontSize: '10px', color: 'var(--secondary-text)' }}>
-                          {asset.percentage.toFixed(1)}%
-                        </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          
+          {/* Add Asset Button */}
+          <button
+            onClick={() => setShowAddAsset(true)}
+            style={{
+              width: '100%',
+              padding: '12px',
+              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 51, 234, 0.1))',
+              border: '2px dashed rgba(59, 130, 246, 0.3)',
+              borderRadius: '12px',
+              color: 'var(--accent-color)',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 500,
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              (e.target as HTMLElement).style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(147, 51, 234, 0.15))';
+              (e.target as HTMLElement).style.borderColor = 'rgba(59, 130, 246, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              (e.target as HTMLElement).style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 51, 234, 0.1))';
+              (e.target as HTMLElement).style.borderColor = 'rgba(59, 130, 246, 0.3)';
+            }}
+          >
+            <i className="fas fa-plus" style={{ marginRight: '8px' }}></i>
+            Select Borrowing Assets
+          </button>
+
+          {/* Summary */}
+          {selectedAssets.length > 0 && (
+            <div style={{
+              marginTop: '16px',
+              padding: '12px',
+              background: 'rgba(59, 130, 246, 0.05)',
+              borderRadius: '12px',
+              border: '1px solid rgba(59, 130, 246, 0.1)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', color: 'var(--secondary-text)' }}>
+                  Total Borrowing Value
+                </span>
+                <span style={{ fontSize: '16px', fontWeight: 600, color: 'var(--accent-color)' }}>
+                  ${totalValue.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Pie Chart */}
+        {pieData.length > 0 && (
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.9)',
+            borderRadius: '16px',
+            padding: '20px',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid var(--border-color)'
+          }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 600 }}>
+              Asset Allocation Visualization
+            </h3>
+            
+            <div style={{ height: '200px', marginBottom: '16px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={40}
+                    outerRadius={80}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Legend */}
+            <div style={{ display: 'grid', gap: '8px' }}>
+              {pieData.map((entry) => {
+                const asset = selectedAssets.find(a => a.symbol === entry.name);
+                return (
+                  <div key={entry.name} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ 
+                        width: '12px',
+                        height: '12px',
+                        borderRadius: '50%',
+                        backgroundColor: entry.color
+                      }}></div>
+                      <span style={{ fontSize: '13px' }}>{entry.name}</span>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 600 }}>
+                        {entry.value.toFixed(1)}%
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--secondary-text)' }}>
+                        ${asset?.value.toFixed(2)}
                       </div>
                     </div>
                   </div>
                 );
               })}
             </div>
-          )}
-        </div>
-        
-        {/* Add Asset Button */}
-        <button
-          onClick={() => setShowAddAsset(true)}
-          style={{
-            width: '100%',
-            padding: '12px',
-            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 51, 234, 0.1))',
-            border: '2px dashed rgba(59, 130, 246, 0.3)',
-            borderRadius: '12px',
-            color: 'var(--accent-color)',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: 500,
-            transition: 'all 0.2s ease'
-          }}
-          onMouseEnter={(e) => {
-            (e.target as HTMLElement).style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(147, 51, 234, 0.15))';
-            (e.target as HTMLElement).style.borderColor = 'rgba(59, 130, 246, 0.5)';
-          }}
-          onMouseLeave={(e) => {
-            (e.target as HTMLElement).style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 51, 234, 0.1))';
-            (e.target as HTMLElement).style.borderColor = 'rgba(59, 130, 246, 0.3)';
-          }}
-        >
-          <i className="fas fa-plus" style={{ marginRight: '8px' }}></i>
-          Select Borrowing Assets
-        </button>
-
-        {/* Summary */}
-        {selectedAssets.length > 0 && (
-          <div style={{
-            marginTop: '16px',
-            padding: '12px',
-            background: 'rgba(59, 130, 246, 0.05)',
-            borderRadius: '12px',
-            border: '1px solid rgba(59, 130, 246, 0.1)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '13px', color: 'var(--secondary-text)' }}>
-                Total Borrowing Value
-              </span>
-              <span style={{ fontSize: '16px', fontWeight: 600, color: 'var(--accent-color)' }}>
-                ${totalValue.toFixed(2)}
-              </span>
-            </div>
           </div>
         )}
       </div>
-
-      {/* Pie Chart */}
-      {pieData.length > 0 && (
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.9)',
-          borderRadius: '16px',
-          padding: '20px',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid var(--border-color)'
-        }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 600 }}>
-            Asset Allocation Visualization
-          </h3>
-          
-          <div style={{ height: '200px', marginBottom: '16px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={40}
-                  outerRadius={80}
-                  paddingAngle={2}
-                  dataKey="value"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Legend */}
-          <div style={{ display: 'grid', gap: '8px' }}>
-            {pieData.map((entry) => {
-              const asset = selectedAssets.find(a => a.symbol === entry.name);
-              return (
-                <div key={entry.name} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ 
-                      width: '12px',
-                      height: '12px',
-                      borderRadius: '50%',
-                      backgroundColor: entry.color
-                    }}></div>
-                    <span style={{ fontSize: '13px' }}>{entry.name}</span>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '13px', fontWeight: 600 }}>
-                      {entry.value.toFixed(1)}%
-                    </div>
-                    <div style={{ fontSize: '11px', color: 'var(--secondary-text)' }}>
-                      ${asset?.value.toFixed(2)}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Add Asset Modal */}
-      {(showAddAsset || addAssetModalActive) && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(255, 255, 255, 0.25)',
-            backdropFilter: showAddAsset ? 'blur(8px)' : 'blur(0px)',
-            WebkitBackdropFilter: showAddAsset ? 'blur(8px)' : 'blur(0px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            opacity: showAddAsset ? 1 : 0,
-            transition: 'opacity 0.2s, backdrop-filter 0.2s, -webkit-backdrop-filter 0.2s',
-            padding: '60px 20px',
-          }}
-          onClick={() => setShowAddAsset(false)}
-        >
-          <div
-            style={{
-              background: 'rgba(255,255,255,0.7)',
-              backdropFilter: 'blur(20px)',
-              borderRadius: '20px',
-              padding: '16px',
-              width: '100%',
-              maxWidth: '360px',
-              maxHeight: '50vh',
-              overflowY: 'auto',
-              position: 'relative',
-              boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)',
-              margin: 'auto',
-              border: '1.5px solid var(--border-color)',
-              transform: showAddAsset ? 'scale(1)' : 'scale(0.96) translateY(20px)',
-              opacity: showAddAsset ? 1 : 0,
-              transition: 'opacity 0.2s, transform 0.2s',
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '12px',
-              paddingBottom: '8px',
-              borderBottom: '1px solid var(--border-color)'
-            }}>
-              <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>Select Assets to Add</h3>
-              <button
-                onClick={() => setShowAddAsset(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '18px',
-                  cursor: 'pointer',
-                  color: 'var(--secondary-text)',
-                  padding: '2px',
-                  borderRadius: '4px',
-                  lineHeight: 1,
-                  width: '24px',
-                  height: '24px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                ×
-              </button>
-            </div>
-            <div style={{ display: 'grid', gap: '6px' }}>
-              {availableAssets
-                .filter(asset => !selectedAssets.find(sa => sa.id === asset.id))
-                .map(asset => (
-                  <div key={asset.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '10px',
-                      background: 'rgba(255, 255, 255, 0.8)',
-                      borderRadius: '8px',
-                      border: '1px solid var(--border-color)',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      fontSize: '13px'
-                    }}
-                    onClick={() => addAsset(asset.id)}
-                    onMouseEnter={(e) => {
-                      const target = e.currentTarget as HTMLElement;
-                      target.style.background = 'rgba(59, 130, 246, 0.1)';
-                      target.style.borderColor = 'rgba(59, 130, 246, 0.3)';
-                    }}
-                    onMouseLeave={(e) => {
-                      const target = e.currentTarget as HTMLElement;
-                      target.style.background = 'rgba(255, 255, 255, 0.8)';
-                      target.style.borderColor = 'var(--border-color)';
-                    }}
-                  >
-                    <div className="token-icon small">{asset.icon}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '13px', fontWeight: 600 }}>{asset.symbol}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--secondary-text)' }}>
-                        {asset.name}
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '11px', fontWeight: 600 }}>
-                        Balance: {asset.balance}
-                      </div>
-                      <div style={{ fontSize: '10px', color: 'var(--secondary-text)' }}>
-                        ${(asset.balance * asset.price).toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      {addAssetModalPortal}
+    </>
   );
 };
 
