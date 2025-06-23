@@ -7,6 +7,7 @@ import { getUserAssetBalance, getBalance } from '../utils/balance';
 import { getUserPosition, getPoolTvl } from '../utils/pool';
 import { getMultipleAssetPrices, PriceData } from '../utils/priceService';
 import { formatUnits } from 'ethers';
+import { getTokenIconStyle } from '../utils/ui';
 
 interface Position {
     token: string;
@@ -450,11 +451,7 @@ const Portfolio: React.FC = () => {
                                                         border: `2px solid ${balanceNum > 0 ? 'rgba(34, 197, 94, 0.3)' : 'rgba(156, 163, 175, 0.3)'}`
                                                     }}>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                            <div className="token-icon placeholder" style={{
-                                                                background: pool.isNative ? '#f59e0b' : '#3b82f6'
-                                                            }}>
-                                                                {pool.name}
-                                                            </div>
+                                                            <div style={getTokenIconStyle(pool.name)}>{pool.name}</div>
                                                             <div>
                                                                 <div style={{
                                                                     fontSize: '15px',
