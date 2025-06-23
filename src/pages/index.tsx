@@ -16,6 +16,7 @@ import { getNetworkStatus, getProtocolStats, getCongestionColor, NetworkStatus, 
 import { useToast } from '../components/Toast';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther } from 'viem';
+import { getTokenIconStyle } from '../utils/ui';
 
 const Home: React.FC = () => {
     const [activeTab, setActiveTab] = useState('borrow');
@@ -542,6 +543,7 @@ const Home: React.FC = () => {
                                             }}
                                         />
                                         <div className="amount-value">${calculateUSDValue(collateralAmount)}</div>
+                                        <div style={getTokenIconStyle(collateralAsset?.icon || 'ETH')}>{collateralAsset?.icon || 'ETH'}</div>
                                         <div className="token-balance">
                                             <span>Balance: {collateralAsset ? collateralAsset.amount : '0'}</span>
                                             <button
@@ -757,6 +759,7 @@ const Home: React.FC = () => {
                                             }}
                                         />
                                         <div className="amount-value">${calculateUSDValue(bridgeAmount)}</div>
+                                        <div style={getTokenIconStyle(bridgeAsset?.icon || 'ETH')}>{bridgeAsset?.icon || 'ETH'}</div>
                                         <div className="token-balance">
                                             <span>Balance: {bridgeAsset ? bridgeAsset.amount : '0'}</span>
                                             <button

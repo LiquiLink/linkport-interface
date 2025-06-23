@@ -6,6 +6,7 @@ import { getUserAssetBalance } from '../utils/balance';
 import { formatUnits } from 'ethers';
 import { poolList } from '../config';
 import ReactDOM from 'react-dom';
+import { getTokenIconStyle } from '../utils/ui';
 
 interface MultiAssetSelectorProps {
   selectedChain: string;
@@ -247,7 +248,7 @@ const MultiAssetSelector: React.FC<MultiAssetSelectorProps> = ({
                           backgroundColor: asset.color
                         }}
                       ></div>
-                      <div className="token-icon small">{asset.symbol}</div>
+                      <div style={getTokenIconStyle(asset.symbol)}>{asset.symbol}</div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: '14px', fontWeight: 600 }}>{asset.symbol}</div>
                         <div style={{ fontSize: '12px', color: 'var(--secondary-text)' }}>
@@ -457,8 +458,7 @@ const MultiAssetSelector: React.FC<MultiAssetSelectorProps> = ({
       )}
 
       {/* Add Asset Modal */}
-      {showAddAsset && (
-        ReactDOM.createPortal(
+      {showAddAsset && (ReactDOM.createPortal(
           <div
             style={{
               position: 'fixed',
@@ -553,7 +553,7 @@ const MultiAssetSelector: React.FC<MultiAssetSelectorProps> = ({
                         target.style.borderColor = 'var(--border-color)';
                       }}
                     >
-                      <div className="token-icon small">{asset.icon}</div>
+                      <div style={getTokenIconStyle(asset.icon)}>{asset.icon}</div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: '13px', fontWeight: 600 }}>{asset.symbol}</div>
                         <div style={{ fontSize: '11px', color: 'var(--secondary-text)' }}>
@@ -572,7 +572,7 @@ const MultiAssetSelector: React.FC<MultiAssetSelectorProps> = ({
                   ))}
               </div>
             </div>
-          </div>, document.body)
+          </div>, document.body) as any
       )}
     </div>
   );

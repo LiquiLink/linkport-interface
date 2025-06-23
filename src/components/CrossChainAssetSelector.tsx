@@ -3,6 +3,37 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 import { Asset, AssetAllocation, CrossChainAssetSelectorProps } from '../utils/types';
 import ReactDOM from 'react-dom';
 
+const getTokenIconStyle = (symbol: string) => {
+    const baseStyle: React.CSSProperties = {
+      width: '36px',
+      height: '36px',
+      borderRadius: '50%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '13px',
+      fontWeight: 'bold',
+      color: 'white',
+      textTransform: 'uppercase',
+      background: '#7F8C8D' // Default background
+    };
+  
+    const themes: { [key: string]: { background: string } } = {
+      'USDC': { background: '#2775CA' },
+      'USDT': { background: '#50AF95' },
+      'DAI': { background: '#F5AC37' },
+      'WETH': { background: 'linear-gradient(135deg, #4D4D4D, #7F8C8D)' },
+      'WBTC': { background: 'linear-gradient(135deg, #F7931A, #FDB95D)' },
+      'LINK': { background: 'linear-gradient(135deg, #2A5ADA, #3B82F6)' },
+      'AAVE': { background: 'linear-gradient(135deg, #B6509E, #E069D4)' },
+      'UNI': { background: 'linear-gradient(135deg, #FF007A, #FF7A9F)' },
+      'ETH': { background: 'linear-gradient(135deg, #627EEA, #8A9FFF)' },
+      'BNB': { background: 'linear-gradient(135deg, #F3BA2F, #F8D06B)' },
+    };
+  
+    const theme = themes[(symbol || '').toUpperCase()];
+    return theme ? { ...baseStyle, ...theme } : baseStyle;
+  };
 
 const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({ 
     sourceChain, 
@@ -216,7 +247,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                     alignItems: 'center',
                     gap: '12px'
                 }}>
-                    <div className="token-icon placeholder">{sourceAsset?.icon || 'ETH'}</div>
+                    <div style={getTokenIconStyle(sourceAsset?.symbol || 'ETH')}>{sourceAsset?.symbol || 'ETH'}</div>
                     <div style={{ flex: 1 }}>
                         <div style={{ fontSize: '16px', fontWeight: 600 }}>
                             {sourceAmount} {sourceAsset?.symbol || 'ETH'}
@@ -283,7 +314,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                                         borderRadius: '50%',
                                         background: asset.color
                                     }}></div>
-                                    <div className="token-icon placeholder">{asset.symbol}</div>
+                                    <div style={getTokenIconStyle(asset.symbol)}>{asset.symbol}</div>
                                     <div style={{ flex: 1 }}>
                                         <div style={{ fontSize: '14px', fontWeight: 600 }}>{asset.symbol}</div>
                                         <div style={{ fontSize: '12px', color: 'var(--secondary-text)' }}>
@@ -352,8 +383,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                 </div>
 
                 {/* Add Asset Modal */}
-                {showAddAsset && (
-                  ReactDOM.createPortal(
+                {showAddAsset && (ReactDOM.createPortal(
                     <div style={{
                         position: 'fixed',
                         top: 0,
@@ -442,7 +472,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                                                 target.style.borderColor = 'var(--border-color)';
                                             }}
                                         >
-                                            <div className="token-icon small">{asset.icon}</div>
+                                            <div style={getTokenIconStyle(asset.icon)}>{asset.icon}</div>
                                             <div style={{ flex: 1 }}>
                                                 <div style={{ fontSize: '13px', fontWeight: 600 }}>{asset.symbol}</div>
                                                 <div style={{ fontSize: '11px', color: 'var(--secondary-text)' }}>
@@ -461,7 +491,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                                     ))}
                             </div>
                         </div>
-                    </div>, document.body)
+                    </div>, document.body) as any
                 )}
             </div>
 
