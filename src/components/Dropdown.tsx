@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { getTokenIconStyle } from '../utils/ui';
 
 interface DropdownOption {
     value: string;
@@ -59,7 +60,7 @@ const Dropdown: React.FC<DropdownProps> = ({
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {selectedOption?.icon && (
-                        <div className="token-icon placeholder">{selectedOption.icon}</div>
+                        <div style={getTokenIconStyle(selectedOption.icon)}>{selectedOption.icon}</div>
                     )}
                     <div style={{ fontSize: '16px', fontWeight: 500 }}>
                         {selectedOption ? selectedOption.label : placeholder}
@@ -116,7 +117,7 @@ const Dropdown: React.FC<DropdownProps> = ({
                             }}
                         >
                             {option.icon && (
-                                <div className="token-icon placeholder">{option.icon}</div>
+                                <div style={getTokenIconStyle(option.icon)}>{option.icon}</div>
                             )}
                             <div style={{ flex: 1 }}>
                                 <div style={{ fontSize: '15px', fontWeight: 500, color: 'var(--text-color)' }}>

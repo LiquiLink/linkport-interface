@@ -3,6 +3,37 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 import { Asset, AssetAllocation, CrossChainAssetSelectorProps } from '../utils/types';
 import ReactDOM from 'react-dom';
 
+const getTokenIconStyle = (symbol: string) => {
+    const baseStyle: React.CSSProperties = {
+      width: '36px',
+      height: '36px',
+      borderRadius: '50%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '13px',
+      fontWeight: 'bold',
+      color: 'white',
+      textTransform: 'uppercase',
+      background: '#7F8C8D' // Default background
+    };
+  
+    const themes: { [key: string]: { background: string } } = {
+      'USDC': { background: '#2775CA' },
+      'USDT': { background: '#50AF95' },
+      'DAI': { background: '#F5AC37' },
+      'WETH': { background: 'linear-gradient(135deg, #4D4D4D, #7F8C8D)' },
+      'WBTC': { background: 'linear-gradient(135deg, #F7931A, #FDB95D)' },
+      'LINK': { background: 'linear-gradient(135deg, #2A5ADA, #3B82F6)' },
+      'AAVE': { background: 'linear-gradient(135deg, #B6509E, #E069D4)' },
+      'UNI': { background: 'linear-gradient(135deg, #FF007A, #FF7A9F)' },
+      'ETH': { background: 'linear-gradient(135deg, #627EEA, #8A9FFF)' },
+      'BNB': { background: 'linear-gradient(135deg, #F3BA2F, #F8D06B)' },
+    };
+  
+    const theme = themes[(symbol || '').toUpperCase()];
+    return theme ? { ...baseStyle, ...theme } : baseStyle;
+  };
 
 const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({ 
     sourceChain, 
@@ -216,7 +247,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                     alignItems: 'center',
                     gap: '12px'
                 }}>
-                    <div className="token-icon placeholder">{sourceAsset?.icon || 'ETH'}</div>
+                    <div style={getTokenIconStyle(sourceAsset?.symbol || 'ETH')}>{sourceAsset?.symbol || 'ETH'}</div>
                     <div style={{ flex: 1 }}>
                         <div style={{ fontSize: '16px', fontWeight: 600 }}>
                             {sourceAmount} {sourceAsset?.symbol || 'ETH'}
@@ -248,10 +279,11 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                 <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '16px'
+                    alignItems: 'baseline',
+                    marginBottom: '16px',
+                    flexDirection: 'column'
                 }}>
-                    <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>
+                    <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>
                         Target Chain Bridge Assets ({getChainName(targetChain)})
                     </h4>
                     <button
@@ -283,7 +315,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                                         borderRadius: '50%',
                                         background: asset.color
                                     }}></div>
-                                    <div className="token-icon placeholder">{asset.symbol}</div>
+                                    <div style={getTokenIconStyle(asset.symbol)}>{asset.symbol}</div>
                                     <div style={{ flex: 1 }}>
                                         <div style={{ fontSize: '14px', fontWeight: 600 }}>{asset.symbol}</div>
                                         <div style={{ fontSize: '12px', color: 'var(--secondary-text)' }}>
@@ -352,8 +384,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                 </div>
 
                 {/* Add Asset Modal */}
-                {showAddAsset && (
-                  ReactDOM.createPortal(
+                {showAddAsset && (ReactDOM.createPortal(
                     <div style={{
                         position: 'fixed',
                         top: 0,
@@ -374,10 +405,10 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                             background: 'rgba(255, 255, 255, 0.95)',
                             backdropFilter: 'blur(20px)',
                             borderRadius: '16px',
-                            padding: '16px',
+                            padding: '20px',
                             width: '100%',
-                            maxWidth: '360px',
-                            maxHeight: '50vh',
+                            maxWidth: '420px',
+                            maxHeight: '60vh',
                             overflowY: 'auto',
                             position: 'relative',
                             boxShadow: '0 20px 50px rgba(0, 0, 0, 0.3)',
@@ -387,24 +418,24 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                                 display: 'flex',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
-                                marginBottom: '12px',
-                                paddingBottom: '8px',
+                                marginBottom: '16px',
+                                paddingBottom: '12px',
                                 borderBottom: '1px solid var(--border-color)'
                             }}>
-                                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>Select Bridge Assets</h3>
+                                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>Select Bridge Assets</h3>
                                 <button
                                     onClick={() => setShowAddAsset(false)}
                                     style={{
                                         background: 'none',
                                         border: 'none',
-                                        fontSize: '18px',
+                                        fontSize: '22px',
                                         cursor: 'pointer',
                                         color: 'var(--secondary-text)',
                                         padding: '2px',
                                         borderRadius: '4px',
                                         lineHeight: 1,
-                                        width: '24px',
-                                        height: '24px',
+                                        width: '28px',
+                                        height: '28px',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center'
@@ -413,7 +444,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                                     ×
                                 </button>
                             </div>
-                            <div style={{ display: 'grid', gap: '6px' }}>
+                            <div style={{ display: 'grid', gap: '8px' }}>
                                 {availableTargetAssets
                                     .filter(asset => !targetAssets.find(ta => ta.id === asset.id))
                                     .map(asset => (
@@ -421,14 +452,13 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                                             style={{
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                gap: '10px',
-                                                padding: '10px',
+                                                gap: '12px',
+                                                padding: '12px',
                                                 background: 'rgba(255, 255, 255, 0.8)',
-                                                borderRadius: '8px',
+                                                borderRadius: '10px',
                                                 border: '1px solid var(--border-color)',
                                                 cursor: 'pointer',
                                                 transition: 'all 0.2s ease',
-                                                fontSize: '13px'
                                             }}
                                             onClick={() => addTargetAsset(asset.id)}
                                             onMouseEnter={(e) => {
@@ -442,26 +472,26 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                                                 target.style.borderColor = 'var(--border-color)';
                                             }}
                                         >
-                                            <div className="token-icon small">{asset.icon}</div>
+                                            <div style={getTokenIconStyle(asset.icon)}>{asset.icon}</div>
                                             <div style={{ flex: 1 }}>
-                                                <div style={{ fontSize: '13px', fontWeight: 600 }}>{asset.symbol}</div>
-                                                <div style={{ fontSize: '11px', color: 'var(--secondary-text)' }}>
+                                                <div style={{ fontSize: '15px', fontWeight: 600 }}>{asset.symbol}</div>
+                                                <div style={{ fontSize: '13px', color: 'var(--secondary-text)' }}>
                                                     {asset.name}
                                                 </div>
                                             </div>
                                             <div style={{ textAlign: 'right' }}>
-                                                <div style={{ fontSize: '11px', fontWeight: 600 }}>
-                                                    Available: {asset.balance}
+                                                <div style={{ fontSize: '13px', fontWeight: 600 }}>
+                                                    Available: {parseFloat(asset.balance).toFixed(2)}
                                                 </div>
-                                                <div style={{ fontSize: '10px', color: 'var(--secondary-text)' }}>
-                                                    ${(parseFloat(asset.balance) * asset.price).toLocaleString()}
+                                                <div style={{ fontSize: '12px', color: 'var(--secondary-text)' }}>
+                                                    ${(parseFloat(asset.balance) * asset.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </div>
                                             </div>
                                         </div>
                                     ))}
                             </div>
                         </div>
-                    </div>, document.body)
+                    </div>, document.body) as any
                 )}
             </div>
 
