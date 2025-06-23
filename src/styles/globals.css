@@ -25,6 +25,7 @@
   margin: 0;
   padding: 0;
   font-family: 'Inter', sans-serif;
+  scrollbar-width: none; /* For Firefox */
 }
 
 body {
@@ -37,6 +38,7 @@ body {
   padding-top: 80px;
   overflow-x: hidden;
   width: 100vw;
+  -ms-overflow-style: none; /* For Internet Explorer and Edge */
 }
 
 .container {
@@ -597,23 +599,9 @@ body {
   color: var(--error-color);
 }
 
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
+/* Scrollbar Styling - Hides scrollbars */
+*::-webkit-scrollbar {
+    display: none;
 }
 
 /* Custom global styles can be added below */
