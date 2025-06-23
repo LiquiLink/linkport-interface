@@ -58,24 +58,24 @@ const WalletConnect: React.FC = () => {
                 {isConnected && address ? (
                     <>
                         <button
-                            className="text-white hover:underline"
+                            className=""
                             onClick={handleCopy}
                             title={address}
+                            style={{ color: 'var(--accent-color)', background: 'none', border: 'none', fontWeight: 600 }}
                         >
-
-                        {networkName && (
-                            <span className="text-xs text-white ml-2">
-                                {networkName}
-                            </span>
-                        )}
+                            {networkName && (
+                                <span className="text-xs ml-2" style={{ color: 'var(--secondary-text)' }}>
+                                    {networkName}
+                                </span>
+                            )}
                             : {address.slice(0, 6)}...{address.slice(-6)}
                         </button>
                         {copied && (
-                            <span className="text-xs text-blue-500 ml-2">Copied!</span>
+                            <span className="text-xs ml-2" style={{ color: 'var(--accent-color)' }}>Copied!</span>
                         )}
                         <button
                             onClick={() => disconnect()}
-                            className="bg-red-500 text-white px-2 py-1 rounded text-xs"
+                            style={{ background: 'var(--error-color)', color: 'white', padding: '2px 8px', borderRadius: '6px', fontSize: '12px', border: 'none' }}
                         >
                             Disconnect
                         </button>
@@ -84,7 +84,7 @@ const WalletConnect: React.FC = () => {
                     <>
                         <button
                             onClick={() => setShowModal(true)}
-                            className="bg-blue-500 text-white px-4 py-2 rounded"
+                            style={{ background: 'var(--accent-color)', color: 'white', padding: '8px 16px', borderRadius: '8px', border: 'none', fontWeight: 500 }}
                         >
                             Connect Wallet
                         </button>
@@ -96,16 +96,16 @@ const WalletConnect: React.FC = () => {
                                         onClick={() => setShowModal(false)}
                                         className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl font-bold"
                                         aria-label="Close"
-                                        style={{ lineHeight: 1 }}
+                                        style={{ lineHeight: 1, color: 'var(--secondary-text)', background: 'none', border: 'none' }}
                                     >
                                         ×
                                     </button>
-                                    <Dialog.Title className="font-bold mb-2 mt-2">Select Wallet</Dialog.Title>
+                                    <Dialog.Title className="font-bold mb-2 mt-2" style={{ color: 'var(--text-color)' }}>Select Wallet</Dialog.Title>
                                     {connectorOptions.map((option) => (
                                         <button
                                             key={option.name}
                                             onClick={() => handleConnect(option.connector, option.name)}
-                                            className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded text-left w-full mb-2"
+                                            style={{ background: 'var(--input-background)', color: 'var(--text-color)', padding: '8px 16px', borderRadius: '8px', border: 'none', textAlign: 'left', width: '100%', marginBottom: '8px', fontWeight: 500, opacity: connecting ? 0.7 : 1 }}
                                             disabled={!!connecting}
                                         >
                                             {connecting === option.name
@@ -114,7 +114,7 @@ const WalletConnect: React.FC = () => {
                                         </button>
                                     ))}
                                     {error && (
-                                        <span className="text-red-500 text-xs mt-2">{error.message}</span>
+                                        <span className="text-xs mt-2" style={{ color: 'var(--error-color)' }}>{error.message}</span>
                                     )}
                                 </Dialog.Panel>
                             </div>
