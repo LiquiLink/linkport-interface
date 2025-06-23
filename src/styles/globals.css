@@ -520,7 +520,7 @@ body {
 
 @media (max-width: 768px) {
   .container {
-    padding: 12px;
+    padding: 32px 12px 12px 12px;
   }
   
   .tab-navigation {
@@ -536,12 +536,24 @@ body {
   }
   
   body {
-    padding-top: 70px;
+    padding-top: 100px;
   }
   
   .portfolio-summary {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  body {
+    padding-top: 120px;
+  }
+  .container {
+    padding-top: 20px;
+  }
+  .quick-actions-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -639,11 +651,5 @@ body {
 @media (max-width: 900px) {
   .quick-actions-grid {
     grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 600px) {
-  .quick-actions-grid {
-    grid-template-columns: 1fr;
   }
 }
