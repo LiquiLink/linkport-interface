@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Layout from '../components/Layout';
 import { BigNumberish, ethers, formatUnits } from 'ethers';
 import { useAccount, useChainId, useReadContract, useWriteContract } from 'wagmi';
@@ -36,6 +36,11 @@ const Pools: React.FC = () => {
     const [userBalances, setUserBalances] = useState<{[key: string]: string}>({});
     const [assetPrices, setAssetPrices] = useState<{[key: string]: any}>({});
     const [isApproving, setIsApproving] = useState<boolean>(false);
+    // Animation states for modals
+    const [depositModalActive, setDepositModalActive] = useState(false);
+    const [withdrawModalActive, setWithdrawModalActive] = useState(false);
+    const depositTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const withdrawTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Use transaction creation hooks
     const { 
@@ -121,8 +126,6 @@ const Pools: React.FC = () => {
         const value = parseFloat(amount) * priceData.price;
         return formatCurrency(value);
     };
-
-
 
     const handleDeposit = async () => {
         if (!selectedPool || !depositAmount || !address) return;
@@ -319,6 +322,29 @@ const Pools: React.FC = () => {
             default: return 'Unknown Network';
         }
     };
+
+    // Modal animation effect for Deposit
+    useEffect(() => {
+        if (isDepositModalOpen) {
+            setDepositModalActive(true);
+        } else if (depositModalActive) {
+            depositTimeoutRef.current = setTimeout(() => setDepositModalActive(false), 200);
+        }
+        return () => {
+            if (depositTimeoutRef.current) clearTimeout(depositTimeoutRef.current);
+        };
+    }, [isDepositModalOpen]);
+    // Modal animation effect for Withdraw
+    useEffect(() => {
+        if (isWithdrawModalOpen) {
+            setWithdrawModalActive(true);
+        } else if (withdrawModalActive) {
+            withdrawTimeoutRef.current = setTimeout(() => setWithdrawModalActive(false), 200);
+        }
+        return () => {
+            if (withdrawTimeoutRef.current) clearTimeout(withdrawTimeoutRef.current);
+        };
+    }, [isWithdrawModalOpen]);
 
     // 防止hydration错误
     if (!isClient) {
@@ -559,35 +585,47 @@ const Pools: React.FC = () => {
                 </div>
 
                 {/* Deposit Modal */}
-                {isDepositModalOpen && selectedPool && (
-                    <div style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 1000
-                    }} onClick={() => {
-                        setIsDepositModalOpen(false);
-                        setDepositAmount('');
-                        setIsApproving(false);
-                    }}>
-                        <div style={{
-                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                            backdropFilter: 'blur(20px)',
-                            borderRadius: '20px',
-                            padding: '24px',
-                            width: '400px',
-                            maxWidth: '90vw',
-                            position: 'relative',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
-                            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)'
-                        }} onClick={(e) => e.stopPropagation()}>
-                            
+                {(isDepositModalOpen || depositModalActive) && selectedPool && (
+                    <div
+                        style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: 'rgba(255, 255, 255, 0.25)',
+                            backdropFilter: isDepositModalOpen ? 'blur(8px)' : 'blur(0px)',
+                            WebkitBackdropFilter: isDepositModalOpen ? 'blur(8px)' : 'blur(0px)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 1000,
+                            opacity: isDepositModalOpen ? 1 : 0,
+                            transition: 'opacity 0.2s ease, backdrop-filter 0.2s, -webkit-backdrop-filter 0.2s',
+                        }}
+                        onClick={() => {
+                            setIsDepositModalOpen(false);
+                            setDepositAmount('');
+                            setIsApproving(false);
+                        }}
+                    >
+                        <div
+                            className="glass-card"
+                            style={{
+                                maxWidth: '400px',
+                                width: '90%',
+                                margin: '20px',
+                                boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)',
+                                border: '1.5px solid var(--border-color)',
+                                background: 'rgba(255,255,255,0.7)',
+                                borderRadius: '20px',
+                                position: 'relative',
+                                transform: isDepositModalOpen ? 'scale(1)' : 'scale(0.96) translateY(20px)',
+                                opacity: isDepositModalOpen ? 1 : 0,
+                                transition: 'opacity 0.2s, transform 0.2s',
+                            }}
+                            onClick={e => e.stopPropagation()}
+                        >
                             {/* Close Button */}
                             <button
                                 onClick={() => {
@@ -757,34 +795,46 @@ const Pools: React.FC = () => {
                 )}
 
                 {/* Withdraw Modal */}
-                {isWithdrawModalOpen && selectedPool && (
-                    <div style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 1000
-                    }} onClick={() => {
-                        setIsWithdrawModalOpen(false);
-                        setWithdrawAmount('');
-                    }}>
-                        <div style={{
-                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                            backdropFilter: 'blur(20px)',
-                            borderRadius: '20px',
-                            padding: '24px',
-                            width: '400px',
-                            maxWidth: '90vw',
-                            position: 'relative',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
-                            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)'
-                        }} onClick={(e) => e.stopPropagation()}>
-                            
+                {(isWithdrawModalOpen || withdrawModalActive) && selectedPool && (
+                    <div
+                        style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: 'rgba(255, 255, 255, 0.25)',
+                            backdropFilter: isWithdrawModalOpen ? 'blur(8px)' : 'blur(0px)',
+                            WebkitBackdropFilter: isWithdrawModalOpen ? 'blur(8px)' : 'blur(0px)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 1000,
+                            opacity: isWithdrawModalOpen ? 1 : 0,
+                            transition: 'opacity 0.2s ease, backdrop-filter 0.2s, -webkit-backdrop-filter 0.2s',
+                        }}
+                        onClick={() => {
+                            setIsWithdrawModalOpen(false);
+                            setWithdrawAmount('');
+                        }}
+                    >
+                        <div
+                            className="glass-card"
+                            style={{
+                                maxWidth: '400px',
+                                width: '90%',
+                                margin: '20px',
+                                boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)',
+                                border: '1.5px solid var(--border-color)',
+                                background: 'rgba(255,255,255,0.7)',
+                                borderRadius: '20px',
+                                position: 'relative',
+                                transform: isWithdrawModalOpen ? 'scale(1)' : 'scale(0.96) translateY(20px)',
+                                opacity: isWithdrawModalOpen ? 1 : 0,
+                                transition: 'opacity 0.2s, transform 0.2s',
+                            }}
+                            onClick={e => e.stopPropagation()}
+                        >
                             {/* Close Button */}
                             <button
                                 onClick={() => {
