@@ -900,8 +900,8 @@ const Home: React.FC = () => {
                 </div>
 
                 {/* Right Panel - Network & Fee Information */}
-                <div className="info-panel">
-                    <div className="glass-card info-card">
+                <div className="info-panel glass-card info-card">
+                    <div className="">
                         <div style={{
                             display: 'flex',
                             justifyContent: 'space-between',
