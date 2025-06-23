@@ -279,10 +279,11 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                 <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '16px'
+                    alignItems: 'baseline',
+                    marginBottom: '16px',
+                    flexDirection: 'column'
                 }}>
-                    <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>
+                    <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>
                         Target Chain Bridge Assets ({getChainName(targetChain)})
                     </h4>
                     <button
