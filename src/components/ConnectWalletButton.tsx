@@ -17,6 +17,7 @@ const WalletConnect: React.FC = () => {
     const [showModal, setShowModal] = useState(false);
     const [connecting, setConnecting] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
+    const [copyPopup, setCopyPopup] = useState(false);
 
     const jwt = typeof window !== 'undefined' ? localStorage.getItem('jwt') || '' : '';
 
@@ -35,7 +36,11 @@ const WalletConnect: React.FC = () => {
         if (address) {
             await navigator.clipboard.writeText(address);
             setCopied(true);
-            setTimeout(() => setCopied(false), 1200);
+            setCopyPopup(true);
+            setTimeout(() => {
+                setCopied(false);
+                setCopyPopup(false);
+            }, 1200);
         }
     };
 
@@ -53,7 +58,7 @@ const WalletConnect: React.FC = () => {
     if (!mounted) return null; 
 
     return (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2" style={{ position: 'relative' }}>
             <div className="flex items-center gap-2">
                 {isConnected && address ? (
                     <>
@@ -70,8 +75,25 @@ const WalletConnect: React.FC = () => {
                             )}
                             : {address.slice(0, 6)}...{address.slice(-6)}
                         </button>
-                        {copied && (
-                            <span className="text-xs ml-2" style={{ color: 'var(--accent-color)' }}>Copied!</span>
+                        {copyPopup && (
+                            <div style={{
+                                position: 'fixed',
+                                top: '80px',
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                background: 'var(--success-color)',
+                                color: 'white',
+                                padding: '10px 24px',
+                                borderRadius: '10px',
+                                fontWeight: 600,
+                                fontSize: '16px',
+                                boxShadow: '0 2px 12px rgba(0,0,0,0.10)',
+                                zIndex: 2000,
+                                opacity: 1,
+                                transition: 'opacity 0.3s',
+                            }}>
+                                Copied!
+                            </div>
                         )}
                         <button
                             onClick={() => disconnect()}
