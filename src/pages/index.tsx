@@ -585,7 +585,8 @@ const Home: React.FC = () => {
 
                             {/* Cross-chain Info */}
                             <div style={{
-                                background: 'rgba(255, 255, 255, 0.6)',
+                                background: 'rgba(255, 255, 255, 0.15)',
+                                backdropFilter: 'blur(8px)',
                                 borderRadius: '12px',
                                 padding: '12px',
                                 marginBottom: '16px'
@@ -801,7 +802,8 @@ const Home: React.FC = () => {
                             {/* Bridge Info */}
                             {bridgeTargetChain && (
                                 <div style={{
-                                    background: 'rgba(255, 255, 255, 0.6)',
+                                    background: 'rgba(255, 255, 255, 0.15)',
+                                    backdropFilter: 'blur(8px)',
                                     borderRadius: '12px',
                                     padding: '12px',
                                     marginBottom: '16px'
@@ -930,7 +932,8 @@ const Home: React.FC = () => {
 
                         {/* Network Status */}
                         <div style={{
-                            background: 'rgba(255, 255, 255, 0.6)',
+                            background: 'rgba(255, 255, 255, 0.15)',
+                            backdropFilter: 'blur(8px)',
                             borderRadius: '12px',
                             padding: '16px',
                             marginBottom: '16px'
@@ -964,7 +967,8 @@ const Home: React.FC = () => {
 
                         {/* Fee Breakdown */}
                         <div style={{
-                            background: 'rgba(255, 255, 255, 0.6)',
+                            background: 'rgba(255, 255, 255, 0.15)',
+                            backdropFilter: 'blur(8px)',
                             borderRadius: '12px',
                             padding: '16px',
                             marginBottom: '16px'
@@ -1011,7 +1015,8 @@ const Home: React.FC = () => {
 
                         {/* Protocol Stats */}
                         <div style={{
-                            background: 'rgba(255, 255, 255, 0.6)',
+                            background: 'rgba(255, 255, 255, 0.15)',
+                            backdropFilter: 'blur(8px)',
                             borderRadius: '12px',
                             padding: '16px'
                         }}>
