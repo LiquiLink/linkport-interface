@@ -20,11 +20,11 @@ const Navigation: React.FC = () => {
       left: 0,
       right: 0,
       zIndex: 1000,
-      background: 'rgba(255, 255, 255, 0.1)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-      borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+      background: 'white',
+      boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+      borderBottom: '1px solid #ececec',
       padding: '16px 0',
+      transition: 'background 0.2s',
     }}>
       <div style={{
         maxWidth: '1200px',
@@ -37,7 +37,7 @@ const Navigation: React.FC = () => {
         <div style={{
           fontSize: '24px',
           fontWeight: 700,
-          color: 'white',
+          color: 'var(--accent-color)',
           letterSpacing: '0.5px',
         }}>
           LINKPORT
@@ -56,12 +56,12 @@ const Navigation: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                color: router.pathname === item.href ? 'white' : 'rgba(255, 255, 255, 0.8)',
+                color: router.pathname === item.href ? 'var(--accent-color)' : '#222',
                 textDecoration: 'none',
                 fontWeight: 500,
                 padding: '8px 16px',
                 borderRadius: '12px',
-                background: router.pathname === item.href ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                background: router.pathname === item.href ? 'rgba(65, 102, 245, 0.08)' : 'transparent',
                 transition: 'all 0.2s ease',
                 fontSize: '16px',
               }}
