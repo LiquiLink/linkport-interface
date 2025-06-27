@@ -1,6 +1,8 @@
 import { readContract } from 'wagmi/actions';
-import { config } from '../config';
-import { sepolia, bscTestnet } from 'wagmi/chains';
+import { config, linkPorts } from '../config';
+import { sepolia, bscTestnet, bsc } from 'wagmi/chains';
+import  LinkPortABI  from '../abi/LinkPort.json';
+import  ERC20ABI from '../abi/ERC20.json';
 
 // Chainlink Price Feed ABI (只需要latestRoundData函数)
 const CHAINLINK_ABI = [
@@ -43,9 +45,47 @@ export const PRICE_FEEDS = {
 
 export interface PriceData {
   price: number;
-  timestamp: number;
+  timestamp?: number;
   decimals: number;
-  symbol: string;
+  symbol?: string;
+}
+
+export async function getAssetPriceFromPort(token: string, chainId: any): Promise<PriceData | null> {
+  try {
+
+    const linkPortAddress = chainId == 97 ? linkPorts[bscTestnet.id] : linkPorts[sepolia.id];
+    const callChainId = chainId == 97 ? bscTestnet.id : sepolia.id;
+
+    console.log("getAssetPriceFromPort", token, chainId, linkPortAddress);
+    const price = await readContract(config, {
+      address: linkPortAddress as `0x${string}`,
+      abi: LinkPortABI,
+      functionName: 'getTokenPrice',
+      args: [token],
+      chainId: callChainId,
+    });
+
+    const decimals = await readContract(config, {
+        address: token as `0x${string}`,
+        abi: ERC20ABI,
+        functionName: 'decimals',
+        chainId: callChainId,
+      })
+
+
+    const priceDecimals = decimals as number;
+    
+    return {
+      price:  Number(price),
+      decimals: priceDecimals,
+    };
+    
+  } catch (error) {
+    return {
+      price: 0,
+      decimals: 18
+    };
+  }
 }
 
 export async function getAssetPrice(symbol: string, chainId: number): Promise<PriceData | null> {
@@ -113,6 +153,21 @@ function getMockPrice(symbol: string): PriceData {
     decimals: 8,
     symbol
   };
+}
+
+export async function getMultipleAssetPricesFromPort(tokens: string[], chainId: number): Promise<Record<string, PriceData>> {
+  const pricePromises = tokens.map(token => 
+    getAssetPriceFromPort(token, chainId).then(price => ({ token , price }))
+  );
+  
+  const results = await Promise.all(pricePromises);
+  
+  return results.reduce((acc, { token , price }) => {
+    if (price) {
+      acc[token] = price;
+    }
+    return acc;
+  }, {} as Record<string, PriceData>);
 }
 
 // 批量获取多个资产价格

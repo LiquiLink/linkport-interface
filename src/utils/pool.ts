@@ -1,7 +1,9 @@
-import { readContract } from 'wagmi/actions';
+import { readContract, writeContract } from 'wagmi/actions';
 import LiquidityPoolABI from '../abi/LiquidityPool.json';
-import { config } from '../config';
+import linkPortABI from '../abi/LinkPort.json';
+import { config, linkPorts, chainSelector } from '../config';
 import { BigNumberish } from 'ethers';
+import { sepolia, bscTestnet } from 'wagmi/chains';
 import { getBalance, getTotalSupply } from './balance';
 
 
@@ -33,3 +35,23 @@ export async function getUserPosition(pool: any, user: any) : Promise<BigNumberi
     return userPosition as BigNumberish;
 }
 
+
+export async function loan(chainId: any, collateralToken: string, collateralAmount: BigNumberish, loanToken: string[], loanAmount: BigNumberish[]) : Promise<void> {
+    console.log("loan", chainId, collateralToken, collateralAmount, loanToken, loanAmount);
+
+    const linkPort = chainId == sepolia.id ? linkPorts[sepolia.id] : linkPorts[bscTestnet.id];
+    const destChainSelector = sepolia.id ? chainSelector[sepolia.id] : chainSelector[bscTestnet.id];
+    try {
+        const tx = await writeContract(config, {
+            address: linkPort as `0x${string}`,
+            abi: linkPortABI,
+            functionName: 'loan',
+            args: [destChainSelector, collateralToken, collateralAmount, loanToken, loanAmount],
+            chainId: chainId,
+        });
+        
+        console.log("Loan transaction sent:", tx);
+    } catch (error) {
+        console.error("Error executing loan:", error);
+    }
+}

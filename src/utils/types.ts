@@ -12,6 +12,7 @@ export interface AssetAllocation {
     symbol: string;
     amount: number;
     value: number;
+    token: string,
     percentage: number;
     color: string;
 }

@@ -6,12 +6,12 @@ import { bsc, bscTestnet, sepolia } from 'wagmi/chains';
 import { useAccount, useChainId, useProof } from 'wagmi';
 import Dropdown from '../components/Dropdown';
 import { poolList } from '../config';
-import { getUserPosition } from '@/utils/pool';
+import { getUserPosition, loan } from '@/utils/pool';
 import { getUserAssetBalance } from '../utils/balance';
 import { formatUnits } from 'ethers';
 import { format } from 'path';
 import { Asset, AssetAllocation } from '../utils/types';
-import { getAssetPrice, getMultipleAssetPrices, formatPrice, PriceData } from '../utils/priceService';
+import { getAssetPrice, getAssetPriceFromPort, getMultipleAssetPrices, formatPrice, PriceData, getMultipleAssetPricesFromPort } from '../utils/priceService';
 import { getNetworkStatus, getProtocolStats, getCongestionColor, NetworkStatus, ProtocolStats } from '../utils/networkService';
 import { useToast } from '../components/Toast';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
@@ -66,11 +66,9 @@ const Home: React.FC = () => {
             if (address) {
                 try {
                     // Get user's raw asset balance, not liquidity pool shares
-                    balance = await getUserAssetBalance(
-                        pool.address, 
+                    balance = await getUserPosition(
+                        pool, 
                         address, 
-                        pool.chainId, 
-                        pool.isNative // If native ETH/BNB, use native balance reading
                     );
                     console.log(`User ${pool.name} balance:`, balance);
                 } catch (error) {
@@ -83,6 +81,7 @@ const Home: React.FC = () => {
                 value: pool.id,
                 label: pool.name,
                 icon: pool.name.toUpperCase(),
+                token: pool.address,
                 balance: balance,
                 amount: balance ? formatUnits(balance, 18) : '0',
                 description: `${pool.name} - Available: ${balance ? formatUnits(balance, 18).slice(0, 6) : '0'}`
@@ -124,11 +123,9 @@ const Home: React.FC = () => {
             let balance = null;
             if (address) {
                 try {
-                    balance = await getUserAssetBalance(
-                        pool.address, 
+                    balance = await getUserPosition(
+                        pool, 
                         address, 
-                        pool.chainId, 
-                        pool.isNative
                     );
                     console.log(`User bridge ${pool.name} balance:`, balance);
                 } catch (error) {
@@ -137,6 +134,7 @@ const Home: React.FC = () => {
                 }
             }
             
+            /*
             // Get price for the asset
             const getAssetPrice = (assetName: string) => {
                 switch(assetName.toUpperCase()) {
@@ -149,6 +147,7 @@ const Home: React.FC = () => {
                     default: return 1;
                 }
             };
+            */
             
             return {
                 value: pool.id,
@@ -156,7 +155,7 @@ const Home: React.FC = () => {
                 icon: pool.name.toUpperCase(),
                 balance: balance,
                 amount: balance ? formatUnits(balance, 18) : '0',
-                price: getAssetPrice(pool.name), // Add price field
+                //price: await getAssetPriceFromPort(pool.address, pool.chainId), // Add price field
                 description: `${pool.name} - Available: ${balance ? formatUnits(balance, 18).slice(0, 6) : '0'}`
             };
         });
@@ -188,11 +187,20 @@ const Home: React.FC = () => {
     // Get price data
     useEffect(() => {
         async function loadAssetPrices() {
-            if (sourceChain) {
-                const symbols = ['ETH', 'LINK', 'USDT', 'BNB'];
-                const prices = await getMultipleAssetPrices(symbols, parseInt(sourceChain));
-                setAssetPrices(prices);
-            }
+            const pircePromises = poolList.map(async (pool) => {
+                const token = pool.address
+                return getAssetPriceFromPort(token, pool.chainId).then(price => ({ token, price }))
+            })
+           const results = await Promise.all(pircePromises);
+  
+           const assetPrices = results.reduce((acc, { token , price }) => {
+               if (price) {
+                   acc[token] = price;
+               }
+               return acc;
+           }, {} as Record<string, PriceData>);
+           console.log("Asset Prices:", assetPrices);
+           setAssetPrices(assetPrices)
         }
         loadAssetPrices();
     }, [sourceChain]);
@@ -260,10 +268,10 @@ const Home: React.FC = () => {
         });
     };
 
-    const calculateUSDValue = (amount: string, asset: string = 'ETH') => {
+    const calculateUSDValue = (amount: string, asset: string) => {
         const value = parseFloat(amount) || 0;
-        const priceData = assetPrices[asset];
-        const price = priceData ? priceData.price : (asset === 'ETH' ? 3000 : 1);
+        const priceData = assetPrices[collateralAsset.token];
+        const price = priceData ? priceData.price : 0;
         return (value * price).toFixed(2);
     };
 
@@ -344,14 +352,17 @@ const Home: React.FC = () => {
                 targetChain: getChainName(targetChain),
                 collateralAsset: collateralAsset?.label,
                 collateralAmount,
-                collateralValue: calculateUSDValue(collateralAmount, collateralAsset?.label || 'USDT'),
+                collateralValue: calculateUSDValue(collateralAmount, collateralAsset.token),
                 selectedAssets,
                 totalBorrowValue: selectedAssets.reduce((sum, asset) => sum + asset.value, 0),
                 healthFactor: calculateHealthFactor()
             });
 
+
             // Show processing notification
             showToast('Transaction processing...', 'info', { autoClose: false });
+
+            loan(chainId, collateralAsset.token, parseEther(collateralAmount), selectedAssets.map(asset => asset.token), selectedAssets.map(asset => parseEther(asset.amount + '')));
 
             // Get collateral smart contract information
             const poolData = poolList.find(pool => 
@@ -517,17 +528,17 @@ const Home: React.FC = () => {
                                             value={collateralAmount}
                                             onChange={(e) => {
                                                 const value = e.target.value;
-                                                // 严格的输入验证：只允许数字和小数点
                                                 if (value === '' || /^[0-9]*\.?[0-9]*$/.test(value)) {
-                                                    // 额外检查：不允许多个小数点
                                                     const dotCount = (value.match(/\./g) || []).length;
                                                     if (dotCount <= 1) {
-                                                        setCollateralAmount(value);
+                                                        if (value < collateralAsset.amount)
+                                                            setCollateralAmount(value);
+                                                        else 
+                                                            showToast('Insufficient collateral balance', 'warning');
                                                     }
                                                 }
                                             }}
                                             onKeyDown={(e) => {
-                                                // 阻止危险字符的输入
                                                 const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
                                                 const isNumber = /^[0-9]$/.test(e.key);
                                                 const isDot = e.key === '.';
@@ -536,7 +547,6 @@ const Home: React.FC = () => {
                                                     e.preventDefault();
                                                 }
                                                 
-                                                // 防止输入多个小数点
                                                 if (isDot && collateralAmount.includes('.')) {
                                                     e.preventDefault();
                                                 }
@@ -579,7 +589,7 @@ const Home: React.FC = () => {
                             {/* Step 2: Lending Target Chain */}
                             <div className="section-title">Step 2: Select Lending Target Chain</div>
                             <Dropdown
-                                options={chainOptions}
+                                options={chainOptions.filter(c => c.value !== sourceChain)}
                                 value={targetChain}
                                 onChange={setTargetChain}
                                 placeholder="Select lending chain"

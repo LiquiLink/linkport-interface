@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Asset, AssetAllocation } from '../utils/types';
 import { useAccount } from 'wagmi';
-import { getUserAssetBalance } from '../utils/balance';
+import { getUserAssetBalance, getBalance } from '../utils/balance';
 import { formatUnits } from 'ethers';
 import { poolList } from '../config';
 import ReactDOM from 'react-dom';
 import { getTokenIconStyle } from '../utils/ui';
+import { get } from 'node:https';
+import { getAssetPriceFromPort } from '@/utils/priceService';
 
 interface MultiAssetSelectorProps {
   selectedChain: string;
@@ -31,63 +33,30 @@ const MultiAssetSelector: React.FC<MultiAssetSelectorProps> = ({
       const chainId = parseInt(selectedChain);
       console.log("Loading assets for chain:", chainId);
       
-      // Define asset data with realistic prices
-      const assetData = [
-        { id: 'usdc', symbol: 'USDC', name: 'USD Coin', price: 1, icon: 'USDC' },
-        { id: 'usdt', symbol: 'USDT', name: 'Tether', price: 1, icon: 'USDT' },
-        { id: 'dai', symbol: 'DAI', name: 'Dai Stablecoin', price: 1, icon: 'DAI' },
-        { id: 'weth', symbol: 'WETH', name: 'Wrapped Ethereum', price: 3000, icon: 'WETH' },
-        { id: 'wbtc', symbol: 'WBTC', name: 'Wrapped Bitcoin', price: 50000, icon: 'WBTC' },
-        { id: 'link', symbol: 'LINK', name: 'Chainlink', price: 15, icon: 'LINK' },
-        { id: 'aave', symbol: 'AAVE', name: 'Aave', price: 100, icon: 'AAVE' },
-        { id: 'uni', symbol: 'UNI', name: 'Uniswap', price: 7, icon: 'UNI' }
-      ];
 
-      const assetsWithBalance = await Promise.all(
-        assetData.map(async (asset) => {
-          let balance = 0;
-          
-          if (address) {
-            try {
-              // Try to find matching pool for this asset and chain
-              const matchingPool = poolList.find(pool => 
-                pool.chainId === chainId && 
-                pool.name.toLowerCase().includes(asset.symbol.toLowerCase())
-              );
-              
-              if (matchingPool) {
-                const balanceResult = await getUserAssetBalance(
-                  matchingPool.address,
-                  address,
-                  chainId,
-                  matchingPool.isNative
-                );
-                
-                if (balanceResult) {
-                  balance = parseFloat(formatUnits(balanceResult, 18));
-                }
-              }
-            } catch (error) {
-              console.log(`Failed to get balance for ${asset.symbol}:`, error);
-              // Use mock balance if real balance fails
-              balance = Math.random() * 1000;
-            }
-          } else {
-            // Use mock balance if no wallet connected
-            balance = Math.random() * 1000;
-          }
-          
+      const poolPromises = poolList.filter(pool => pool.chainId === chainId).map(async pool => {
+        const price = await getAssetPriceFromPort(pool.address, pool.chainId);
+        console.log("Asset price for", pool.tokens[0], "on chain", pool.chainId, ":", price);
+        return getBalance(pool.address, pool.pool, pool.chainId).then(async balance => {
           return {
-            ...asset,
-            balance: balance
+            id: pool.id,
+            symbol: pool.tokens[0],
+            name: pool.name,
+            icon: pool.tokens[0].toUpperCase(),
+            price: price.price,
+            balance: parseFloat(formatUnits(balance, 18)), // Assuming 18 decimals for simplicity
+            isNative: pool.isNative,
+            token: pool.address,
+            chainId: pool.chainId
           };
         })
-      );
+      })
+            
+      const assetsWithBalance = await Promise.all(poolPromises);
+      console.log("Assets with balance:", assetsWithBalance);
 
-      // 智能资产排序函数
       const sortAssets = (assets: any[]) => {
         return [...assets].sort((a, b) => {
-          // 1. 主流资产优先级
           const mainAssets = ['ETH', 'USDC', 'USDT', 'DAI', 'WETH', 'BNB'];
           const aPriority = mainAssets.indexOf(a.symbol?.toUpperCase()) !== -1 ? 0 : 1;
           const bPriority = mainAssets.indexOf(b.symbol?.toUpperCase()) !== -1 ? 0 : 1;
@@ -96,20 +65,16 @@ const MultiAssetSelector: React.FC<MultiAssetSelectorProps> = ({
             return aPriority - bPriority;
           }
           
-          // 2. 按余额排序
           const aBalance = a.balance || 0;
           const bBalance = b.balance || 0;
           
-          // 有余额的排在前面
           if (aBalance > 0 && bBalance === 0) return -1;
           if (aBalance === 0 && bBalance > 0) return 1;
           
-          // 都有余额时，按余额降序
           if (aBalance > 0 && bBalance > 0) {
             return bBalance - aBalance;
           }
           
-          // 3. 余额都为0时，按字母顺序
           return (a.symbol || '').localeCompare(b.symbol || '');
         });
       };
@@ -129,6 +94,7 @@ const MultiAssetSelector: React.FC<MultiAssetSelectorProps> = ({
     const newAsset: AssetAllocation = {
       id: asset.id,
       symbol: asset.symbol,
+      token: asset.token,
       amount: 0,
       value: 0,
       percentage: 0,
@@ -286,22 +252,17 @@ const MultiAssetSelector: React.FC<MultiAssetSelectorProps> = ({
                         onChange={(e) => {
                           const value = e.target.value;
                           
-                          // 严格的输入验证：只允许数字和小数点
                           if (value === '' || /^[0-9]*\.?[0-9]*$/.test(value)) {
-                            // 额外检查：不允许多个小数点
                             const dotCount = (value.match(/\./g) || []).length;
                             if (dotCount <= 1) {
-                              // 更新显示值
                               setInputValues(prev => ({ ...prev, [asset.id]: value }));
                               
-                              // 更新实际数值
                               const num = value === '' ? 0 : parseFloat(value) || 0;
                               updateAssetAmount(asset.id, num);
                             }
                           }
                         }}
                         onKeyDown={(e) => {
-                          // 阻止危险字符的输入
                           const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
                           const isNumber = /^[0-9]$/.test(e.key);
                           const isDot = e.key === '.';
@@ -310,7 +271,6 @@ const MultiAssetSelector: React.FC<MultiAssetSelectorProps> = ({
                             e.preventDefault();
                           }
                           
-                          // 防止输入多个小数点
                           if (isDot && (inputValues[asset.id] || '').includes('.')) {
                             e.preventDefault();
                           }

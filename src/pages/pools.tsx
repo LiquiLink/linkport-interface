@@ -193,8 +193,9 @@ const Pools: React.FC = () => {
                 await writeContractDeposit({
                     address: pool.pool as `0x${string}`,
                     abi: LiquidityPoolABI,
-                    functionName: 'deposit',
-                    value: amount
+                    functionName: 'depositNative',
+                    value: amount,
+                    args: [],
                 }, {
                     onSuccess: async (txHash) => {
                         console.log('✅ Native token deposit transaction submitted:', txHash);
