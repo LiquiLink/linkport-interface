@@ -18,8 +18,8 @@ export interface AssetAllocation {
 }
 
 export interface CrossChainAssetSelectorProps {
-    sourceChain: string;
-    targetChain: string;
+    sourceChain: number;
+    targetChain: number;
     sourceAsset: Asset | null;
     sourceAmount: number;
     onTargetAssetsChange: (assets: AssetAllocation[]) => void;

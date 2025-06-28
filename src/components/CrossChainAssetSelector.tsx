@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Asset, AssetAllocation, CrossChainAssetSelectorProps } from '../utils/types';
 import ReactDOM from 'react-dom';
+import { formatUnits } from 'ethers';
+import { sepolia, bscTestnet } from 'wagmi/chains';
+import { poolList } from '../config';
+import { getAssetPriceFromPort  } from '@/utils/priceService';
+import { getBalance } from '@/utils/balance';
 
 const getTokenIconStyle = (symbol: string) => {
     const baseStyle: React.CSSProperties = {
@@ -45,6 +50,9 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
     const [targetAssets, setTargetAssets] = useState<AssetAllocation[]>([]);
     const [showAddAsset, setShowAddAsset] = useState(false);
     const [inputValues, setInputValues] = useState<{ [key: string]: string }>({});
+    const [availableTargetAssets, setAvailableTargetAssets] = useState<any[]>([]);
+
+    console.log('targetChain:', targetChain);   
 
     // Smart asset sorting function
     const sortAssets = (assets: Asset[]) => {
@@ -76,18 +84,68 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
         });
     };
 
-    const unsortedAssets: Asset[] = [
-        { id: 'usdc', symbol: 'USDC', name: 'USD Coin', price: 1, balance: '5000', icon: 'USDC' },
-        { id: 'usdt', symbol: 'USDT', name: 'Tether', price: 1, balance: '3000', icon: 'USDT' },
-        { id: 'dai', symbol: 'DAI', name: 'Dai Stablecoin', price: 1, balance: '2000', icon: 'DAI' },
-        { id: 'weth', symbol: 'WETH', name: 'Wrapped Ethereum', price: 3000, balance: '1.5', icon: 'WETH' },
-        { id: 'wbtc', symbol: 'WBTC', name: 'Wrapped Bitcoin', price: 50000, balance: '0.1', icon: 'WBTC' },
-        { id: 'link', symbol: 'LINK', name: 'Chainlink', price: 15, balance: '200', icon: 'LINK' },
-        { id: 'aave', symbol: 'AAVE', name: 'Aave', price: 100, balance: '50', icon: 'AAVE' },
-        { id: 'uni', symbol: 'UNI', name: 'Uniswap', price: 7, balance: '300', icon: 'UNI' }
-    ];
 
-    const availableTargetAssets: Asset[] = sortAssets(unsortedAssets);
+    useEffect(() => { 
+        async function loadAvailableAssets() {
+            console.log("Loading available assets for target chain:", targetChain);
+            if (!targetChain) return;
+
+            poolList.forEach(pool => {
+                console.log("Pool:", pool.name, "Chain ID:", pool.chainId, "Address:", pool.address, "Tokens:", pool.tokens, pool.chainId == targetChain);
+            })
+            
+            const poolPromises = poolList.filter(pool => pool.chainId == targetChain).map(async pool => {
+                console.log("Processing pool:", pool.name, "on chain", pool.chainId);
+                const price = await getAssetPriceFromPort(pool.address, pool.chainId);
+                console.log("Asset price for", pool.tokens[0], "on chain", pool.chainId, ":", price);
+                return getBalance(pool.address, pool.pool, pool.chainId).then(async balance => {
+                    return {
+                        id: pool.id,
+                        symbol: pool.tokens[0],
+                        name: pool.name,
+                        icon: pool.tokens[0].toUpperCase(),
+                        price: price.price,
+                        balance: parseFloat(formatUnits(balance, 18)), // Assuming 18 decimals for simplicity
+                        isNative: pool.isNative,
+                        token: pool.address,
+                        chainId: pool.chainId
+                    };
+                })
+            })
+                    
+            const assetsWithBalance = await Promise.all(poolPromises);
+            console.log("Assets with balance:", assetsWithBalance);
+
+            const sortAssets = (assets: any[]) => {
+                return [...assets].sort((a, b) => {
+                const mainAssets = ['ETH', 'USDC', 'USDT', 'DAI', 'WETH', 'BNB'];
+                const aPriority = mainAssets.indexOf(a.symbol?.toUpperCase()) !== -1 ? 0 : 1;
+                const bPriority = mainAssets.indexOf(b.symbol?.toUpperCase()) !== -1 ? 0 : 1;
+                
+                if (aPriority !== bPriority) {
+                    return aPriority - bPriority;
+                }
+                
+                const aBalance = a.balance || 0;
+                const bBalance = b.balance || 0;
+                
+                if (aBalance > 0 && bBalance === 0) return -1;
+                if (aBalance === 0 && bBalance > 0) return 1;
+                
+                if (aBalance > 0 && bBalance > 0) {
+                    return bBalance - aBalance;
+                }
+                
+                return (a.symbol || '').localeCompare(b.symbol || '');
+                });
+            };
+            console.log("Sorted assets:", assetsWithBalance);
+
+            setAvailableTargetAssets(sortAssets(assetsWithBalance));
+        }
+
+        loadAvailableAssets();
+    }, [targetChain]);
 
 
     const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316'];
@@ -167,11 +225,8 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
 
     const getChainName = (chainId: string) => {
         const chains: { [key: string]: string } = {
-            'ethereum': 'Ethereum',
-            'optimism': 'Optimism',
-            'arbitrum': 'Arbitrum',
-            'polygon': 'Polygon',
-            'avalanche': 'Avalanche'
+            [sepolia.id]: 'Ethereum Sepolia',
+            [bscTestnet.id]: 'BNB Testnet',
         };
         return chains[chainId] || chainId;
     };
@@ -229,6 +284,8 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
         }
     };
 
+    console.log("source Asset:", sourceAsset);  
+
     return (
         <div>
             {/* Source Asset Display */}
@@ -247,10 +304,10 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                     alignItems: 'center',
                     gap: '12px'
                 }}>
-                    <div style={getTokenIconStyle(sourceAsset?.symbol || 'ETH')}>{sourceAsset?.symbol || 'ETH'}</div>
+                    <div style={getTokenIconStyle(sourceAsset?.icon || 'ETH')}>{sourceAsset?.symbol || 'ETH'}</div>
                     <div style={{ flex: 1 }}>
                         <div style={{ fontSize: '16px', fontWeight: 600 }}>
-                            {sourceAmount} {sourceAsset?.symbol || 'ETH'}
+                            {sourceAmount} {sourceAsset?.label || 'ETH'}
                         </div>
                         <div style={{ fontSize: '14px', color: 'var(--secondary-text)' }}>
                             Value: {formatValue(sourceAmount * (sourceAsset?.price || 3000))}
