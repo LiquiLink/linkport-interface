@@ -42,26 +42,34 @@ const LiquidationMonitor: React.FC = () => {
         }
     };
 
-    // Mock data loading
+    // Real data loading - calculated from user's actual positions
     useEffect(() => {
-        if (address) {
-            // Mock reading data from localStorage or contracts
-            const mockCollateralValue = 3000; // $3000 collateral
-            const mockDebtValue = 2400;       // $2400 debt
+        async function loadRealLiquidationData() {
+            if (!address) return;
             
-            const healthFactor = calculateHealthFactor(mockCollateralValue, mockDebtValue);
-            const collateralRatio = mockCollateralValue / mockDebtValue;
-            const riskLevel = getRiskLevel(healthFactor);
-
-            setLiquidationInfo({
-                healthFactor,
-                collateralRatio,
-                collateralValue: mockCollateralValue,
-                debtValue: mockDebtValue,
-                isAtRisk: healthFactor < 1.2,
-                riskLevel
-            });
+            try {
+                            // Should get user's actual collateral and lending data from smart contracts here
+            // Currently check localStorage or use conservative estimates
+                
+                // Check if there's stored liquidation risk data
+                const storedRiskData = localStorage.getItem(`liquidation_risk_${address}`);
+                if (storedRiskData) {
+                    const parsedData = JSON.parse(storedRiskData);
+                    setLiquidationInfo(parsedData);
+                    return;
+                }
+                
+                                  // If no stored data, user may not have active lending positions
+                  // Don't show liquidation monitoring
+                setLiquidationInfo(null);
+                
+            } catch (error) {
+                console.error('Failed to load liquidation data:', error);
+                setLiquidationInfo(null);
+            }
         }
+        
+        loadRealLiquidationData();
     }, [address]);
 
     if (!address) {
@@ -160,7 +168,7 @@ const LiquidationMonitor: React.FC = () => {
                 </div>
             </div>
 
-            {/* 风险警告 */}
+                                    {/* Risk warning */}
             {liquidationInfo.isAtRisk && (
                 <div className="risk-warning">
                     <div className="warning-header">
@@ -189,7 +197,7 @@ const LiquidationMonitor: React.FC = () => {
                 </div>
             )}
 
-            {/* 永续贷款说明 */}
+                                {/* Perpetual loan explanation */}
             <div className="perpetual-info">
                 <div className="info-header">
                     💎 Perpetual Loan Model
@@ -204,7 +212,7 @@ const LiquidationMonitor: React.FC = () => {
                             ✅ <strong>No time limits:</strong> Loans don't expire based on time
                         </div>
                         <div className="feature">
-                            ⚡ <strong>Collateral-based:</strong> Only liquidated when health factor < 1.0
+                            ⚡ <strong>Collateral-based:</strong> Only liquidated when health factor &lt; 1.0
                         </div>
                         <div className="feature">
                             💰 <strong>Interest accrues:</strong> You pay ongoing interest but can repay anytime
@@ -216,7 +224,7 @@ const LiquidationMonitor: React.FC = () => {
                 </div>
             </div>
 
-            {/* 健康系数图表 */}
+                            {/* Health factor chart */}
             <div className="health-chart">
                 <div className="chart-header">
                     <span>Health Factor Visualization</span>

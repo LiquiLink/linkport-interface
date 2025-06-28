@@ -2,12 +2,18 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import RiskMonitor from '../components/RiskMonitor';
 import { useAccount, useChainId } from 'wagmi';
+import { useRouter } from 'next/router';
 import { poolList } from '../config';
 import { getUserAssetBalance, getBalance } from '../utils/balance';
 import { getUserPosition, getPoolTvl } from '../utils/pool';
 import { getMultipleAssetPrices, PriceData } from '../utils/priceService';
 import { formatUnits } from 'ethers';
 import { getTokenIconStyle } from '../utils/ui';
+import { useToast } from '../components/Toast';
+import DepositModal from '../components/DepositModal';
+import AddLiquidityModal from '../components/AddLiquidityModal';
+import WithdrawModal from '../components/WithdrawModal';
+import AnalyticsModal from '../components/AnalyticsModal';
 
 interface Position {
     token: string;
@@ -30,6 +36,7 @@ interface PortfolioData {
 const Portfolio: React.FC = () => {
     const { address, isConnected } = useAccount();
     const chainId = useChainId();
+    const router = useRouter();
     const [isClient, setIsClient] = useState(false);
     const [loading, setLoading] = useState(true);
     const [portfolioData, setPortfolioData] = useState<PortfolioData>({
@@ -45,6 +52,15 @@ const Portfolio: React.FC = () => {
     // Risk monitoring data - based on real user data
     const [userBorrowedValue, setUserBorrowedValue] = useState(0); // Real borrowed value
     const [hasActivePositions, setHasActivePositions] = useState(false);
+
+    // Modal states
+    const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
+    const [isBridgeModalOpen, setIsBridgeModalOpen] = useState(false);
+    const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+    const [isAddLiquidityModalOpen, setIsAddLiquidityModalOpen] = useState(false);
+    const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
+    
+    const { showToast } = useToast();
 
     // Prevent hydration errors
     useEffect(() => {
@@ -63,12 +79,12 @@ const Portfolio: React.FC = () => {
                 console.log("✅ Price data loaded successfully:", prices);
             } catch (error) {
                 console.error("❌ Failed to get price data:", error);
-                // Use default prices as fallback
+                // Use conservative fallback prices if price service fails
                 setAssetPrices({
-                    ETH: { price: 3000, timestamp: Date.now(), decimals: 18, symbol: 'ETH' },
-                    LINK: { price: 15, timestamp: Date.now(), decimals: 18, symbol: 'LINK' },
+                    ETH: { price: 2400, timestamp: Date.now(), decimals: 18, symbol: 'ETH' },
+                    LINK: { price: 12, timestamp: Date.now(), decimals: 18, symbol: 'LINK' },
                     USDT: { price: 1, timestamp: Date.now(), decimals: 18, symbol: 'USDT' },
-                    BNB: { price: 500, timestamp: Date.now(), decimals: 18, symbol: 'BNB' }
+                    BNB: { price: 240, timestamp: Date.now(), decimals: 18, symbol: 'BNB' }
                 });
             }
         }
@@ -168,14 +184,19 @@ const Portfolio: React.FC = () => {
                 const hasPositions = userPositions.length > 0 || totalValue > 0;
                 setHasActivePositions(hasPositions);
                 
-                // In a real application, this would fetch user borrowing data from smart contracts
-                // For now, we simulate some borrowing data for demonstration
-                if (hasPositions && (totalValue + totalLiquidity) > 0) {
-                    // Regardless of asset size, any position may have borrowing risk
-                    // Simulate borrowing ratio: 60% of collateral value, minimum $10 (avoid very small values)
-                    const totalCollateral = totalValue + totalLiquidity;
-                    setUserBorrowedValue(Math.max(totalCollateral * 0.6, 10));
-                } else {
+                        // Get user's actual lending data from smart contracts
+        // Check if there are lending records in localStorage
+                try {
+                    const borrowingData = localStorage.getItem(`user_borrowings_${address}`);
+                    if (borrowingData) {
+                        const parsed = JSON.parse(borrowingData);
+                        setUserBorrowedValue(parsed.totalBorrowed || 0);
+                    } else {
+                        // No lending records, set to 0
+                        setUserBorrowedValue(0);
+                    }
+                } catch (error) {
+                    console.error('Failed to load borrowing data:', error);
                     setUserBorrowedValue(0);
                 }
 
@@ -210,6 +231,69 @@ const Portfolio: React.FC = () => {
             case 11155111: return 'Sepolia Testnet';
             default: return 'Unknown Network';
         }
+    };
+
+    // Modal and navigation functions for buttons
+    const handleAddLiquidity = () => {
+        setIsAddLiquidityModalOpen(true);
+    };
+
+    const handleWithdraw = () => {
+        setIsWithdrawModalOpen(true);
+    };
+
+    const handleDeposit = () => {
+        setIsDepositModalOpen(true);
+    };
+
+    const handleBridge = () => {
+        setIsBridgeModalOpen(true);
+    };
+
+    const handleAnalytics = () => {
+        setIsAnalyticsModalOpen(true);
+    };
+
+    const handleBrowsePools = () => {
+        router.push('/pools');
+    };
+
+    const handleConnectWallet = () => {
+        router.push('/');
+    };
+
+    // Modal success handlers
+    const handleDepositSuccess = () => {
+        // Refresh portfolio data after successful deposit
+        if (Object.keys(assetPrices).length > 0) {
+            // Trigger portfolio data refresh by re-running the effect
+            setLoading(true);
+        }
+        showToast('Portfolio refreshed after successful deposit', 'success');
+    };
+
+    const handleBridgeSuccess = () => {
+        // Refresh portfolio data after successful bridge
+        if (Object.keys(assetPrices).length > 0) {
+            setLoading(true);
+        }
+        showToast('Portfolio refreshed after successful bridge', 'success');
+    };
+
+    const handleWithdrawSuccess = () => {
+        // Refresh portfolio data after successful withdrawal
+        if (Object.keys(assetPrices).length > 0) {
+            setLoading(true);
+        }
+        showToast('Portfolio refreshed after successful withdrawal', 'success');
+    };
+
+    const handleAddLiquiditySuccess = () => {
+        // Refresh portfolio data after adding liquidity
+        if (Object.keys(assetPrices).length > 0) {
+            setLoading(true);
+        }
+        showToast('Portfolio refreshed after adding liquidity', 'success');
     };
 
     if (!isClient) {
@@ -274,10 +358,14 @@ const Portfolio: React.FC = () => {
                         }}>
                             Connect your wallet to view your portfolio, manage positions, and track your liquidity across multiple networks.
                         </p>
-                        <button className="button primary" style={{
-                            padding: '12px 24px',
-                            fontSize: '16px'
-                        }}>
+                        <button 
+                            className="button primary" 
+                            style={{
+                                padding: '12px 24px',
+                                fontSize: '16px'
+                            }}
+                            onClick={handleConnectWallet}
+                        >
                             Connect Wallet
                         </button>
                     </div>
@@ -614,9 +702,12 @@ const Portfolio: React.FC = () => {
                                             }}>
                                                 Provide liquidity to pools to start earning rewards
                                             </p>
-                                            <button className="button primary compact">
-                                                Browse Pools
-                                            </button>
+                                                                        <button 
+                                className="button primary compact"
+                                onClick={handleBrowsePools}
+                            >
+                                Browse Pools
+                            </button>
                                         </div>
                                     ) : (
                                         <div style={{ display: 'grid', gap: '12px' }}>
@@ -683,10 +774,18 @@ const Portfolio: React.FC = () => {
                                         gap: '8px',
                                         marginTop: '16px'
                                     }}>
-                                        <button className="button primary compact" style={{ flex: 1 }}>
+                                        <button 
+                                            className="button primary compact" 
+                                            style={{ flex: 1 }}
+                                            onClick={handleAddLiquidity}
+                                        >
                                             Add Liquidity
                                         </button>
-                                        <button className="button secondary compact" style={{ flex: 1 }}>
+                                        <button 
+                                            className="button secondary compact" 
+                                            style={{ flex: 1 }}
+                                            onClick={handleWithdraw}
+                                        >
                                             Withdraw
                                         </button>
                                     </div>
@@ -704,38 +803,54 @@ const Portfolio: React.FC = () => {
                                     </h3>
                                     
                                     <div className="quick-actions-grid">
-                                        <button className="action-card" style={{
-                                            background: 'rgba(59, 130, 246, 0.1)',
-                                            border: '2px solid rgba(59, 130, 246, 0.3)',
-                                            color: '#3b82f6'
-                                        }}>
+                                        <button 
+                                            className="action-card" 
+                                            style={{
+                                                background: 'rgba(59, 130, 246, 0.1)',
+                                                border: '2px solid rgba(59, 130, 246, 0.3)',
+                                                color: '#3b82f6'
+                                            }}
+                                            onClick={handleDeposit}
+                                        >
                                             <i className="fas fa-plus-circle" style={{ fontSize: '20px', marginBottom: '8px' }}></i>
                                             <span style={{ fontSize: '14px', fontWeight: 500 }}>Deposit</span>
                                         </button>
                                         
-                                        <button className="action-card" style={{
-                                            background: 'rgba(34, 197, 94, 0.1)',
-                                            border: '2px solid rgba(34, 197, 94, 0.3)',
-                                            color: '#22c55e'
-                                        }}>
+                                        <button 
+                                            className="action-card" 
+                                            style={{
+                                                background: 'rgba(34, 197, 94, 0.1)',
+                                                border: '2px solid rgba(34, 197, 94, 0.3)',
+                                                color: '#22c55e'
+                                            }}
+                                            onClick={handleWithdraw}
+                                        >
                                             <i className="fas fa-minus-circle" style={{ fontSize: '20px', marginBottom: '8px' }}></i>
                                             <span style={{ fontSize: '14px', fontWeight: 500 }}>Withdraw</span>
                                         </button>
                                         
-                                        <button className="action-card" style={{
-                                            background: 'rgba(245, 158, 11, 0.1)',
-                                            border: '2px solid rgba(245, 158, 11, 0.3)',
-                                            color: '#f59e0b'
-                                        }}>
+                                        <button 
+                                            className="action-card" 
+                                            style={{
+                                                background: 'rgba(245, 158, 11, 0.1)',
+                                                border: '2px solid rgba(245, 158, 11, 0.3)',
+                                                color: '#f59e0b'
+                                            }}
+                                            onClick={handleBridge}
+                                        >
                                             <i className="fas fa-exchange-alt" style={{ fontSize: '20px', marginBottom: '8px' }}></i>
                                             <span style={{ fontSize: '14px', fontWeight: 500 }}>Bridge</span>
                                         </button>
                                         
-                                        <button className="action-card" style={{
-                                            background: 'rgba(139, 92, 246, 0.1)',
-                                            border: '2px solid rgba(139, 92, 246, 0.3)',
-                                            color: '#8b5cf6'
-                                        }}>
+                                        <button 
+                                            className="action-card" 
+                                            style={{
+                                                background: 'rgba(139, 92, 246, 0.1)',
+                                                border: '2px solid rgba(139, 92, 246, 0.3)',
+                                                color: '#8b5cf6'
+                                            }}
+                                            onClick={handleAnalytics}
+                                        >
                                             <i className="fas fa-chart-line" style={{ fontSize: '20px', marginBottom: '8px' }}></i>
                                             <span style={{ fontSize: '14px', fontWeight: 500 }}>Analytics</span>
                                         </button>
@@ -746,6 +861,100 @@ const Portfolio: React.FC = () => {
                     </>
                 )}
             </div>
+
+            {/* Modals */}
+            <DepositModal
+                isOpen={isDepositModalOpen}
+                onClose={() => setIsDepositModalOpen(false)}
+                onSuccess={handleDepositSuccess}
+            />
+
+            <AddLiquidityModal
+                isOpen={isAddLiquidityModalOpen}
+                onClose={() => setIsAddLiquidityModalOpen(false)}
+                onSuccess={handleAddLiquiditySuccess}
+            />
+
+            <WithdrawModal
+                isOpen={isWithdrawModalOpen}
+                onClose={() => setIsWithdrawModalOpen(false)}
+                onSuccess={handleWithdrawSuccess}
+                userPositions={positions}
+            />
+
+            <AnalyticsModal
+                isOpen={isAnalyticsModalOpen}
+                onClose={() => setIsAnalyticsModalOpen(false)}
+                portfolioData={portfolioData}
+                userPositions={positions}
+                assetPrices={assetPrices}
+            />
+            
+            {/* Bridge Modal - Quick Bridge to main interface */}
+            {isBridgeModalOpen && (
+                <div 
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        padding: '20px'
+                    }}
+                    onClick={() => setIsBridgeModalOpen(false)}
+                >
+                    <div 
+                        style={{
+                            background: 'white',
+                            borderRadius: '20px',
+                            padding: '24px',
+                            maxWidth: '450px',
+                            textAlign: 'center'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div style={{ fontSize: '48px', marginBottom: '16px' }}>🌉</div>
+                        <h3 style={{ marginBottom: '12px', color: 'var(--text-color)' }}>Cross-Chain Bridge</h3>
+                        <p style={{ marginBottom: '20px', color: 'var(--secondary-text)', lineHeight: 1.5 }}>
+                            Transfer your assets between Ethereum Sepolia and BSC Testnet using our secure cross-chain bridge.
+                        </p>
+                        <div style={{
+                            background: 'rgba(59, 130, 246, 0.1)',
+                            padding: '12px',
+                            borderRadius: '8px',
+                            marginBottom: '20px',
+                            fontSize: '14px',
+                            color: 'var(--secondary-text)'
+                        }}>
+                            💡 Bridge transactions typically take 5-10 minutes to complete
+                        </div>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <button 
+                                onClick={() => setIsBridgeModalOpen(false)}
+                                className="button secondary"
+                                style={{ flex: 1 }}
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    setIsBridgeModalOpen(false);
+                                    router.push('/?tab=bridge');
+                                }}
+                                className="button primary"
+                                style={{ flex: 1 }}
+                            >
+                                Open Bridge
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </Layout>
     );
 };

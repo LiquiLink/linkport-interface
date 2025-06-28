@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog } from '@headlessui/react';
 import { useAccount, useDisconnect, useConnect, useChainId, useChains } from 'wagmi';
-import { injected, walletConnect } from 'wagmi/connectors';
+import { injected } from 'wagmi/connectors';
 
 const connectorOptions = [
-    { name: 'MetaMask', connector: injected()},
-    { name: 'WalletConnect', connector: walletConnect({ projectId: process.env.WalletConnectId || ""}) },
+    { 
+        name: 'MetaMask', 
+        connector: injected({
+            // Force local MetaMask extension only
+            target: 'metaMask',
+            shimDisconnect: true,
+        })
+    },
 ];
 
 const WalletConnect: React.FC = () => {
@@ -18,7 +24,7 @@ const WalletConnect: React.FC = () => {
     const [connecting, setConnecting] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
     const [copyPopup, setCopyPopup] = useState(false);
-    console.log("connected", chainId)
+    // Remove duplicate console.log to prevent excessive logging
 
     const jwt = typeof window !== 'undefined' ? localStorage.getItem('jwt') || '' : '';
 

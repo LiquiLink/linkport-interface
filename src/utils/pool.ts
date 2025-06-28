@@ -10,31 +10,61 @@ import { sep } from 'path';
 
 
 export async function getPoolTvl(pool: any) : Promise<BigNumberish> {
+    try {
+        const balance = await getBalance(pool.address, pool.pool, pool.chainId);
+        
+        // Try to get totalLoans, but handle gracefully if contract doesn't have this function
+        let totalLoans: BigNumberish = BigInt(0);
+        try {
+            totalLoans = await readContract(config, {
+                address: pool.pool,
+                abi: LiquidityPoolABI,
+                functionName: 'totalLoans',
+                args: [],
+                chainId: pool.chainId,
+            }) as BigNumberish;
+        } catch (error) {
+            console.warn(`totalLoans function not available for pool ${pool.name}, using balance only for TVL`);
+            // If totalLoans function doesn't exist, just use the balance
+            totalLoans = BigInt(0);
+        }
 
-    const balance = await getBalance(pool.address, pool.pool, pool.chainId);
-    const totalLoans  = await readContract(config, {
-        address: pool.pool,
-        abi: LiquidityPoolABI,
-        functionName: 'totalLoans',
-        args: [],
-    }) as BigNumberish;
-
-    const tvl = (balance as bigint) + (totalLoans as bigint);
-    return  tvl as BigNumberish;
+        const tvl = (balance as bigint) + (totalLoans as bigint);
+        return tvl as BigNumberish;
+    } catch (error) {
+        console.error(`Error getting TVL for pool ${pool.name}:`, error);
+        // Return 0 as fallback
+        return BigInt(0);
+    }
 }
 
 export async function getUserPosition(pool: any, user: any) : Promise<BigNumberish> {
-    console.log("getUserPosition", pool.name, pool, user);
-    const shares  = await getBalance(pool.pool, user, pool.chainId);
+    try {
+        const shares = await getBalance(pool.pool, user, pool.chainId);
+        
+        // If user has no shares, return 0 early
+        if (!shares || shares === BigInt(0)) {
+            return BigInt(0);
+        }
 
-    console.log("shares", pool.name, shares);
-    const totalSupply  = await getTotalSupply(pool.pool, pool.chainId);
+        const totalSupply = await getTotalSupply(pool.pool, pool.chainId);
+        
+        // If no total supply, return 0
+        if (!totalSupply || totalSupply === BigInt(0)) {
+            return BigInt(0);
+        }
 
-    const tvl = await getPoolTvl(pool);
+        const tvl = await getPoolTvl(pool);
 
-    const userPosition = tvl ? ((shares as bigint) * (tvl as bigint) / (totalSupply as bigint)) : BigInt(0); 
+        const userPosition = tvl && tvl !== BigInt(0) ? 
+            ((shares as bigint) * (tvl as bigint) / (totalSupply as bigint)) : 
+            BigInt(0); 
 
-    return userPosition as BigNumberish;
+        return userPosition as BigNumberish;
+    } catch (error) {
+        console.warn(`Error getting user position for pool ${pool.name}:`, error instanceof Error ? error.message : error);
+        return BigInt(0);
+    }
 }
 
 

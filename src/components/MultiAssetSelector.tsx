@@ -43,7 +43,7 @@ const MultiAssetSelector: React.FC<MultiAssetSelectorProps> = ({
             symbol: pool.tokens[0],
             name: pool.name,
             icon: pool.tokens[0].toUpperCase(),
-            price: price.price,
+            price: price?.price || 0,
             balance: parseFloat(formatUnits(balance, 18)), // Assuming 18 decimals for simplicity
             isNative: pool.isNative,
             token: pool.address,

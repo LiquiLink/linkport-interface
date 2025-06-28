@@ -4,7 +4,7 @@ import { sepolia, bscTestnet, bsc } from 'wagmi/chains';
 import  LinkPortABI  from '../abi/LinkPort.json';
 import  ERC20ABI from '../abi/ERC20.json';
 
-// Chainlink Price Feed ABI (只需要latestRoundData函数)
+// Chainlink Price Feed ABI (only need latestRoundData function)
 const CHAINLINK_ABI = [
   {
     inputs: [],
@@ -28,18 +28,21 @@ const CHAINLINK_ABI = [
   }
 ];
 
-// Chainlink价格预言机地址配置
+// Chainlink price oracle address configuration
 export const PRICE_FEEDS = {
   [sepolia.id]: {
     'ETH/USD': '0x694AA1769357215DE4FAC081bf1f309aDC325306',
     'LINK/USD': '0xc59E3633BAAC79493d908e63626716e204A45EdF',
     'BTC/USD': '0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43',
+    // Note: USDT and BNB price feeds may not be available on Sepolia
+    // Using fallback prices for these assets
   },
   [bscTestnet.id]: {
     'BNB/USD': '0x2514895c72f50D8bd4B4F9b1110F0D6bD2c97526',
     'ETH/USD': '0x143db3CEEfbdfe5631aDD3E50f7614B6ba708BA7',
-    'LINK/USD': '0x1B329402Cb1825C4797703f854985F06cD6067bc',
+    'LINK/USD': '0x1B329402Cb1825C4797703f854985F06cD6067BC',
     'BTC/USD': '0x5741306c21795FdCBb9b265Ea0255F499DFe515C',
+    'USDT/USD': '0xEca2605f0BCF2BA5966372C99837b1F182d3D620', // BSC Testnet USDT price feed
   }
 };
 
@@ -95,13 +98,17 @@ export async function getAssetPrice(symbol: string, chainId: number): Promise<Pr
     const feedAddress = chainFeeds?.[feedKey as keyof typeof chainFeeds];
     
     if (!feedAddress) {
-      console.warn(`Price feed not found for ${symbol} on chain ${chainId}`);
-      // 返回模拟价格数据
+      // For testnet, many price feeds are not available, use fallback directly
+      console.warn(`Price feed not found for ${symbol} on chain ${chainId}, using fallback price`);
       return getMockPrice(symbol);
     }
 
-    // 获取价格数据
-    const [roundData, decimals] = await Promise.all([
+    // Add timeout and better error handling for RPC calls
+    const timeout = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('RPC timeout')), 5000)
+    );
+
+    const priceRequest = Promise.all([
       readContract(config, {
         address: feedAddress as `0x${string}`,
         abi: CHAINLINK_ABI,
@@ -116,6 +123,9 @@ export async function getAssetPrice(symbol: string, chainId: number): Promise<Pr
       })
     ]);
 
+    // Race between price request and timeout
+    const [roundData, decimals] = await Promise.race([priceRequest, timeout]) as any;
+
     const [, answer, , updatedAt] = roundData as [bigint, bigint, bigint, bigint, bigint];
     const priceDecimals = decimals as number;
     
@@ -123,32 +133,42 @@ export async function getAssetPrice(symbol: string, chainId: number): Promise<Pr
     
     return {
       price,
-      timestamp: Number(updatedAt) * 1000, // 转换为毫秒
+      timestamp: Number(updatedAt) * 1000, // Convert to milliseconds
       decimals: priceDecimals,
       symbol
     };
     
   } catch (error) {
-    console.error(`Error fetching price for ${symbol}:`, error);
-    // 返回模拟数据作为后备
+    // Don't log detailed error for RPC connection issues to reduce console noise
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('CONNECTION_CLOSED') || errorMessage.includes('timeout')) {
+      console.warn(`RPC connection issue for ${symbol} price, using fallback`);
+    } else {
+      console.warn(`Error fetching price for ${symbol}, using fallback:`, errorMessage);
+    }
+    // Return mock data as fallback
     return getMockPrice(symbol);
   }
 }
 
-// 模拟价格数据（当Chainlink不可用时使用）
+// Fallback price data (used when both Chainlink and smart contracts are unavailable)
+// These prices are based on recent market data and will be updated periodically
 function getMockPrice(symbol: string): PriceData {
-  const mockPrices: Record<string, number> = {
-    'ETH': 3000,
-    'BTC': 45000,
-    'LINK': 15,
-    'BNB': 300,
-    'USDT': 1,
-    'USDC': 1,
-    'DAI': 1
+  // Use relatively conservative estimated prices, updated manually periodically
+  const fallbackPrices: Record<string, number> = {
+    'ETH': 2400, // More conservative ETH price estimate
+    'BTC': 42000, // More conservative BTC price estimate
+    'LINK': 12, // More conservative LINK price estimate
+    'BNB': 240, // More conservative BNB price estimate
+    'USDT': 1.0,
+    'USDC': 1.0,
+    'DAI': 1.0
   };
 
+  console.warn(`Using fallback price for ${symbol}: $${fallbackPrices[symbol] || 1}`);
+  
   return {
-    price: mockPrices[symbol] || 1,
+    price: fallbackPrices[symbol] || 1,
     timestamp: Date.now(),
     decimals: 8,
     symbol
@@ -170,7 +190,7 @@ export async function getMultipleAssetPricesFromPort(tokens: string[], chainId: 
   }, {} as Record<string, PriceData>);
 }
 
-// 批量获取多个资产价格
+// Batch fetch multiple asset prices
 export async function getMultipleAssetPrices(symbols: string[], chainId: number): Promise<Record<string, PriceData>> {
   const pricePromises = symbols.map(symbol => 
     getAssetPrice(symbol, chainId).then(price => ({ symbol, price }))
@@ -186,13 +206,13 @@ export async function getMultipleAssetPrices(symbols: string[], chainId: number)
   }, {} as Record<string, PriceData>);
 }
 
-// 计算USD价值
+// Calculate USD value
 export function calculateUSDValue(amount: number, priceData: PriceData | null): number {
   if (!priceData) return 0;
   return amount * priceData.price;
 }
 
-// 格式化价格显示
+// Format price display
 export function formatPrice(price: number): string {
   if (price >= 1000) {
     return `$${price.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
@@ -203,7 +223,7 @@ export function formatPrice(price: number): string {
   }
 }
 
-// 计算价格变化百分比
+// Calculate price change percentage
 export function calculatePriceChange(currentPrice: number, previousPrice: number): number {
   if (previousPrice === 0) return 0;
   return ((currentPrice - previousPrice) / previousPrice) * 100;

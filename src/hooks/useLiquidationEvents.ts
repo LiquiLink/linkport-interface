@@ -17,7 +17,7 @@ const useLiquidationEvents = (liquidationContractAddress?: string) => {
     const chainId = useChainId();
     const { createLiquidationTransaction } = useTransactionCreator();
 
-    // 监听清算事件
+    // Listen for liquidation events
     useWatchContractEvent({
         address: liquidationContractAddress as `0x${string}`,
         abi: LiquidationABI,
@@ -40,7 +40,7 @@ const useLiquidationEvents = (liquidationContractAddress?: string) => {
         try {
             const { borrower, amount, token, penalty } = log.args as LiquidationEventData;
             
-            // 只记录与当前用户相关的清算事件
+                            // Only record liquidation events related to current user
             if (borrower.toLowerCase() !== address?.toLowerCase()) {
                 return;
             }
@@ -48,7 +48,7 @@ const useLiquidationEvents = (liquidationContractAddress?: string) => {
             const formattedAmount = formatUnits(amount, 18);
             const formattedPenalty = formatUnits(penalty, 18);
 
-            // 获取代币价格来计算USD价值
+                            // Get token price to calculate USD value
             let usdValue = '$0.00';
             try {
                 const prices = await getMultipleAssetPrices(['ETH', 'LINK', 'USDT', 'BNB'], chainId || 97);
@@ -62,7 +62,7 @@ const useLiquidationEvents = (liquidationContractAddress?: string) => {
                 console.warn('⚠️ Failed to fetch price for liquidation value calculation:', error);
             }
 
-            // 创建清算交易记录
+                            // Create liquidation transaction record
             await createLiquidationTransaction(
                 getTokenSymbol(token),
                 formattedAmount,
@@ -70,7 +70,7 @@ const useLiquidationEvents = (liquidationContractAddress?: string) => {
                 borrower,
                 log.transactionHash,
                 formattedPenalty,
-                formattedAmount // 在这个例子中，清算金额等于被没收的抵押品
+                formattedAmount // In this example, liquidation amount equals forfeited collateral
             );
 
             console.log('✅ Liquidation transaction recorded:', {
@@ -86,34 +86,34 @@ const useLiquidationEvents = (liquidationContractAddress?: string) => {
         }
     };
 
-    // 辅助函数：根据代币地址获取代币符号
+    // Helper function: get token symbol based on token address
     const getTokenSymbol = (tokenAddress: string): string => {
-        // 这里应该根据实际的代币地址映射返回符号
-        // 简化版本，实际应用中应该维护一个地址到符号的映射
+        // Should return symbol based on actual token address mapping
+        // Simplified version, actual application should maintain an address-to-symbol mapping
         const tokenMap: { [key: string]: string } = {
-            // 添加实际的代币地址映射
+            // Add actual token address mapping
             '0x779877A7B0D9E8603169DdbD7836e478b4624789': 'LINK',
             '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd': 'USDT',
-            '0x0000000000000000000000000000000000000000': 'ETH', // 原生ETH
-            // 更多代币映射...
+            '0x0000000000000000000000000000000000000000': 'ETH', // Native ETH
+            // More token mappings...
         };
         
         return tokenMap[tokenAddress.toLowerCase()] || 'UNKNOWN';
     };
 
     return {
-        // 可以返回一些状态或方法供组件使用
+        // Can return some states or methods for component use
         isListening: !!liquidationContractAddress && !!address
     };
 };
 
 export default useLiquidationEvents;
 
-// 清算事件监听Hook的简化版本，适用于演示
+// Simplified version of liquidation event listening Hook, suitable for demo
 export const useLiquidationDemo = () => {
     const { createLiquidationTransaction } = useTransactionCreator();
 
-    // 演示用的模拟清算事件创建
+    // Create simulated liquidation event for demo
     const createDemoLiquidation = async () => {
         try {
             await createLiquidationTransaction(
@@ -121,9 +121,9 @@ export const useLiquidationDemo = () => {
                 '2.5',
                 '$7,500.00',
                 '0x1234...5678',
-                '0xabcd1234...', // 模拟交易哈希
-                '0.25', // 10% 清算罚金
-                '2.75' // 被没收的抵押品（本金+罚金）
+                '0xabcd1234...', // Mock transaction hash
+                '0.25', // 10% liquidation penalty
+                '2.75' // Forfeited collateral (principal + penalty)
             );
             
             console.log('✅ Demo liquidation transaction created');

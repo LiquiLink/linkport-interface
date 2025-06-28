@@ -126,7 +126,7 @@ const WalletConnect: React.FC = () => {
             padding: '8px',
             border: '1px solid var(--border-color)'
         }}>
-            {/* 链切换按钮 */}
+                                    {/* Chain switch button */}
             <div style={{ position: 'relative' }}>
                 <button
                     onClick={() => setShowConnectors(!showConnectors)}
@@ -203,7 +203,7 @@ const WalletConnect: React.FC = () => {
                 )}
             </div>
 
-            {/* 钱包地址 */}
+                                    {/* Wallet address */}
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -228,7 +228,7 @@ const WalletConnect: React.FC = () => {
                 </span>
             </div>
 
-            {/* 断开连接按钮 */}
+                                    {/* Disconnect button */}
             <button
                 onClick={() => disconnect()}
                 style={{

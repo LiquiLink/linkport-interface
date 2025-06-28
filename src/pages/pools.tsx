@@ -71,8 +71,7 @@ const Pools: React.FC = () => {
                 const prices = await getMultipleAssetPrices(symbols, chainId);
                 setAssetPrices(prices);
                 
-                console.log('📊 On-chain pool data:', chainPools);
-                console.log('💰 Price data:', prices);
+                // Successfully fetched pool and price data
                 
                 // Get TVL and user position data
                 const tvlData: {[key: string]: number} = {};
@@ -347,7 +346,7 @@ const Pools: React.FC = () => {
         };
     }, [isWithdrawModalOpen]);
 
-    // 防止hydration错误
+    // Prevent hydration errors
     if (!isClient) {
         return null;
     }

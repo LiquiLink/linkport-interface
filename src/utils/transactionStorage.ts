@@ -48,10 +48,10 @@ export interface TransactionStats {
 
 class TransactionStorage {
     private static readonly STORAGE_KEY = 'linkport_transactions';
-    private static readonly MAX_TRANSACTIONS = 1000; // 限制存储数量避免localStorage过大
+    private static readonly MAX_TRANSACTIONS = 1000; // Limit storage quantity to avoid oversized localStorage
 
     /**
-     * 获取所有交易记录
+     * Get all transaction records
      */
     static getAllTransactions(): Transaction[] {
         try {
@@ -59,7 +59,7 @@ class TransactionStorage {
             if (!stored) return [];
             
             const transactions: Transaction[] = JSON.parse(stored);
-            return transactions.sort((a, b) => b.timestamp - a.timestamp); // 按时间倒序
+            return transactions.sort((a, b) => b.timestamp - a.timestamp); // Sort by time in descending order
         } catch (error) {
             console.error('❌ Failed to load transactions:', error);
             return [];
@@ -67,7 +67,7 @@ class TransactionStorage {
     }
 
     /**
-     * 添加新交易记录
+     * Add new transaction record
      */
     static addTransaction(transaction: Omit<Transaction, 'id' | 'timestamp'>): Transaction {
         try {
@@ -80,7 +80,7 @@ class TransactionStorage {
             const existingTransactions = this.getAllTransactions();
             const updatedTransactions = [newTransaction, ...existingTransactions];
 
-            // 限制存储数量，删除最旧的记录
+            // Limit storage quantity, delete oldest records
             if (updatedTransactions.length > this.MAX_TRANSACTIONS) {
                 updatedTransactions.splice(this.MAX_TRANSACTIONS);
             }
@@ -96,7 +96,7 @@ class TransactionStorage {
     }
 
     /**
-     * 更新交易状态
+     * Update transaction status
      */
     static updateTransaction(id: string, updates: Partial<Transaction>): Transaction | null {
         try {
@@ -120,7 +120,7 @@ class TransactionStorage {
     }
 
     /**
-     * 删除交易记录
+     * Delete transaction record
      */
     static deleteTransaction(id: string): boolean {
         try {
@@ -142,33 +142,33 @@ class TransactionStorage {
     }
 
     /**
-     * 根据过滤条件获取交易记录
+     * Get transaction records based on filter conditions
      */
     static getFilteredTransactions(filter: TransactionFilter): Transaction[] {
         const allTransactions = this.getAllTransactions();
         
         return allTransactions.filter(tx => {
-            // 交易类型过滤
+            // Transaction type filter
             if (filter.type && filter.type !== 'all' && tx.type !== filter.type) {
                 return false;
             }
 
-            // 状态过滤
+            // Status filter
             if (filter.status && filter.status !== 'all' && tx.status !== filter.status) {
                 return false;
             }
 
-            // 链ID过滤
+            // Chain ID filter
             if (filter.chainId && tx.chainId !== filter.chainId) {
                 return false;
             }
 
-            // 代币过滤
+            // Token filter
             if (filter.token && filter.token !== 'all' && tx.token !== filter.token) {
                 return false;
             }
 
-            // 时间过滤
+            // Time filter
             if (filter.timeframe && filter.timeframe !== 'all') {
                 const now = Date.now();
                 const timeframes = {
@@ -188,19 +188,19 @@ class TransactionStorage {
     }
 
     /**
-     * 获取交易统计数据
+     * Get transaction statistics
      */
     static getTransactionStats(userAddress?: string, chainId?: number): TransactionStats {
         let transactions = this.getAllTransactions();
         
-        // 按用户地址过滤
+        // Filter by user address
         if (userAddress) {
             transactions = transactions.filter(tx => 
                 tx.userAddress.toLowerCase() === userAddress.toLowerCase()
             );
         }
 
-        // 按链ID过滤
+        // Filter by chain ID
         if (chainId) {
             transactions = transactions.filter(tx => tx.chainId === chainId);
         }
@@ -209,13 +209,13 @@ class TransactionStorage {
         const pending = transactions.filter(tx => tx.status === 'pending');
         const failed = transactions.filter(tx => tx.status === 'failed');
 
-        // 计算总交易量（USD）
+        // Calculate total transaction volume (USD)
         const totalVolume = completed.reduce((sum, tx) => {
             const value = parseFloat(tx.value.replace(/[$,]/g, '')) || 0;
             return sum + value;
         }, 0);
 
-        // 统计最常用的代币
+        // Count most frequently used tokens
         const tokenCounts: { [key: string]: number } = {};
         transactions.forEach(tx => {
             tokenCounts[tx.token] = (tokenCounts[tx.token] || 0) + 1;
@@ -224,7 +224,7 @@ class TransactionStorage {
             tokenCounts[a] > tokenCounts[b] ? a : b, 'N/A'
         );
 
-        // 统计最常用的链
+        // Count most frequently used chains
         const chainCounts: { [key: number]: number } = {};
         transactions.forEach(tx => {
             chainCounts[tx.chainId] = (chainCounts[tx.chainId] || 0) + 1;
@@ -235,7 +235,7 @@ class TransactionStorage {
         const mostUsedChain = mostUsedChainId === '97' ? 'BSC Testnet' : 
                              mostUsedChainId === '11155111' ? 'Sepolia Testnet' : 'Unknown';
 
-        // 计算平均Gas费用
+        // Calculate average gas fees
         const gasTransactions = completed.filter(tx => tx.gasUsed && tx.gasPrice);
         const totalGasUsed = gasTransactions.reduce((sum, tx) => 
             sum + parseInt(tx.gasUsed || '0'), 0
@@ -257,7 +257,7 @@ class TransactionStorage {
     }
 
     /**
-     * 获取用户特定链上的交易记录
+     * Get user's transaction records on specific chain
      */
     static getUserTransactions(userAddress: string, chainId?: number): Transaction[] {
         return this.getAllTransactions().filter(tx => {
@@ -268,7 +268,7 @@ class TransactionStorage {
     }
 
     /**
-     * 清空所有交易记录
+     * Clear all transaction records
      */
     static clearAllTransactions(): void {
         try {
@@ -280,7 +280,7 @@ class TransactionStorage {
     }
 
     /**
-     * 导出交易记录为JSON
+     * Export transaction records as JSON
      */
     static exportTransactions(): string {
         const transactions = this.getAllTransactions();
@@ -288,27 +288,27 @@ class TransactionStorage {
     }
 
     /**
-     * 导入交易记录
+     * Import transaction records
      */
     static importTransactions(jsonData: string): boolean {
         try {
             const transactions: Transaction[] = JSON.parse(jsonData);
             
-            // 验证数据格式
+            // Validate data format
             if (!Array.isArray(transactions)) {
                 throw new Error('Invalid data format');
             }
 
-            // 合并现有数据
+            // Merge existing data
             const existingTransactions = this.getAllTransactions();
             const allTransactions = [...transactions, ...existingTransactions];
             
-            // 去重（基于ID和txHash）
+            // Remove duplicates (based on ID and txHash)
             const uniqueTransactions = allTransactions.filter((tx, index, arr) => 
                 arr.findIndex(t => t.id === tx.id || (t.txHash && t.txHash === tx.txHash)) === index
             );
 
-            // 限制数量
+            // Limit quantity
             const finalTransactions = uniqueTransactions
                 .sort((a, b) => b.timestamp - a.timestamp)
                 .slice(0, this.MAX_TRANSACTIONS);
@@ -323,14 +323,14 @@ class TransactionStorage {
     }
 
     /**
-     * 生成唯一交易ID
+     * Generate unique transaction ID
      */
     private static generateTransactionId(): string {
         return `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     }
 
     /**
-     * 获取存储信息
+     * Get storage information
      */
     static getStorageInfo(): { size: number; count: number; maxSize: number } {
         try {

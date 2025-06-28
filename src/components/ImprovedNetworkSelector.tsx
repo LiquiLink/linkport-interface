@@ -98,7 +98,7 @@ const ImprovedNetworkSelector: React.FC<ImprovedNetworkSelectorProps> = ({
                     fontSize: '16px',
                     fontWeight: 600,
                     color: 'var(--text-color)'
-                }}>选择目标网络</h3>
+                }}>Select Target Network</h3>
                 <div style={{
                     width: '24px',
                     height: '24px',
@@ -194,7 +194,7 @@ const ImprovedNetworkSelector: React.FC<ImprovedNetworkSelectorProps> = ({
                                 color: 'var(--secondary-text)',
                                 marginBottom: '2px'
                             }}>
-                                质押年化收益率
+                                                                            Staking APY
                             </div>
                             <div style={{
                                 fontSize: '16px',
@@ -223,7 +223,7 @@ const ImprovedNetworkSelector: React.FC<ImprovedNetworkSelectorProps> = ({
                                     color: 'var(--secondary-text)',
                                     marginBottom: '2px'
                                 }}>
-                                    总质押量
+                                                                                Total Staked
                                 </div>
                                 <div style={{
                                     fontSize: '11px',
@@ -244,7 +244,7 @@ const ImprovedNetworkSelector: React.FC<ImprovedNetworkSelectorProps> = ({
                                     color: 'var(--secondary-text)',
                                     marginBottom: '2px'
                                 }}>
-                                    您的余额
+                                    Your Balance
                                 </div>
                                 <div style={{
                                     fontSize: '11px',
@@ -271,7 +271,7 @@ const ImprovedNetworkSelector: React.FC<ImprovedNetworkSelectorProps> = ({
                                     marginBottom: '2px'
                                 }}>
                                     <span style={{ color: 'var(--secondary-text)' }}>
-                                        已质押:
+                                        Staked:
                                     </span>
                                     <span style={{
                                         fontWeight: 600,
@@ -285,7 +285,7 @@ const ImprovedNetworkSelector: React.FC<ImprovedNetworkSelectorProps> = ({
                                     justifyContent: 'space-between'
                                 }}>
                                     <span style={{ color: 'var(--secondary-text)' }}>
-                                        预估年收益:
+                                        Est. Annual Yield:
                                     </span>
                                     <span style={{
                                         fontWeight: 600,
@@ -312,7 +312,7 @@ const ImprovedNetworkSelector: React.FC<ImprovedNetworkSelectorProps> = ({
                                         // Handle stake action
                                     }}
                                 >
-                                    质押 {network.symbol}
+                                    Stake {network.symbol}
                                 </button>
                                 {network.userStaked > 0 && (
                                     <button 
@@ -328,7 +328,7 @@ const ImprovedNetworkSelector: React.FC<ImprovedNetworkSelectorProps> = ({
                                             // Handle unstake action
                                         }}
                                     >
-                                        取消质押
+                                        Unstake
                                     </button>
                                 )}
                             </div>
@@ -344,15 +344,15 @@ const ImprovedNetworkSelector: React.FC<ImprovedNetworkSelectorProps> = ({
                 padding: '12px'
             }}>
                 <div className="stat-row compact">
-                    <span>跨链总价值</span>
+                    <span>Cross-chain Total Value</span>
                     <span>$2.5B</span>
                 </div>
                 <div className="stat-row compact">
-                    <span>活跃用户</span>
+                    <span>Active Users</span>
                     <span>125,432</span>
                 </div>
                 <div className="stat-row compact">
-                    <span>您的总质押价值</span>
+                    <span>Your Total Staked Value</span>
                     <span style={{ color: '#22c55e' }}>
                         {formatCurrency(
                             networks.reduce((sum, n) => sum + (n.userStaked * (n.symbol === 'AVAX' ? 25 : n.symbol === 'MATIC' ? 0.8 : 2.5)), 0)

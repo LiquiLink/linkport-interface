@@ -104,7 +104,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                         symbol: pool.tokens[0],
                         name: pool.name,
                         icon: pool.tokens[0].toUpperCase(),
-                        price: price.price,
+                        price: price?.price || 0,
                         balance: parseFloat(formatUnits(balance, 18)), // Assuming 18 decimals for simplicity
                         isNative: pool.isNative,
                         token: pool.address,
@@ -298,7 +298,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                 marginBottom: '20px'
             }}>
                 <h4 style={{ marginBottom: '12px', fontSize: '16px', fontWeight: 600, color: '#3b82f6' }}>
-                    Source Chain Collateral ({getChainName(sourceChain)})
+                    Source Chain Collateral ({getChainName(sourceChain.toString())})
                 </h4>
                 <div style={{
                     display: 'flex',
@@ -308,7 +308,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                     <div style={getTokenIconStyle(sourceAsset?.icon || 'ETH')}>{sourceAsset?.symbol || 'ETH'}</div>
                     <div style={{ flex: 1 }}>
                         <div style={{ fontSize: '16px', fontWeight: 600 }}>
-                            {sourceAmount} {sourceAsset?.label || 'ETH'}
+                            {sourceAmount} {sourceAsset?.name || 'ETH'}
                         </div>
                         <div style={{ fontSize: '14px', color: 'var(--secondary-text)' }}>
                             Value: {formatValue(sourceAmount * (sourceAsset?.price || 3000))}
@@ -342,7 +342,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                     flexDirection: 'column'
                 }}>
                     <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>
-                        Target Chain Bridge Assets ({getChainName(targetChain)})
+                        Target Chain Bridge Assets ({getChainName(targetChain.toString())})
                     </h4>
                     <button
                         className="button secondary compact"

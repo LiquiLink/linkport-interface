@@ -1,15 +1,15 @@
 ====================================
-💡 简单余额检查方法
+💡 Simple Balance Check Methods
 ====================================
 
-方法1: 直接访问区块浏览器
-🔗 打开这个链接查看你的真实余额:
+Method 1: Direct access to block explorer
+🔗 Open this link to view your real balance:
 https://testnet.bscscan.com/address/0xe28D37E094AC43Fc264bAb5263b3694b985B39df
 
-方法2: 使用浏览器控制台 (无需粘贴代码)
-1. 按 F12 打开开发者工具
-2. 切换到 Console 标签
-3. 手动输入以下命令 (一行一行输入):
+Method 2: Use browser console (no code pasting required)
+1. Press F12 to open developer tools
+2. Switch to Console tab
+3. Manually enter the following commands (one line at a time):
 
 fetch('https://data-seed-prebsc-1-s1.binance.org:8545', {
   method: 'POST',
@@ -23,21 +23,21 @@ fetch('https://data-seed-prebsc-1-s1.binance.org:8545', {
 }).then(r => r.json()).then(d => {
   const wei = BigInt(d.result);
   const bnb = Number(wei) / 1e18;
-  console.log('BNB 余额:', bnb.toFixed(6), 'BNB');
+  console.log('BNB Balance:', bnb.toFixed(6), 'BNB');
 });
 
-方法3: 在应用中查看调试器
-刷新页面后，右上角会显示 "🔍 余额调试器 (详细版)"
+Method 3: View debugger in application
+After refreshing the page, "🔍 Balance Debugger (Detailed Version)" will be displayed in the top right corner
 
 ====================================
-🎯 预期结果对比:
+🎯 Expected Result Comparison:
 ====================================
 
-如果应用显示: 0.5499 (所有代币都一样)
-但真实余额是: 不同的数值
-→ 说明应用有bug，正在读取错误的数据
+If the app shows: 0.5499 (same for all tokens)
+But real balance is: Different values
+→ This means the app has a bug and is reading wrong data
 
-如果两者一致:
-→ 说明余额读取正常
+If both are consistent:
+→ This means balance reading is normal
 
 ==================================== 

@@ -3,13 +3,13 @@ import MultiAssetSelector from '../components/MultiAssetSelector';
 import ImprovedNetworkSelector from '../components/ImprovedNetworkSelector';
 import CrossChainAssetSelector from '../components/CrossChainAssetSelector';
 import { bsc, bscTestnet, sepolia } from 'wagmi/chains';
-import { useAccount, useChainId, useProof } from 'wagmi';
+import { useAccount, useChainId, useProof, useSwitchChain } from 'wagmi';
 import  ERC20ABI  from '../abi/ERC20.json'
 import Dropdown from '../components/Dropdown';
 import { poolList, chainSelector } from '../config';
 import { getUserPosition, loan, bridge} from '@/utils/pool';
 import { linkPorts } from '../config';
-import { getUserAssetBalance } from '../utils/balance';
+import { getUserAssetBalance, getBalance } from '../utils/balance';
 import { getMapToken } from '../utils/port';
 import { formatUnits } from 'ethers';
 import { format } from 'path';
@@ -20,6 +20,15 @@ import { useToast } from '../components/Toast';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther } from 'viem';
 import { getTokenIconStyle } from '../utils/ui';
+
+// Interface for user staking positions
+interface StakingPosition {
+    token: string;
+    poolId: string;
+    amount: string;
+    value: number;
+    apy: string;
+}
 
 const Home: React.FC = () => {
     const [activeTab, setActiveTab] = useState('borrow');
@@ -40,10 +49,29 @@ const Home: React.FC = () => {
     const [bridgeAssetOptions, setBridgeAssetOptions] = useState<any[]>([]);
     const [bridgeTargetAssets, setBridgeTargetAssets] = useState<AssetAllocation[]>([]);
 
+    // Staking positions and lending options
+    const [userStakingPositions, setUserStakingPositions] = useState<StakingPosition[]>([]);
+    const [useExistingStaking, setUseExistingStaking] = useState<boolean>(false);
+    const [totalStakingValue, setTotalStakingValue] = useState<number>(0);
+    
+    // Network switching states
+    const [isSwitchingNetwork, setIsSwitchingNetwork] = useState<boolean>(false);
+    const [lastSwitchedChain, setLastSwitchedChain] = useState<string>('');
+    
+    // Global toast tracking - prevent duplicate toasts completely
+    const [shownToasts, setShownToasts] = useState<Set<string>>(new Set());
+    
+    // Manual input control
+    const [isManualInput, setIsManualInput] = useState<boolean>(false);
+    
+    // Network information popup state
+    const [isNetworkInfoOpen, setIsNetworkInfoOpen] = useState<boolean>(false);
+
     const { address } = useAccount()
     const chainId = useChainId();
     const { showToast, ToastContainer } = useToast();
     const { writeContract } = useWriteContract();
+    const { switchChain } = useSwitchChain();
 
     // Price and network status
     const [assetPrices, setAssetPrices] = useState<Record<string, PriceData>>({});
@@ -56,22 +84,194 @@ const Home: React.FC = () => {
         { value: bscTestnet.id.toString(), label: 'BNB Testnet', icon: 'BNB', description: 'Binance Smart Chain'}
     ];
 
+    // Fetch user staking positions on the selected chain
+    async function fetchUserStakingPositions(chainId: any) {
+        if (!address) {
+            setUserStakingPositions([]);
+            setTotalStakingValue(0);
+            return;
+        }
+
+        console.log("Fetching user staking positions for chainId:", chainId);
+        
+        const numericChainId = typeof chainId === 'string' ? parseInt(chainId) : chainId;
+        
+        try {
+            const stakingPositions: StakingPosition[] = [];
+            let totalValue = 0;
+
+            // Get user positions in all pools on this chain
+            const chainPools = poolList.filter(pool => pool.chainId === numericChainId);
+            
+            for (const pool of chainPools) {
+                try {
+                    // Get user's actual position value in the liquidity pool using the real calculation
+                    const userPositionWei = await getUserPosition(pool, address);
+                    const userPositionAmount = userPositionWei ? formatUnits(userPositionWei, 18) : '0';
+                    const userPositionValue = parseFloat(userPositionAmount);
+                    
+                    if (userPositionValue > 0) {
+                        // Get asset price to calculate USD value
+                        const priceData = assetPrices[pool.address];
+                        const assetPrice = priceData?.price || 1;
+                        const assetUSDValue = userPositionValue * assetPrice;
+                        
+                        stakingPositions.push({
+                            token: pool.name,
+                            poolId: pool.id,
+                            amount: userPositionValue.toString(),
+                            value: assetUSDValue,
+                            apy: pool.apy
+                        });
+                        
+                        totalValue += assetUSDValue;
+                        
+                        console.log(`${pool.name} staking position:`, {
+                            userPositionWei: userPositionWei?.toString(),
+                            userPositionAmount,
+                            assetPrice,
+                            assetUSDValue
+                        });
+                    }
+                } catch (error) {
+                    console.error(`Failed to get staking position for ${pool.name}:`, error);
+                }
+            }
+            
+            setUserStakingPositions(stakingPositions);
+            setTotalStakingValue(totalValue);
+            
+            console.log("User staking positions:", stakingPositions);
+            console.log("Total staking value:", totalValue);
+            
+        } catch (error) {
+            console.error("Failed to fetch user staking positions:", error);
+            setUserStakingPositions([]);
+            setTotalStakingValue(0);
+        }
+    }
+
+    // Hook to fetch staking positions when sourceChain or address changes
+    useEffect(() => {
+        fetchUserStakingPositions(sourceChain);
+    }, [sourceChain, address, assetPrices]);
+
+    // Auto-recalculate collateral when staking option changes
+    useEffect(() => {
+        // Allow recalculation if: no manual input OR collateral amount is empty
+        const shouldAutoCalculate = !isManualInput || collateralAmount === '';
+        
+        if (selectedAssets.length > 0 && collateralAsset && shouldAutoCalculate) {
+            const totalBorrowValue = selectedAssets.reduce((sum, asset) => sum + asset.value, 0);
+            
+            if (totalBorrowValue > 0) {
+                // Calculate required total collateral value (LTV = 75%)
+                const requiredTotalCollateralValue = totalBorrowValue / 0.75;
+                
+                // Subtract existing staking value if enabled
+                const existingStakingValue = useExistingStaking ? totalStakingValue : 0;
+                const requiredNewCollateralValue = Math.max(0, requiredTotalCollateralValue - existingStakingValue);
+                
+                // Convert to collateral asset amount
+                const assetPrice = assetPrices[collateralAsset.token]?.price || 2400;
+                const requiredCollateralAmount = requiredNewCollateralValue / assetPrice;
+                
+                // Auto-fill the collateral amount input
+                setCollateralAmount(requiredCollateralAmount.toFixed(6));
+            }
+        }
+    }, [useExistingStaking, totalStakingValue, selectedAssets, collateralAsset, assetPrices, isManualInput, collateralAmount]);
+
+    // Update collateral calculation to include staking if enabled
+    const calculateTotalCollateralValue = () => {
+        const newCollateralValue = parseFloat(collateralAmount) || 0;
+        const assetPrice = collateralAsset ? (assetPrices[collateralAsset.token]?.price || 2400) : 2400;
+        const newCollateralUSDValue = newCollateralValue * assetPrice;
+        
+        const stakingValue = useExistingStaking ? totalStakingValue : 0;
+        
+        return newCollateralUSDValue + stakingValue;
+    };
+
+    // Calculate required collateral based on selected borrowing assets
+    const calculateRequiredCollateral = () => {
+        const totalBorrowValue = selectedAssets.reduce((sum, asset) => sum + asset.value, 0);
+        if (totalBorrowValue === 0) return 0;
+        
+        // Need collateral worth 133.33% of borrow value (75% LTV = borrow/collateral = 0.75)
+        const requiredCollateralValue = totalBorrowValue / 0.75;
+        
+        // Subtract existing staking value if enabled
+        const stakingValue = useExistingStaking ? totalStakingValue : 0;
+        const requiredNewCollateralValue = Math.max(0, requiredCollateralValue - stakingValue);
+        
+        // Convert to collateral asset amount
+        const assetPrice = collateralAsset ? (assetPrices[collateralAsset.token]?.price || 2400) : 2400;
+        return requiredNewCollateralValue / assetPrice;
+    };
+
+    // Auto-suggest collateral amount when borrowing assets change
+    const [showCollateralSuggestion, setShowCollateralSuggestion] = useState(false);
+    const [suggestedCollateralAmount, setSuggestedCollateralAmount] = useState('');
+
+    // Update suggestions when selected assets change
+    useEffect(() => {
+        if (selectedAssets.length > 0 && !collateralAmount) {
+            const requiredAmount = calculateRequiredCollateral();
+            if (requiredAmount > 0) {
+                setSuggestedCollateralAmount(requiredAmount.toFixed(6));
+                setShowCollateralSuggestion(true);
+            } else {
+                setShowCollateralSuggestion(false);
+            }
+        } else {
+            setShowCollateralSuggestion(false);
+        }
+    }, [selectedAssets, useExistingStaking, totalStakingValue, collateralAsset, assetPrices]);
+
+    // Function to apply suggested collateral amount
+    const applySuggestedCollateral = () => {
+        setCollateralAmount(suggestedCollateralAmount);
+        setShowCollateralSuggestion(false);
+    };
+
+    // Function to filter assets based on chain logic
+    const filterAssetsByChain = (chainId: number, assets: any[]) => {
+        return assets.filter(pool => {
+            // Filter out illogical asset-chain combinations
+            if (chainId === sepolia.id) {
+                // On Sepolia: Allow ETH, USDT, LINK but NOT BNB
+                return pool.name.toUpperCase() !== 'BNB';
+            } else if (chainId === bscTestnet.id) {
+                // On BSC Testnet: Allow BNB, USDT, LINK but NOT ETH (unless wrapped)
+                return pool.name.toUpperCase() !== 'ETH';
+            }
+            return true; // Allow all for other chains
+        });
+    };
+
     async function fetchPools(chainId: any) {
         console.log("Fetching pools for chainId:", chainId, "Type:", typeof chainId);
         
         const numericChainId = typeof chainId === 'string' ? parseInt(chainId) : chainId;
         
-        const sourceAssetsPromises = poolList.filter(pool => {
+        // Filter pools by chainId and logical asset-chain combinations
+        const filteredPools = filterAssetsByChain(numericChainId, poolList.filter(pool => {
             return pool.chainId === numericChainId 
-        }).map(async (pool) => {
+        }));
+        
+        const sourceAssetsPromises = filteredPools.map(async (pool) => {
             // Only fetch balance if user is connected
             let balance = null;
             if (address) {
                 try {
                     // Get user's raw asset balance, not liquidity pool shares
-                    balance = await getUserPosition(
-                        pool, 
+                    const isNative = pool.name.toUpperCase() === 'ETH' || pool.name.toUpperCase() === 'BNB';
+                    balance = await getUserAssetBalance(
+                        pool.address, 
                         address, 
+                        pool.chainId,
+                        isNative
                     );
                     console.log(`User ${pool.name} balance:`, balance);
                 } catch (error) {
@@ -110,9 +310,48 @@ const Home: React.FC = () => {
         }
     }
 
+    // Auto-switch network when sourceChain changes
     useEffect(() => {
+        const handleNetworkSwitch = async () => {
+            if (address && sourceChain && !isSwitchingNetwork) {
+                const targetChainId = parseInt(sourceChain);
+                
+                // Only switch if chain is different AND not recently switched to this chain
+                if (chainId !== targetChainId && lastSwitchedChain !== sourceChain) {
+                    setIsSwitchingNetwork(true);
+                    try {
+                        console.log(`Switching network from ${chainId} to ${targetChainId}`);
+                        await switchChain({ chainId: targetChainId as 11155111 | 97 });
+                        setLastSwitchedChain(sourceChain);
+                        
+                        // Show success toast only once
+                        setTimeout(() => {
+                            showToastOnce(`Switched to ${getChainName(sourceChain)}`, 'success');
+                        }, 100);
+                        
+                        // Reset the last switched chain after a delay to allow future switches
+                        setTimeout(() => {
+                            setLastSwitchedChain('');
+                        }, 3000);
+                    } catch (error: any) {
+                        console.error('Failed to switch network:', error);
+                        if (error?.code === 4001) {
+                            showToastOnce('Network switch cancelled by user', 'warning');
+                        } else {
+                            showToastOnce('Failed to switch network. Please switch manually in your wallet.', 'error');
+                        }
+                    } finally {
+                        setTimeout(() => setIsSwitchingNetwork(false), 500);
+                    }
+                }
+            }
+        };
+
         fetchPools(sourceChain);
-    }, [sourceChain])
+        if (address) {
+            handleNetworkSwitch();
+        }
+    }, [sourceChain, address, chainId])
 
     // Function to fetch bridge asset options
     async function fetchBridgePools(chainId: any) {
@@ -120,15 +359,21 @@ const Home: React.FC = () => {
         
         const numericChainId = typeof chainId === 'string' ? parseInt(chainId) : chainId;
         
-        const bridgeAssetsPromises = poolList.filter(pool => {
+        // Filter pools by chainId and logical asset-chain combinations
+        const filteredBridgePools = filterAssetsByChain(numericChainId, poolList.filter(pool => {
             return pool.chainId === numericChainId 
-        }).map(async (pool) => {
+        }));
+        
+        const bridgeAssetsPromises = filteredBridgePools.map(async (pool) => {
             let balance = null;
             if (address) {
                 try {
-                    balance = await getUserPosition(
-                        pool, 
+                    const isNative = pool.name.toUpperCase() === 'ETH' || pool.name.toUpperCase() === 'BNB';
+                    balance = await getUserAssetBalance(
+                        pool.address, 
                         address, 
+                        pool.chainId,
+                        isNative
                     );
                     console.log(`User bridge ${pool.name} balance:`, balance);
                 } catch (error) {
@@ -139,17 +384,17 @@ const Home: React.FC = () => {
             
             /*
             // Get price for the asset
-            const getAssetPrice = (assetName: string) => {
-                switch(assetName.toUpperCase()) {
-                    case 'ETH': return assetPrices.ETH?.price || 3000;
-                    case 'LINK': return assetPrices.LINK?.price || 15;
-                    case 'BNB': return assetPrices.BNB?.price || 500;
-                    case 'USDC':
-                    case 'USDT':
-                    case 'DAI': return 1;
-                    default: return 1;
-                }
-            };
+                                    const getAssetPrice = (assetName: string) => {
+                            switch(assetName.toUpperCase()) {
+                                case 'ETH': return assetPrices.ETH?.price || 2400; // More conservative fallback price
+                                case 'LINK': return assetPrices.LINK?.price || 12; // More conservative fallback price
+                                case 'BNB': return assetPrices.BNB?.price || 240; // More conservative fallback price
+                                case 'USDC':
+                                case 'USDT':
+                                case 'DAI': return 1;
+                                default: return 1;
+                            }
+                        };
             */
             
             return {
@@ -183,10 +428,46 @@ const Home: React.FC = () => {
         }
     }
 
-    // Fetch bridge asset options when bridge source chain changes
+    // Fetch bridge asset options when bridge source chain changes and auto-switch network
     useEffect(() => {
+        const handleBridgeNetworkSwitch = async () => {
+            if (address && bridgeSourceChain && activeTab === 'bridge' && !isSwitchingNetwork) {
+                const targetChainId = parseInt(bridgeSourceChain);
+                
+                // Only switch if chain is different AND not recently switched to this chain
+                if (chainId !== targetChainId && lastSwitchedChain !== bridgeSourceChain) {
+                    setIsSwitchingNetwork(true);
+                    try {
+                        console.log(`Switching bridge network from ${chainId} to ${targetChainId}`);
+                        await switchChain({ chainId: targetChainId as 11155111 | 97 });
+                        setLastSwitchedChain(bridgeSourceChain);
+                        
+                        // Show success toast only once
+                        setTimeout(() => {
+                            showToastOnce(`Switched to ${getChainName(bridgeSourceChain)}`, 'success');
+                        }, 100);
+                        
+                        // Reset the last switched chain after a delay to allow future switches
+                        setTimeout(() => {
+                            setLastSwitchedChain('');
+                        }, 3000);
+                    } catch (error: any) {
+                        console.error('Failed to switch bridge network:', error);
+                        if (error?.code === 4001) {
+                            showToastOnce('Network switch cancelled by user', 'warning');
+                        } else {
+                            showToastOnce('Failed to switch network. Please switch manually in your wallet.', 'error');
+                        }
+                    } finally {
+                        setTimeout(() => setIsSwitchingNetwork(false), 500);
+                    }
+                }
+            }
+        };
+
         fetchBridgePools(bridgeSourceChain);
-    }, [bridgeSourceChain, address])
+        handleBridgeNetworkSwitch();
+    }, [bridgeSourceChain, address, chainId, activeTab])
 
     // Get price data
     useEffect(() => {
@@ -274,25 +555,68 @@ const Home: React.FC = () => {
 
     const calculateUSDValue = (amount: string, asset: string) => {
         const value = parseFloat(amount) || 0;
-        const priceData = assetPrices[collateralAsset.token];
+        let priceData;
+        
+        if (asset && collateralAsset && asset === collateralAsset.token) {
+            priceData = assetPrices[collateralAsset.token];
+        } else {
+            priceData = assetPrices[asset];
+        }
+        
         const price = priceData ? priceData.price : 0;
         return (value * price).toFixed(2);
     };
 
     const calculateMaxBorrow = (collateralAmount: string) => {
-        const value = parseFloat(collateralAmount) || 0;
-        return (value * 3000 * 0.75).toFixed(0); // 75% LTV
+        const totalCollateralValue = calculateTotalCollateralValue();
+        return (totalCollateralValue * 0.75).toFixed(0); // 75% LTV with total collateral including staking
     };
 
     const calculateHealthFactor = () => {
-        const collateralValue = parseFloat(collateralAmount) * 3000;
+        const totalCollateralValue = calculateTotalCollateralValue();
         const totalBorrowValue = selectedAssets.reduce((sum, asset) => sum + asset.value, 0);
         if (totalBorrowValue === 0) return 100;
-        return Math.min(100, (collateralValue * 0.8 / totalBorrowValue) * 100);
+        return Math.min(100, (totalCollateralValue * 0.8 / totalBorrowValue) * 100);
     };
 
     const handleAssetsChange = (assets: AssetAllocation[]) => {
         setSelectedAssets(assets);
+        
+        // Reset manual input flag when assets change significantly or when starting fresh
+        if (assets.length === 0) {
+            setIsManualInput(false);
+            setCollateralAmount('');
+            return;
+        }
+        
+        // Auto-calculate required collateral based on selected borrowing assets
+        // Allow calculation if: no manual input OR collateral amount is empty
+        const shouldAutoCalculate = !isManualInput || collateralAmount === '';
+        
+        if (assets.length > 0 && collateralAsset && shouldAutoCalculate) {
+            const totalBorrowValue = assets.reduce((sum, asset) => sum + asset.value, 0);
+            
+            if (totalBorrowValue > 0) {
+                // Calculate required total collateral value (LTV = 75%)
+                const requiredTotalCollateralValue = totalBorrowValue / 0.75;
+                
+                // Subtract existing staking value if enabled
+                const existingStakingValue = useExistingStaking ? totalStakingValue : 0;
+                const requiredNewCollateralValue = Math.max(0, requiredTotalCollateralValue - existingStakingValue);
+                
+                // Convert to collateral asset amount
+                const assetPrice = assetPrices[collateralAsset.token]?.price || 2400;
+                const requiredCollateralAmount = requiredNewCollateralValue / assetPrice;
+                
+                // Auto-fill the collateral amount input
+                setCollateralAmount(requiredCollateralAmount.toFixed(6));
+                
+                // If we just auto-calculated, reset the manual input flag
+                if (collateralAmount === '') {
+                    setIsManualInput(false);
+                }
+            }
+        }
     };
 
     const handleSourceAssetsChange = (assetId: string) => {
@@ -328,8 +652,60 @@ const Home: React.FC = () => {
     // MAX button handler functions
     const handleMaxCollateral = () => {
         if (collateralAsset && collateralAsset.amount) {
+            setIsManualInput(true); // Mark as manual input
             setCollateralAmount(collateralAsset.amount);
         }
+    };
+    
+    // Handle manual collateral input
+    const handleCollateralAmountChange = (value: string) => {
+        if (value === '') {
+            // Reset manual input flag when user clears the input
+            setIsManualInput(false);
+        } else {
+            // Mark as manual input when user types non-empty value
+            setIsManualInput(true);
+        }
+        setCollateralAmount(value);
+    };
+
+    // Force single toast display function
+    const showToastOnce = (message: string, type: 'success' | 'error' | 'warning' | 'info', options?: any) => {
+        const timestamp = Date.now();
+        const toastId = `${type}-${message.replace(/\s+/g, '_')}-${timestamp}`;
+        
+        if (!shownToasts.has(toastId)) {
+            showToast(message, type, { ...options, toastId });
+            setShownToasts(prev => new Set(prev).add(toastId));
+            
+            // Clear this toast ID after 5 seconds to allow showing it again later
+            setTimeout(() => {
+                setShownToasts(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(toastId);
+                    return newSet;
+                });
+            }, 5000);
+        }
+    };
+
+    // Network information utilities
+    const getCongestionColor = (level: string) => {
+        switch (level?.toLowerCase()) {
+            case 'low': return '#22c55e';
+            case 'medium': return '#f59e0b';
+            case 'high': return '#ef4444';
+            default: return '#6b7280';
+        }
+    };
+
+    const formatPrice = (price: number) => {
+        return `$${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    };
+
+    const getCongestionLevel = () => {
+        if (!networkStatus) return 'Medium';
+        return networkStatus.congestionLevel.charAt(0).toUpperCase() + networkStatus.congestionLevel.slice(1);
     };
 
     const handleMaxBridge = () => {
@@ -340,7 +716,13 @@ const Home: React.FC = () => {
 
     // Handle lending operation
     const handleLendingExecute = async () => {
-        if (selectedAssets.length === 0 || !collateralAmount || calculateHealthFactor() <= 50) {
+        // Allow borrowing if user has staking positions OR new collateral
+        const hasValidCollateral = useExistingStaking && totalStakingValue > 0 || collateralAmount && parseFloat(collateralAmount) > 0;
+        
+        if (selectedAssets.length === 0 || !hasValidCollateral || calculateHealthFactor() <= 50) {
+            if (!hasValidCollateral && selectedAssets.length > 0) {
+                showToast('Please provide collateral or enable using existing staking positions', 'warning');
+            }
             return;
         }
 
@@ -351,12 +733,17 @@ const Home: React.FC = () => {
         }
 
         try {
+            const totalCollateralValue = calculateTotalCollateralValue();
+            
             console.log('🏦 Executing lending operation:', {
                 sourceChain: getChainName(sourceChain),
                 targetChain: getChainName(targetChain),
                 collateralAsset: collateralAsset?.label,
-                collateralAmount,
-                collateralValue: calculateUSDValue(collateralAmount, collateralAsset.token),
+                newCollateralAmount: collateralAmount,
+                newCollateralValue: collateralAmount ? calculateUSDValue(collateralAmount, collateralAsset?.token || 'ETH') : '$0',
+                useExistingStaking,
+                stakingValue: useExistingStaking ? `$${totalStakingValue.toFixed(2)}` : '$0',
+                totalCollateralValue: `$${totalCollateralValue.toFixed(2)}`,
                 selectedAssets,
                 totalBorrowValue: selectedAssets.reduce((sum, asset) => sum + asset.value, 0),
                 healthFactor: calculateHealthFactor()
@@ -368,7 +755,7 @@ const Home: React.FC = () => {
 
 
 
-            loan(sourceChain, targetChain, collateralAsset.token, parseEther(collateralAmount), selectedAssets.map(asset => asset.token), selectedAssets.map(asset => parseEther(asset.amount + '')));
+            loan(sourceChain, targetChain, collateralAsset.token, parseEther(collateralAmount), selectedAssets.map(asset => asset.token), selectedAssets.map(asset => parseEther(asset.amount.toString())));
 
             // Get collateral smart contract information
             const poolData = poolList.find(pool => 
@@ -411,9 +798,25 @@ const Home: React.FC = () => {
                 { duration: 6000 }
             );
 
-            // Reset form
-            setCollateralAmount('');
-            setSelectedAssets([]);
+            // Reset form and refresh data after successful operation
+            setTimeout(() => {
+                // Clear input fields
+                setCollateralAmount('');
+                setSelectedAssets([]);
+                setUseExistingStaking(false);
+                
+                // Refresh user staking positions
+                if (sourceChain) {
+                    fetchUserStakingPositions(sourceChain);
+                }
+                
+                // Refresh pools and asset data
+                if (sourceChain) {
+                    fetchPools(sourceChain);
+                }
+                
+                console.log('✅ Form cleared and data refreshed after successful lending operation');
+            }, 2000); // Wait 2 seconds to allow transaction processing
             
         } catch (error: any) {
             console.error('❌ Lending operation failed:', error);
@@ -457,15 +860,15 @@ const Home: React.FC = () => {
             }
 
 
-            // 显示处理中提示
+            // Show processing notification
             showToast('Initiating cross-chain bridge...', 'info', { autoClose: false });
 
-            bridge(bridgeSourceChain, bridgeTargetChain, bridgeAsset.token, parseEther(bridgeAmount), mapTokens, bridgeTargetAssets.map(asset => parseEther(asset.value + '')));
+            bridge(bridgeSourceChain, bridgeTargetChain, bridgeAsset.token, parseEther(bridgeAmount), mapTokens, bridgeTargetAssets.map(asset => parseEther(asset.value.toString())));
 
-            // 模拟钱包交互
+            // Simulate wallet interaction
             showToast('Wallet interaction initiated...', 'info');
 
-            // 显示成功提示
+            // Show success notification
             showToast(
                 `🎉 Cross-Chain Bridge Transaction Submitted!\n\n` +
                 `Source Chain: ${getChainName(bridgeSourceChain)}\n` +
@@ -479,9 +882,22 @@ const Home: React.FC = () => {
                 { duration: 6000 }
             );
 
-            // 重置表单
-            //setBridgeAmount('');
-            //setBridgeTargetAssets([]);
+            // Reset form and refresh data after successful operation
+            setTimeout(() => {
+                // Clear input fields
+                setBridgeAmount('');
+                setBridgeTargetAssets([]);
+                
+                // Refresh bridge assets and balances
+                if (bridgeSourceChain) {
+                    fetchBridgePools(bridgeSourceChain);
+                }
+                if (bridgeTargetChain) {
+                    fetchBridgePools(bridgeTargetChain);
+                }
+                
+                console.log('✅ Form cleared and data refreshed after successful bridge operation');
+            }, 2000); // Wait 2 seconds to allow transaction processing
 
         } catch (error: any) {
             console.error('❌ Cross-chain bridge operation failed:', error);
@@ -494,6 +910,42 @@ const Home: React.FC = () => {
 
     return (
         <div className="container">
+            {/* Network Status Button - Top Right */}
+            <button
+                onClick={() => setIsNetworkInfoOpen(!isNetworkInfoOpen)}
+                style={{
+                    position: 'fixed',
+                    top: '20px',
+                    right: '20px',
+                    zIndex: 1001,
+                    background: 'rgba(255, 255, 255, 0.95)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '12px',
+                    padding: '8px 16px',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    color: getCongestionColor(getCongestionLevel())
+                }}
+                onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'scale(1.02)';
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.15)';
+                }}
+                onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                }}
+            >
+                <i className="fas fa-network-wired" style={{ fontSize: '12px' }}></i>
+                Network Congestion: {getCongestionLevel()}
+            </button>
+
             <div className="main-layout">
                 {/* Left Panel - Main Trading Interface */}
                 <div className="glass-card main-trading-panel">
@@ -534,25 +986,136 @@ const Home: React.FC = () => {
                                 placeholder="Select collateral asset"
                             />
 
+                            {/* User Staking Positions Display - Compact Version */}
+                            {userStakingPositions.length > 0 && (
+                                <div style={{
+                                    background: 'rgba(34, 197, 94, 0.08)',
+                                    borderRadius: '10px',
+                                    padding: '12px',
+                                    marginBottom: '16px',
+                                    border: '1px solid rgba(34, 197, 94, 0.2)'
+                                }}>
+                                    {/* Header with total value */}
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        marginBottom: '8px'
+                                    }}>
+                                        <div style={{
+                                            fontSize: '13px',
+                                            fontWeight: 600,
+                                            color: '#059669',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px'
+                                        }}>
+                                            💰 Your Staking on {getChainName(sourceChain).split(' ')[0]}
+                                        </div>
+                                        <div style={{
+                                            fontSize: '15px',
+                                            fontWeight: 700,
+                                            color: '#047857'
+                                        }}>
+                                            ${totalStakingValue.toFixed(2)}
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Compact staking positions list */}
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                                        {userStakingPositions.map((position, index) => (
+                                            <div key={index} style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '4px',
+                                                padding: '4px 8px',
+                                                background: 'rgba(255, 255, 255, 0.7)',
+                                                borderRadius: '6px',
+                                                fontSize: '11px',
+                                                border: '1px solid rgba(34, 197, 94, 0.15)'
+                                            }}>
+                                                <div style={{
+                                                    ...getTokenIconStyle(position.token),
+                                                    width: '16px',
+                                                    height: '16px',
+                                                    fontSize: '8px'
+                                                }}>
+                                                    {position.token}
+                                                </div>
+                                                <span style={{ fontWeight: 500 }}>
+                                                    {parseFloat(position.amount).toFixed(1)} {position.token}
+                                                </span>
+                                                <span style={{ color: '#6b7280', fontSize: '10px' }}>
+                                                    ${position.value.toFixed(0)}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Compact option to use existing staking as collateral */}
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        paddingTop: '6px',
+                                        borderTop: '1px solid rgba(34, 197, 94, 0.15)'
+                                    }}>
+                                        <input
+                                            type="checkbox"
+                                            id="useExistingStaking"
+                                            checked={useExistingStaking}
+                                            onChange={(e) => setUseExistingStaking(e.target.checked)}
+                                            style={{
+                                                width: '14px',
+                                                height: '14px',
+                                                accentColor: '#059669'
+                                            }}
+                                        />
+                                        <label htmlFor="useExistingStaking" style={{
+                                            fontSize: '12px',
+                                            fontWeight: 500,
+                                            color: '#059669',
+                                            cursor: 'pointer',
+                                            lineHeight: 1.2
+                                        }}>
+                                            Use as additional collateral
+                                        </label>
+                                        {useExistingStaking && (
+                                            <span style={{
+                                                fontSize: '11px',
+                                                color: '#047857',
+                                                fontWeight: 600,
+                                                marginLeft: 'auto'
+                                            }}>
+                                                ✓ Enabled
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Collateral Amount Input */}
                             {collateralAsset && (
                                 <div>
-                                    <div className="section-title">Collateral Amount</div>
+                                    <div className="section-title">
+                                        {useExistingStaking ? 'Additional Collateral Amount (Optional)' : 'Collateral Amount'}
+                                    </div>
                                     <div className="input-card">
                                         <input
                                             type="text"
                                             className="amount-input"
-                                            placeholder="Enter amount"
+                                            placeholder={selectedAssets.length > 0 ? "Auto-calculated based on borrowing" : (useExistingStaking ? "Enter additional amount (optional)" : "Enter amount")}
                                             value={collateralAmount}
                                             onChange={(e) => {
                                                 const value = e.target.value;
                                                 if (value === '' || /^[0-9]*\.?[0-9]*$/.test(value)) {
                                                     const dotCount = (value.match(/\./g) || []).length;
                                                     if (dotCount <= 1) {
-                                                        if (value < collateralAsset.amount)
-                                                            setCollateralAmount(value);
-                                                        else 
+                                                        if (value === '' || parseFloat(value) <= parseFloat(collateralAsset.amount)) {
+                                                            handleCollateralAmountChange(value);
+                                                        } else {
                                                             showToast('Insufficient collateral balance', 'warning');
+                                                        }
                                                     }
                                                 }
                                             }}
@@ -570,7 +1133,7 @@ const Home: React.FC = () => {
                                                 }
                                             }}
                                         />
-                                        <div className="amount-value">${calculateUSDValue(collateralAmount)}</div>
+                                        <div className="amount-value">${calculateUSDValue(collateralAmount, collateralAsset?.token || 'ETH')}</div>
                                         <div style={getTokenIconStyle(collateralAsset?.icon || 'ETH')}>{collateralAsset?.icon || 'ETH'}</div>
                                         <div className="token-balance">
                                             <span>Balance: {collateralAsset ? collateralAsset.amount : '0'}</span>
@@ -601,6 +1164,18 @@ const Home: React.FC = () => {
                                             </button>
                                         </div>
                                     </div>
+                                    
+                                    {/* Auto-calculation hint */}
+                                    {selectedAssets.length > 0 && (
+                                        <div style={{
+                                            fontSize: '12px',
+                                            color: '#059669',
+                                            marginTop: '4px',
+                                            fontStyle: 'italic'
+                                        }}>
+                                            💡 Auto-calculated based on ${selectedAssets.reduce((sum, asset) => sum + asset.value, 0).toFixed(2)} borrowing (you can adjust manually)
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -641,26 +1216,7 @@ const Home: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Lending Summary */}
-                            <div style={{
-                                background: 'rgba(255, 255, 255, 0.6)',
-                                borderRadius: '12px',
-                                padding: '16px',
-                                marginBottom: '16px'
-                            }}>
-                                <div className="stat-row compact">
-                                    <span>Selected Assets</span>
-                                    <span>{selectedAssets.length} types</span>
-                                </div>
-                                <div className="stat-row compact">
-                                    <span>Total Lent</span>
-                                    <span>${selectedAssets.reduce((sum, asset) => sum + asset.value, 0).toFixed(2)}</span>
-                                </div>
-                                <div className="stat-row compact">
-                                    <span>Est. Interest Rate</span>
-                                    <span>2.5%</span>
-                                </div>
-                            </div>
+
 
                             {/* Health Factor */}
                             <div className="health-indicator">
@@ -761,9 +1317,9 @@ const Home: React.FC = () => {
                                             value={bridgeAmount}
                                             onChange={(e) => {
                                                 const value = e.target.value;
-                                                // 严格的输入验证：只允许数字和小数点
+                                                // Strict input validation: only allow numbers and decimal point
                                                 if (value === '' || /^[0-9]*\.?[0-9]*$/.test(value)) {
-                                                    // 额外检查：不允许多个小数点
+                                                                                                          // Additional check: no multiple decimal points allowed
                                                     const dotCount = (value.match(/\./g) || []).length;
                                                     if (dotCount <= 1) {
                                                         setBridgeAmount(value);
@@ -771,7 +1327,7 @@ const Home: React.FC = () => {
                                                 }
                                             }}
                                             onKeyDown={(e) => {
-                                                // 阻止危险字符的输入
+                                                // Prevent dangerous character input
                                                 const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
                                                 const isNumber = /^[0-9]$/.test(e.key);
                                                 const isDot = e.key === '.';
@@ -780,13 +1336,13 @@ const Home: React.FC = () => {
                                                     e.preventDefault();
                                                 }
                                                 
-                                                // 防止输入多个小数点
+                                                // Prevent multiple decimal point input
                                                 if (isDot && bridgeAmount.includes('.')) {
                                                     e.preventDefault();
                                                 }
                                             }}
                                         />
-                                        <div className="amount-value">${calculateUSDValue(bridgeAmount)}</div>
+                                        <div className="amount-value">${calculateUSDValue(bridgeAmount, bridgeAsset?.token || 'ETH')}</div>
                                         <div style={getTokenIconStyle(bridgeAsset?.icon || 'ETH')}>{bridgeAsset?.icon || 'ETH'}</div>
                                         <div className="token-balance">
                                             <span>Balance: {bridgeAsset ? bridgeAsset.amount : '0'}</span>
@@ -917,8 +1473,8 @@ const Home: React.FC = () => {
                         <div className="glass-card">
                             <div className="section-title large">Step 3: Select Target Assets</div>
                             <CrossChainAssetSelector
-                                sourceChain={bridgeSourceChain}
-                                targetChain={bridgeTargetChain}
+                                sourceChain={parseInt(bridgeSourceChain)}
+                                targetChain={parseInt(bridgeTargetChain)}
                                 sourceAsset={bridgeAsset || { id: 'eth', symbol: 'ETH', name: 'Ethereum', price: assetPrices.ETH?.price || 3000, balance: '0', icon: 'ETH' }}
                                 sourceAmount={parseFloat(bridgeAmount) || 0}
                                 onTargetAssetsChange={handleBridgeTargetAssetsChange}
@@ -927,7 +1483,7 @@ const Home: React.FC = () => {
                     )}
                 </div>
 
-                {/* Right Panel - Network & Fee Information */}
+                {/* Right Panel - Collateral & Lending Summary */}
                 <div className="info-panel glass-card info-card">
                     <div className="">
                         <div style={{
@@ -943,7 +1499,7 @@ const Home: React.FC = () => {
                                 fontSize: '16px',
                                 fontWeight: 600,
                                 color: 'var(--text-color)'
-                            }}>Network Information</h3>
+                            }}>💼 Collateral & Lending Summary</h3>
                             <div style={{
                                 width: '24px',
                                 height: '24px',
@@ -955,11 +1511,50 @@ const Home: React.FC = () => {
                                 justifyContent: 'center',
                                 fontSize: '12px'
                             }}>
-                                <i className="fas fa-info"></i>
+                                <i className="fas fa-chart-line"></i>
                             </div>
                         </div>
 
-                        {/* Network Status */}
+                        {/* Total Collateral */}
+                        <div style={{
+                            background: 'rgba(255, 255, 255, 0.6)',
+                            borderRadius: '12px',
+                            padding: '16px',
+                            marginBottom: '16px'
+                        }}>
+                            <div className="stat-row compact" style={{ 
+                                background: 'rgba(59, 130, 246, 0.08)',
+                                padding: '8px 12px',
+                                borderRadius: '8px',
+                                marginBottom: '8px'
+                            }}>
+                                <span style={{ fontWeight: 600 }}>Total Collateral Value</span>
+                                <span style={{ fontWeight: 600, color: '#3b82f6' }}>
+                                    ${calculateTotalCollateralValue().toFixed(2)}
+                                </span>
+                            </div>
+                            
+                            {/* Collateral breakdown */}
+                            {useExistingStaking && totalStakingValue > 0 && (
+                                <div style={{ marginLeft: '8px', marginBottom: '8px' }}>
+                                    <div className="stat-row compact" style={{ fontSize: '13px', color: '#6b7280' }}>
+                                        <span>• From staking positions</span>
+                                        <span>${totalStakingValue.toFixed(2)}</span>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {collateralAmount && (
+                                <div style={{ marginLeft: '8px', marginBottom: '8px' }}>
+                                    <div className="stat-row compact" style={{ fontSize: '13px', color: '#6b7280' }}>
+                                        <span>• From new collateral</span>
+                                        <span>${calculateUSDValue(collateralAmount, collateralAsset?.token || 'ETH')}</span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Borrowing Capacity */}
                         <div style={{
                             background: 'rgba(255, 255, 255, 0.6)',
                             borderRadius: '12px',
@@ -967,6 +1562,193 @@ const Home: React.FC = () => {
                             marginBottom: '16px'
                         }}>
                             <h4 style={{ fontSize: '14px', marginBottom: '12px', color: 'var(--text-color)' }}>
+                                Borrowing Information
+                            </h4>
+                            <div style={{ display: 'grid', gap: '8px' }}>
+                                {/* Max borrowing capacity */}
+                                <div className="stat-row compact" style={{ 
+                                    background: 'rgba(34, 197, 94, 0.08)',
+                                    padding: '8px 12px',
+                                    borderRadius: '8px',
+                                    marginBottom: '8px'
+                                }}>
+                                    <span>Max Borrowing Capacity (75% LTV)</span>
+                                    <span style={{ fontWeight: 600, color: '#22c55e' }}>
+                                        ${calculateMaxBorrow(collateralAmount)}
+                                    </span>
+                                </div>
+                                
+                                {/* Current borrowing */}
+                                <div className="stat-row compact">
+                                    <span>Selected Assets to Borrow</span>
+                                    <span>{selectedAssets.length} types</span>
+                                </div>
+                                <div className="stat-row compact">
+                                    <span>Total Borrowing Amount</span>
+                                    <span>${selectedAssets.reduce((sum, asset) => sum + asset.value, 0).toFixed(2)}</span>
+                                </div>
+                                <div className="stat-row compact">
+                                    <span>Est. Interest Rate</span>
+                                    <span>2.5%</span>
+                                </div>
+                                
+                                {/* Health Factor Mini Display */}
+                                <div className="stat-row compact" style={{
+                                    background: calculateHealthFactor() > 75 ? 'rgba(34, 197, 94, 0.08)' : 
+                                               calculateHealthFactor() > 50 ? 'rgba(251, 191, 36, 0.08)' : 
+                                               'rgba(239, 68, 68, 0.08)',
+                                    padding: '8px 12px',
+                                    borderRadius: '8px',
+                                    marginTop: '8px'
+                                }}>
+                                    <span>Health Factor</span>
+                                    <span style={{ 
+                                        fontWeight: 600,
+                                        color: calculateHealthFactor() > 75 ? '#22c55e' : 
+                                               calculateHealthFactor() > 50 ? '#f59e0b' : 
+                                               '#ef4444'
+                                    }}>
+                                        {calculateHealthFactor().toFixed(0)}%
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Asset Prices & Protocol Info */}
+                        <div style={{
+                            background: 'rgba(255, 255, 255, 0.6)',
+                            borderRadius: '12px',
+                            padding: '16px'
+                        }}>
+                            <h4 style={{ fontSize: '14px', marginBottom: '12px', color: 'var(--text-color)' }}>
+                                Market Information
+                            </h4>
+                            <div style={{ display: 'grid', gap: '8px' }}>
+                                <div className="stat-row compact">
+                                    <span>Current Prices</span>
+                                    <div style={{ fontSize: '11px', color: 'var(--secondary-text)', textAlign: 'right' }}>
+                                        {assetPrices.ETH && (
+                                            <div>ETH: {formatPrice(assetPrices.ETH.price)}</div>
+                                        )}
+                                        {assetPrices.LINK && (
+                                            <div>LINK: {formatPrice(assetPrices.LINK.price)}</div>
+                                        )}
+                                        {assetPrices.BNB && (
+                                            <div>BNB: {formatPrice(assetPrices.BNB.price)}</div>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="stat-row compact">
+                                    <span>Price Updates</span>
+                                    <span style={{ fontSize: '12px', color: 'var(--secondary-text)' }}>
+                                        {Object.keys(assetPrices).length > 0 ? 'Live Chainlink' : 'Loading...'}
+                                    </span>
+                                </div>
+                                <div className="stat-row compact">
+                                    <span>Cross-chain Path</span>
+                                    <span style={{ fontSize: '12px', color: 'var(--secondary-text)' }}>
+                                        {sourceChain && targetChain ? 
+                                            `${getChainName(sourceChain)} → ${getChainName(targetChain)}` :
+                                            'Select chains'
+                                        }
+                                    </span>
+                                </div>
+                                <div className="stat-row compact">
+                                    <span>Protocol Fee</span>
+                                    <span>0.1%</span>
+                                </div>
+                                <div className="stat-row compact">
+                                    <span>Est. Bridge Time</span>
+                                    <span>~7 minutes</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Network Information Popup */}
+            {isNetworkInfoOpen && (
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        backdropFilter: 'blur(4px)',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        justifyContent: 'flex-end',
+                        padding: '70px 20px 20px 20px',
+                        zIndex: 1000,
+                        animation: 'fadeIn 0.2s ease'
+                    }}
+                    onClick={() => setIsNetworkInfoOpen(false)}
+                >
+                    <div
+                        style={{
+                            background: 'rgba(255, 255, 255, 0.95)',
+                            backdropFilter: 'blur(10px)',
+                            borderRadius: '16px',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            padding: '20px',
+                            minWidth: '350px',
+                            maxWidth: '400px',
+                            maxHeight: '80vh',
+                            overflowY: 'auto',
+                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+                            transform: isNetworkInfoOpen ? 'translateX(0)' : 'translateX(100%)',
+                            transition: 'transform 0.3s ease',
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '20px',
+                            paddingBottom: '12px',
+                            borderBottom: '1px solid rgba(0, 0, 0, 0.1)'
+                        }}>
+                            <h3 style={{
+                                margin: 0,
+                                fontSize: '18px',
+                                fontWeight: 600,
+                                color: '#1e1e1e'
+                            }}>
+                                🌐 Network Information
+                            </h3>
+                            <button
+                                onClick={() => setIsNetworkInfoOpen(false)}
+                                style={{
+                                    background: 'rgba(0, 0, 0, 0.1)',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '32px',
+                                    height: '32px',
+                                    cursor: 'pointer',
+                                    fontSize: '18px',
+                                    color: '#666',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        {/* Network Status */}
+                        <div style={{
+                            background: 'rgba(255, 255, 255, 0.7)',
+                            borderRadius: '12px',
+                            padding: '16px',
+                            marginBottom: '16px'
+                        }}>
+                            <h4 style={{ fontSize: '14px', marginBottom: '12px', color: '#1e1e1e' }}>
                                 Network Status
                             </h4>
                             <div style={{ display: 'grid', gap: '8px' }}>
@@ -977,9 +1759,10 @@ const Home: React.FC = () => {
                                 <div className="stat-row compact">
                                     <span>Network Congestion</span>
                                     <span style={{ 
-                                        color: networkStatus ? getCongestionColor(networkStatus.congestionLevel) : '#f59e0b' 
+                                        color: networkStatus ? getCongestionColor(networkStatus.congestionLevel) : '#f59e0b',
+                                        fontWeight: 600
                                     }}>
-                                        {networkStatus ? networkStatus.congestionLevel.charAt(0).toUpperCase() + networkStatus.congestionLevel.slice(1) : 'Medium'}
+                                        {getCongestionLevel()}
                                     </span>
                                 </div>
                                 <div className="stat-row compact">
@@ -995,12 +1778,12 @@ const Home: React.FC = () => {
 
                         {/* Fee Breakdown */}
                         <div style={{
-                            background: 'rgba(255, 255, 255, 0.6)',
+                            background: 'rgba(255, 255, 255, 0.7)',
                             borderRadius: '12px',
                             padding: '16px',
                             marginBottom: '16px'
                         }}>
-                            <h4 style={{ fontSize: '14px', marginBottom: '12px', color: 'var(--text-color)' }}>
+                            <h4 style={{ fontSize: '14px', marginBottom: '12px', color: '#1e1e1e' }}>
                                 Fee Breakdown
                             </h4>
                             <div style={{ display: 'grid', gap: '8px' }}>
@@ -1016,21 +1799,15 @@ const Home: React.FC = () => {
                                     <span>Protocol Fee</span>
                                     <span>0.1%</span>
                                 </div>
-                                <div className="stat-row compact">
-                                    <span>Price Updates</span>
-                                    <span style={{ fontSize: '12px', color: 'var(--secondary-text)' }}>
-                                        {Object.keys(assetPrices).length > 0 ? 'Live Chainlink' : 'Loading...'}
-                                    </span>
-                                </div>
                                 <div style={{
                                     paddingTop: '8px',
-                                    borderTop: '1px solid var(--border-color)',
+                                    borderTop: '1px solid rgba(0, 0, 0, 0.1)',
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                     fontWeight: 600
                                 }}>
                                     <span>Est. Total Fee</span>
-                                    <span style={{ color: 'var(--accent-color)' }}>
+                                    <span style={{ color: '#3b82f6' }}>
                                         {networkStatus ? 
                                             `$${((parseFloat(networkStatus.gasPriceGwei.standard) * 21000 / 1e9) * (assetPrices.ETH?.price || 3000) + 2.5).toFixed(2)}` 
                                             : '~$7.70'
@@ -1040,13 +1817,13 @@ const Home: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Protocol Stats */}
+                        {/* Protocol Statistics */}
                         <div style={{
-                            background: 'rgba(255, 255, 255, 0.6)',
+                            background: 'rgba(255, 255, 255, 0.7)',
                             borderRadius: '12px',
                             padding: '16px'
                         }}>
-                            <h4 style={{ fontSize: '14px', marginBottom: '12px', color: 'var(--text-color)' }}>
+                            <h4 style={{ fontSize: '14px', marginBottom: '12px', color: '#1e1e1e' }}>
                                 Protocol Statistics
                             </h4>
                             <div style={{ display: 'grid', gap: '8px' }}>
@@ -1060,7 +1837,7 @@ const Home: React.FC = () => {
                                 </div>
                                 <div className="stat-row compact">
                                     <span>Success Rate</span>
-                                    <span style={{ color: '#22c55e' }}>
+                                    <span style={{ color: '#22c55e', fontWeight: 600 }}>
                                         {protocolStats ? `${protocolStats.successRate}%` : '99.8%'}
                                     </span>
                                 </div>
@@ -1068,25 +1845,21 @@ const Home: React.FC = () => {
                                     <span>Avg. Bridge Time</span>
                                     <span>{protocolStats ? protocolStats.averageTransactionTime : '~7 minutes'}</span>
                                 </div>
-                                <div className="stat-row compact">
-                                    <span>Current Prices</span>
-                                    <div style={{ fontSize: '11px', color: 'var(--secondary-text)', textAlign: 'right' }}>
-                                        {assetPrices.ETH && (
-                                            <div>ETH: {formatPrice(assetPrices.ETH.price)}</div>
-                                        )}
-                                        {assetPrices.LINK && (
-                                            <div>LINK: {formatPrice(assetPrices.LINK.price)}</div>
-                                        )}
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Toast Container for notifications */}
             <ToastContainer />
+
+            <style jsx>{`
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+            `}</style>
         </div>
     );
 };
