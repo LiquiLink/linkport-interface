@@ -18,6 +18,7 @@ const WalletConnect: React.FC = () => {
     const [connecting, setConnecting] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
     const [copyPopup, setCopyPopup] = useState(false);
+    console.log("connected", chainId)
 
     const jwt = typeof window !== 'undefined' ? localStorage.getItem('jwt') || '' : '';
 

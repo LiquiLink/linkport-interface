@@ -5,7 +5,7 @@ import CrossChainAssetSelector from '../components/CrossChainAssetSelector';
 import { bsc, bscTestnet, sepolia } from 'wagmi/chains';
 import { useAccount, useChainId, useProof } from 'wagmi';
 import Dropdown from '../components/Dropdown';
-import { poolList } from '../config';
+import { poolList, chainSelector } from '../config';
 import { getUserPosition, loan } from '@/utils/pool';
 import { getUserAssetBalance } from '../utils/balance';
 import { formatUnits } from 'ethers';
@@ -362,7 +362,9 @@ const Home: React.FC = () => {
             // Show processing notification
             showToast('Transaction processing...', 'info', { autoClose: false });
 
-            loan(chainId, collateralAsset.token, parseEther(collateralAmount), selectedAssets.map(asset => asset.token), selectedAssets.map(asset => parseEther(asset.amount + '')));
+
+
+            loan(chainId, targetChain, collateralAsset.token, parseEther(collateralAmount), selectedAssets.map(asset => asset.token), selectedAssets.map(asset => parseEther(asset.amount + '')));
 
             // Get collateral smart contract information
             const poolData = poolList.find(pool => 

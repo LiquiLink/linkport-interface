@@ -5,6 +5,7 @@ import { config, linkPorts, chainSelector } from '../config';
 import { BigNumberish } from 'ethers';
 import { sepolia, bscTestnet } from 'wagmi/chains';
 import { getBalance, getTotalSupply } from './balance';
+import { sep } from 'path';
 
 
 export async function getPoolTvl(pool: any) : Promise<BigNumberish> {
@@ -36,11 +37,12 @@ export async function getUserPosition(pool: any, user: any) : Promise<BigNumberi
 }
 
 
-export async function loan(chainId: any, collateralToken: string, collateralAmount: BigNumberish, loanToken: string[], loanAmount: BigNumberish[]) : Promise<void> {
+export async function loan(chainId: any, targetChainId: any, collateralToken: string, collateralAmount: BigNumberish, loanToken: string[], loanAmount: BigNumberish[]) : Promise<void> {
     console.log("loan", chainId, collateralToken, collateralAmount, loanToken, loanAmount);
 
     const linkPort = chainId == sepolia.id ? linkPorts[sepolia.id] : linkPorts[bscTestnet.id];
-    const destChainSelector = sepolia.id ? chainSelector[sepolia.id] : chainSelector[bscTestnet.id];
+    const destChainSelector = targetChainId== sepolia.id ? chainSelector[sepolia.id] : chainSelector[bscTestnet.id];
+    console.log("linkPort", linkPort, "destChainSelector", destChainSelector);
     try {
         const tx = await writeContract(config, {
             address: linkPort as `0x${string}`,
