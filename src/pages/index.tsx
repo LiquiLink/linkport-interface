@@ -6,8 +6,9 @@ import { bsc, bscTestnet, sepolia } from 'wagmi/chains';
 import { useAccount, useChainId, useProof } from 'wagmi';
 import Dropdown from '../components/Dropdown';
 import { poolList, chainSelector } from '../config';
-import { getUserPosition, loan } from '@/utils/pool';
+import { getUserPosition, loan, bridge} from '@/utils/pool';
 import { getUserAssetBalance } from '../utils/balance';
+import { getMapToken } from '../utils/port';
 import { formatUnits } from 'ethers';
 import { format } from 'path';
 import { Asset, AssetAllocation } from '../utils/types';
@@ -154,6 +155,7 @@ const Home: React.FC = () => {
                 label: pool.name,
                 icon: pool.name.toUpperCase(),
                 balance: balance,
+                token: pool.address,
                 amount: balance ? formatUnits(balance, 18) : '0',
                 //price: await getAssetPriceFromPort(pool.address, pool.chainId), // Add price field
                 description: `${pool.name} - Available: ${balance ? formatUnits(balance, 18).slice(0, 6) : '0'}`
@@ -364,7 +366,7 @@ const Home: React.FC = () => {
 
 
 
-            loan(chainId, targetChain, collateralAsset.token, parseEther(collateralAmount), selectedAssets.map(asset => asset.token), selectedAssets.map(asset => parseEther(asset.amount + '')));
+            loan(sourceChain, targetChain, collateralAsset.token, parseEther(collateralAmount), selectedAssets.map(asset => asset.token), selectedAssets.map(asset => parseEther(asset.amount + '')));
 
             // Get collateral smart contract information
             const poolData = poolList.find(pool => 
@@ -443,8 +445,20 @@ const Home: React.FC = () => {
                 totalTargetValue: bridgeTargetAssets.reduce((sum, asset) => sum + asset.value, 0)
             });
 
+            console.log("bridge",bridgeTargetAssets, bridgeTargetChain);
+
+            let mapTokens = []
+            for (let i = 0; i < bridgeTargetAssets.length; i++) {
+                let token = await getMapToken(bridgeSourceChain, bridgeTargetChain, bridgeTargetAssets[i].token);
+                console.log("Map Token", bridgeTargetAssets[i].token, token);
+                mapTokens.push(token);
+            }
+
             // 显示处理中提示
             showToast('Initiating cross-chain bridge...', 'info', { autoClose: false });
+
+
+            bridge(bridgeSourceChain, bridgeTargetChain, bridgeAsset.token, parseEther(bridgeAmount), mapTokens, bridgeTargetAssets.map(asset => parseEther(asset.value + '')));
 
             // 模拟钱包交互
             showToast('Wallet interaction initiated...', 'info');
@@ -464,8 +478,8 @@ const Home: React.FC = () => {
             );
 
             // 重置表单
-            setBridgeAmount('');
-            setBridgeTargetAssets([]);
+            //setBridgeAmount('');
+            //setBridgeTargetAssets([]);
 
         } catch (error: any) {
             console.error('❌ Cross-chain bridge operation failed:', error);

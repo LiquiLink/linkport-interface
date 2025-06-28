@@ -57,3 +57,25 @@ export async function loan(chainId: any, targetChainId: any, collateralToken: st
         console.error("Error executing loan:", error);
     }
 }
+
+export async function bridge(chainId: any, targetChainId: any, collateralToken: string, collateralAmount: BigNumberish, loanToken: string[], loanAmount: BigNumberish[]) : Promise<void> {
+    console.log("bridge", chainId, targetChainId, collateralToken, collateralAmount, loanToken, loanAmount);
+
+
+    const linkPort = chainId == sepolia.id ? linkPorts[sepolia.id] : linkPorts[bscTestnet.id];
+    const destChainSelector = targetChainId== sepolia.id ? chainSelector[sepolia.id] : chainSelector[bscTestnet.id];
+    console.log("linkPort", linkPort, "destChainSelector", destChainSelector);
+    try {
+        const tx = await writeContract(config, {
+            address: linkPort as `0x${string}`,
+            abi: linkPortABI,
+            functionName: 'bridge',
+            args: [destChainSelector, collateralToken, collateralAmount, loanToken, loanAmount],
+            chainId: chainId == sepolia.id ? sepolia.id : bscTestnet.id,
+        });
+
+        console.log("Bridge transaction sent:", tx);
+    } catch (error) {
+        console.error("Error executing loan:", error);
+    }
+}

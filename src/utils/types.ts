@@ -5,6 +5,7 @@ export interface Asset {
     price: number;
     balance: string;
     icon: string;
+    token: string,
 }
 
 export interface AssetAllocation {

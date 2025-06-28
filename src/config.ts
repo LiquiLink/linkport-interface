@@ -33,8 +33,8 @@ export const poolList = [
         name: 'LINK',
         apy: '8.3%',
         isNative: false,
-        address: "0x779877A7B0D9E8603169DdbD7836e478b4624789",
-        pool: "0xAc285c231b766BbE0b7964125fb01f808775CB0a",
+        address: "0x391e62e754caa820b606703d1920c34a35792dd6",
+        pool: "0x748Ea283F44FbF2da72Abace4575CD8F57D706dd",
         volume24h: '$89K',
         tokens: ['LINK']
     },
@@ -48,6 +48,17 @@ export const poolList = [
         pool: "0x33e0Eee584352f61490F91951B162E38d0a6EeD7",
         volume24h: '$89K',
         tokens: ['USDT']
+    },
+    {
+        id: 'sepoliaBNB',
+        chainId: sepolia.id, 
+        name: 'BNB',
+        apy: '8.3%',
+        isNative: false,
+        address: "0xDC64753A100619a00aC950dA011c9eAB9B5aC870",
+        pool: "0x88322f612dc9e0ed043f766de227bd7ada86d78e",
+        volume24h: '$89K',
+        tokens: ['BNB']
     },
     {
         id: 'sepoliaETH',
@@ -66,8 +77,8 @@ export const poolList = [
         name: 'LINK',
         apy: '8.3%',
         isNative: false,
-        address: "0x84b9B910527Ad5C03A9Ca831909E21e236EA7b06",
-        pool: "0x3aA26101A8b4Dc77A0467a5B9aF0702d57621D16",
+        address: "0xf11935eb67fe7c505e93ed7751f8c59fc3199121",
+        pool: "0x70093330B51754edC72053CbA3bDF9208fC85547",
         volume24h: '$89K',
         tokens: ['LINK']
     },

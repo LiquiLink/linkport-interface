@@ -169,6 +169,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
             amount: 0,
             value: 0,
             percentage: 0,
+            token: asset.token,
             color: colors[targetAssets.length % colors.length]
         };
 
