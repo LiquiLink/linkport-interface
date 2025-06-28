@@ -10,6 +10,7 @@ import { getPoolTvl, getUserPosition } from '../utils/pool';
 import { useTransactionCreator } from '../hooks/useTransactions';
 import { getMultipleAssetPrices } from '../utils/priceService';
 import { useToast } from '../components/Toast';
+import LoadingSpinner, { LoadingValue, PoolCardSkeleton } from '../components/LoadingSpinner';
 
 interface Pool {
     id: string;
@@ -40,6 +41,13 @@ const Pools: React.FC = () => {
     const [withdrawModalActive, setWithdrawModalActive] = useState(false);
     const depositTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
     const withdrawTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+    
+    // Loading states
+    const [isDataLoading, setIsDataLoading] = useState(true);
+    const [isPoolsLoading, setIsPoolsLoading] = useState(true);
+    const [loadingTvls, setLoadingTvls] = useState<{[key: string]: boolean}>({});
+    const [loadingPositions, setLoadingPositions] = useState<{[key: string]: boolean}>({});
+    const [loadingBalances, setLoadingBalances] = useState<{[key: string]: boolean}>({});
 
     // Use transaction creation hooks
     const { 
@@ -62,51 +70,101 @@ const Pools: React.FC = () => {
         async function fetchPools() {
             if (!isClient || !chainId) return;
             
+            setIsDataLoading(true);
+            setIsPoolsLoading(true);
+            
             try {
+                console.log('🔄 Starting to fetch pools data...');
+                
                 const chainPools = poolList.filter(pool => pool.chainId === chainId);
                 setPools(chainPools);
                 
+                // Initialize loading states for each pool
+                const initialTvlLoading: {[key: string]: boolean} = {};
+                const initialPositionLoading: {[key: string]: boolean} = {};
+                const initialBalanceLoading: {[key: string]: boolean} = {};
+                
+                chainPools.forEach(pool => {
+                    initialTvlLoading[pool.id] = true;
+                    initialPositionLoading[pool.id] = true;
+                    initialBalanceLoading[pool.id] = true;
+                });
+                
+                setLoadingTvls(initialTvlLoading);
+                setLoadingPositions(initialPositionLoading);
+                setLoadingBalances(initialBalanceLoading);
+                setIsPoolsLoading(false);
+                
+                console.log('📊 Fetching price data...');
                 // Get price data
                 const symbols = ['ETH', 'LINK', 'USDT', 'BNB'];
                 const prices = await getMultipleAssetPrices(symbols, chainId);
                 setAssetPrices(prices);
-                
-                // Successfully fetched pool and price data
+                console.log('✅ Price data loaded');
                 
                 // Get TVL and user position data
                 const tvlData: {[key: string]: number} = {};
                 const positionData: {[key: string]: string} = {};
                 const balanceData: {[key: string]: string} = {};
                 
+                console.log('💰 Fetching pool data for', chainPools.length, 'pools...');
+                
                 for (const pool of chainPools) {
                     try {
+                        console.log(`📈 Fetching TVL for ${pool.name}...`);
                         // Get TVL
                         const tvl = await getPoolTvl(pool);
                         tvlData[pool.id] = tvl ? parseFloat(formatUnits(tvl, 18)) : 0;
+                        setPoolTvls(prev => ({ ...prev, [pool.id]: tvlData[pool.id] }));
+                        setLoadingTvls(prev => ({ ...prev, [pool.id]: false }));
+                        console.log(`✅ ${pool.name} TVL: $${tvlData[pool.id].toFixed(2)}`);
                         
                         if (address) {
+                            console.log(`👤 Fetching user data for ${pool.name}...`);
+                            
                             // Get user position in the pool
                             const userPos = await getUserPosition(pool, address);
                             positionData[pool.id] = userPos ? formatUnits(userPos, 18) : '0';
+                            setUserPositions(prev => ({ ...prev, [pool.id]: positionData[pool.id] }));
+                            setLoadingPositions(prev => ({ ...prev, [pool.id]: false }));
                             
                             // Get user balance
                             const userBal = await getUserAssetBalance(pool.address, address, pool.chainId, pool.isNative);
                             balanceData[pool.id] = formatUnits(userBal, 18);
+                            setUserBalances(prev => ({ ...prev, [pool.id]: balanceData[pool.id] }));
+                            setLoadingBalances(prev => ({ ...prev, [pool.id]: false }));
+                            
+                            console.log(`✅ ${pool.name} user data loaded`);
+                        } else {
+                            // No user connected, set loading to false
+                            setLoadingPositions(prev => ({ ...prev, [pool.id]: false }));
+                            setLoadingBalances(prev => ({ ...prev, [pool.id]: false }));
                         }
                     } catch (error) {
-                        console.error(`Failed to get ${pool.name} data:`, error);
+                        console.error(`❌ Failed to get ${pool.name} data:`, error);
                         tvlData[pool.id] = 0;
                         positionData[pool.id] = '0';
                         balanceData[pool.id] = '0';
+                        
+                        // Set loading to false even on error
+                        setLoadingTvls(prev => ({ ...prev, [pool.id]: false }));
+                        setLoadingPositions(prev => ({ ...prev, [pool.id]: false }));
+                        setLoadingBalances(prev => ({ ...prev, [pool.id]: false }));
                     }
                 }
                 
-                setPoolTvls(tvlData);
-                setUserPositions(positionData);
-                setUserBalances(balanceData);
+                console.log('🎉 All pool data loaded successfully!');
                 
             } catch (error) {
-                console.error('Failed to fetch pool data:', error);
+                console.error('❌ Failed to fetch pool data:', error);
+                setIsPoolsLoading(false);
+                
+                // Set all loading states to false on error
+                setLoadingTvls({});
+                setLoadingPositions({});
+                setLoadingBalances({});
+            } finally {
+                setIsDataLoading(false);
             }
         }
         
@@ -392,7 +450,15 @@ const Pools: React.FC = () => {
                         </p>
                     </div>
 
-                    {pools.length === 0 ? (
+                    {isPoolsLoading ? (
+                        // Loading skeleton for pools
+                        <div style={{ display: 'grid', gap: '20px' }}>
+                            <LoadingSpinner type="spinner" text="Loading pools data..." />
+                            {[1, 2, 3].map(i => (
+                                <PoolCardSkeleton key={i} />
+                            ))}
+                        </div>
+                    ) : pools.length === 0 ? (
                         <div style={{
                             textAlign: 'center',
                             padding: '48px 24px',
@@ -495,7 +561,10 @@ const Pools: React.FC = () => {
                                                 fontWeight: 600,
                                                 color: 'var(--text-color)'
                                             }}>
-                                                {poolTvls[pool.id] ? formatCurrency(poolTvls[pool.id]) : '$0'}
+                                                <LoadingValue
+                                                    isLoading={loadingTvls[pool.id] || false}
+                                                    value={poolTvls[pool.id] ? formatCurrency(poolTvls[pool.id]) : '$0'}
+                                                />
                                             </div>
                                         </div>
                                         
@@ -512,7 +581,10 @@ const Pools: React.FC = () => {
                                                 fontWeight: 600,
                                                 color: 'var(--text-color)'
                                             }}>
-                                                {userPositions[pool.id] ? parseFloat(userPositions[pool.id]).toFixed(4) : '0'}
+                                                <LoadingValue
+                                                    isLoading={loadingPositions[pool.id] || false}
+                                                    value={userPositions[pool.id] ? parseFloat(userPositions[pool.id]).toFixed(4) : '0'}
+                                                />
                                             </div>
                                         </div>
                                         
@@ -679,7 +751,10 @@ const Pools: React.FC = () => {
                                     fontWeight: 600,
                                     color: '#1e1e1e'
                                 }}>
-                                    {parseFloat(userBalances[selectedPool.id] || '0').toFixed(6)} {selectedPool.name}
+                                    <LoadingValue
+                                        isLoading={loadingBalances[selectedPool.id] || false}
+                                        value={`${parseFloat(userBalances[selectedPool.id] || '0').toFixed(6)} ${selectedPool.name}`}
+                                    />
                                 </div>
                             </div>
 
@@ -887,7 +962,10 @@ const Pools: React.FC = () => {
                                     fontWeight: 600,
                                     color: '#1e1e1e'
                                 }}>
-                                    {parseFloat(userPositions[selectedPool.id] || '0').toFixed(6)} {selectedPool.name}
+                                    <LoadingValue
+                                        isLoading={loadingPositions[selectedPool.id] || false}
+                                        value={`${parseFloat(userPositions[selectedPool.id] || '0').toFixed(6)} ${selectedPool.name}`}
+                                    />
                                 </div>
                             </div>
 
@@ -910,7 +988,10 @@ const Pools: React.FC = () => {
                                     fontWeight: 600,
                                     color: '#1e1e1e'
                                 }}>
-                                    {parseFloat(userBalances[selectedPool.id] || '0').toFixed(6)} {selectedPool.name}
+                                    <LoadingValue
+                                        isLoading={loadingBalances[selectedPool.id] || false}
+                                        value={`${parseFloat(userBalances[selectedPool.id] || '0').toFixed(6)} ${selectedPool.name}`}
+                                    />
                                 </div>
                             </div>
 
