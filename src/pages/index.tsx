@@ -4,9 +4,11 @@ import ImprovedNetworkSelector from '../components/ImprovedNetworkSelector';
 import CrossChainAssetSelector from '../components/CrossChainAssetSelector';
 import { bsc, bscTestnet, sepolia } from 'wagmi/chains';
 import { useAccount, useChainId, useProof } from 'wagmi';
+import  ERC20ABI  from '../abi/ERC20.json'
 import Dropdown from '../components/Dropdown';
 import { poolList, chainSelector } from '../config';
 import { getUserPosition, loan, bridge} from '@/utils/pool';
+import { linkPorts } from '../config';
 import { getUserAssetBalance } from '../utils/balance';
 import { getMapToken } from '../utils/port';
 import { formatUnits } from 'ethers';
@@ -454,9 +456,9 @@ const Home: React.FC = () => {
                 mapTokens.push(token);
             }
 
+
             // 显示处理中提示
             showToast('Initiating cross-chain bridge...', 'info', { autoClose: false });
-
 
             bridge(bridgeSourceChain, bridgeTargetChain, bridgeAsset.token, parseEther(bridgeAmount), mapTokens, bridgeTargetAssets.map(asset => parseEther(asset.value + '')));
 

@@ -5,6 +5,7 @@ import { config, linkPorts, chainSelector } from '../config';
 import { BigNumberish } from 'ethers';
 import { sepolia, bscTestnet } from 'wagmi/chains';
 import { getBalance, getTotalSupply } from './balance';
+import ERC20ABI from '../abi/ERC20.json';
 import { sep } from 'path';
 
 
@@ -41,7 +42,7 @@ export async function loan(chainId: any, targetChainId: any, collateralToken: st
     console.log("loan", chainId, collateralToken, collateralAmount, loanToken, loanAmount);
 
     const linkPort = chainId == sepolia.id ? linkPorts[sepolia.id] : linkPorts[bscTestnet.id];
-    const destChainSelector = targetChainId== sepolia.id ? chainSelector[sepolia.id] : chainSelector[bscTestnet.id];
+    const destChainSelector = targetChainId == sepolia.id ? chainSelector[sepolia.id] : chainSelector[bscTestnet.id];
     console.log("linkPort", linkPort, "destChainSelector", destChainSelector);
     try {
         const tx = await writeContract(config, {
@@ -49,7 +50,7 @@ export async function loan(chainId: any, targetChainId: any, collateralToken: st
             abi: linkPortABI,
             functionName: 'loan',
             args: [destChainSelector, collateralToken, collateralAmount, loanToken, loanAmount],
-            chainId: chainId,
+            chainId: chainId == sepolia.id ? sepolia.id : bscTestnet.id,
         });
         
         console.log("Loan transaction sent:", tx);
@@ -66,6 +67,13 @@ export async function bridge(chainId: any, targetChainId: any, collateralToken: 
     const destChainSelector = targetChainId== sepolia.id ? chainSelector[sepolia.id] : chainSelector[bscTestnet.id];
     console.log("linkPort", linkPort, "destChainSelector", destChainSelector);
     try {
+        await writeContract(config, {
+            address: collateralToken as `0x${string}`,
+            abi: ERC20ABI,
+            functionName: 'approve',
+            args: [linkPort, collateralAmount],
+        }); 
+
         const tx = await writeContract(config, {
             address: linkPort as `0x${string}`,
             abi: linkPortABI,
