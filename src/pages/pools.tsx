@@ -358,7 +358,7 @@ const Pools: React.FC = () => {
         };
     }, [isWithdrawModalOpen]);
 
-    // 防止hydration错误
+    // Prevent hydration errors
     if (!isClient) {
         return null;
     }
@@ -405,13 +405,9 @@ const Pools: React.FC = () => {
                     </div>
 
                     {pools.length === 0 ? (
-                        <div style={{
+                        <div className="glass-card" style={{
                             textAlign: 'center',
-                            padding: '48px 24px',
-                            background: 'rgba(255, 255, 255, 0.6)',
-                            backdropFilter: 'blur(10px)',
-                            borderRadius: '16px',
-                            border: '1px solid var(--border-color)'
+                            padding: '48px 24px'
                         }}>
                             <div style={{ fontSize: '32px', marginBottom: '16px', color: 'var(--secondary-text)' }}>
                                 🏊‍♂️
@@ -426,14 +422,10 @@ const Pools: React.FC = () => {
                     ) : (
                         <div style={{ display: 'grid', gap: '20px' }}>
                             {pools.map((pool) => (
-                                <div key={pool.id} style={{
-                                    background: 'rgba(255, 255, 255, 0.7)',
-                                    backdropFilter: 'blur(10px)',
-                                    borderRadius: '16px',
-                                    border: '1px solid var(--border-color)',
+                                <div key={pool.id} className="glass-card" style={{
                                     padding: '24px',
                                     transition: 'all 0.2s ease',
-                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                                    cursor: 'pointer'
                                 }}>
                                     <div style={{
                                         display: 'flex',
@@ -573,17 +565,12 @@ const Pools: React.FC = () => {
                                         <button
                                             onClick={() => openWithdrawModal(pool)}
                                             disabled={isPendingWithdraw || parseFloat(userPositions[pool.id] || '0') === 0}
+                                            className="button-secondary"
                                             style={{
                                                 flex: 1,
                                                 padding: '12px 16px',
-                                                borderRadius: '8px',
-                                                border: '1px solid var(--border-color)',
-                                                background: 'white',
-                                                color: 'black',
                                                 fontSize: '14px',
                                                 fontWeight: 600,
-                                                cursor: 'pointer',
-                                                transition: 'all 0.2s ease',
                                                 opacity: (isPendingWithdraw || parseFloat(userPositions[pool.id] || '0') === 0) ? 0.5 : 1
                                             }}
                                         >
@@ -688,10 +675,7 @@ const Pools: React.FC = () => {
                                 color: 'var(--text-secondary)',
                                 marginTop: '4px'
                             }}>
-                                Available: <LoadingValue
-                                    isLoading={loadingBalances[selectedPool.id] || false}
-                                    value={userBalances[selectedPool.id] ? parseFloat(userBalances[selectedPool.id]).toFixed(4) : '0'}
-                                /> {selectedPool.name}
+                                Available: {userBalances[selectedPool.id] ? parseFloat(userBalances[selectedPool.id]).toFixed(4) : '0'} {selectedPool.name}
                             </div>
                             {depositAmount && (
                                 <div style={{
@@ -849,10 +833,7 @@ const Pools: React.FC = () => {
                                 color: 'var(--text-secondary)',
                                 marginTop: '4px'
                             }}>
-                                Your position: <LoadingValue
-                                    isLoading={loadingPositions[selectedPool.id] || false}
-                                    value={userPositions[selectedPool.id] ? parseFloat(userPositions[selectedPool.id]).toFixed(4) : '0'}
-                                /> {selectedPool.name}
+                                Your position: {userPositions[selectedPool.id] ? parseFloat(userPositions[selectedPool.id]).toFixed(4) : '0'} {selectedPool.name}
                             </div>
                             {withdrawAmount && (
                                 <div style={{

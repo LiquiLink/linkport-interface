@@ -40,14 +40,14 @@ const Home: React.FC = () => {
     const [bridgeAmount, setBridgeAmount] = useState('');
     
     // Lending related states
-    const [sourceChain, setSourceChain] = useState<string>(sepolia.id.toString()); // Collateral source chain
+    const [sourceChain, setSourceChain] = useState<string>(''); // Will be set based on user's current chain
     const [assetOptions, setAssetOptions] = useState<any[]>([]); // Assets available for collateral
     const [targetChain, setTargetChain] = useState<string>(''); // Borrowing target chain
     const [collateralAsset, setCollateralAsset] = useState<any>(null);
     const [selectedAssets, setSelectedAssets] = useState<AssetAllocation[]>([]);
 
     // Cross-chain related states
-    const [bridgeSourceChain, setBridgeSourceChain] = useState<string>(sepolia.id.toString());
+    const [bridgeSourceChain, setBridgeSourceChain] = useState<string>(''); // Will be set based on user's current chain
     const [bridgeTargetChain, setBridgeTargetChain] = useState<string>('');
     const [bridgeAsset, setBridgeAsset] = useState<any>(null);
     const [bridgeAssetOptions, setBridgeAssetOptions] = useState<any[]>([]);
@@ -61,6 +61,7 @@ const Home: React.FC = () => {
     // Network switching states
     const [isSwitchingNetwork, setIsSwitchingNetwork] = useState<boolean>(false);
     const [lastSwitchedChain, setLastSwitchedChain] = useState<string>('');
+    const [userChangedSourceChain, setUserChangedSourceChain] = useState<boolean>(false); // Track if user manually changed source chain
     
     // Global toast tracking - prevent duplicate toasts completely
     const [shownToasts, setShownToasts] = useState<Set<string>>(new Set());
@@ -87,6 +88,31 @@ const Home: React.FC = () => {
         createBorrowTransaction, 
         createBridgeTransaction 
     } = useTransactionCreator();
+    // Initialize sourceChain and bridgeSourceChain based on user's current chain
+    useEffect(() => {
+        if (chainId && sourceChain === '') {
+            const currentChainStr = chainId.toString();
+            console.log('🔗 Initializing sourceChain based on user current chain:', currentChainStr);
+            setSourceChain(currentChainStr);
+            setBridgeSourceChain(currentChainStr);
+        }
+    }, [chainId, sourceChain]);
+
+    // Sync sourceChain when user manually switches network in wallet (but don't trigger network switch)
+    useEffect(() => {
+        if (chainId && sourceChain && !userChangedSourceChain && !isSwitchingNetwork) {
+            const currentChainStr = chainId.toString();
+            if (sourceChain !== currentChainStr) {
+                console.log('🔄 User switched network in wallet, syncing sourceChain:', currentChainStr);
+                setSourceChain(currentChainStr);
+                setBridgeSourceChain(currentChainStr);
+            }
+        }
+        // Reset the flag after processing
+        if (userChangedSourceChain) {
+            setUserChangedSourceChain(false);
+        }
+    }, [chainId, sourceChain, userChangedSourceChain, isSwitchingNetwork]);
 
     // Fetch user staking positions on the selected chain
     async function fetchUserStakingPositions(chainId: any) {
@@ -322,17 +348,17 @@ const Home: React.FC = () => {
         }
     }
 
-    // Auto-switch network when sourceChain changes
+    // Auto-switch network when sourceChain changes (only when user manually changed it)
     useEffect(() => {
         const handleNetworkSwitch = async () => {
-            if (address && sourceChain && !isSwitchingNetwork) {
+            if (address && sourceChain && !isSwitchingNetwork && userChangedSourceChain) {
                 const targetChainId = parseInt(sourceChain);
                 
-                // Only switch if chain is different AND not recently switched to this chain
+                // Only switch if chain is different AND user manually changed the source chain
                 if (chainId !== targetChainId && lastSwitchedChain !== sourceChain) {
                     setIsSwitchingNetwork(true);
                     try {
-                        console.log(`Switching network from ${chainId} to ${targetChainId}`);
+                        console.log(`User changed sourceChain, switching network from ${chainId} to ${targetChainId}`);
                         await switchChain({ chainId: targetChainId as 11155111 | 97 });
                         setLastSwitchedChain(sourceChain);
                         
@@ -359,11 +385,16 @@ const Home: React.FC = () => {
             }
         };
 
-        fetchPools(sourceChain);
-        if (address) {
+        // Always fetch pools when sourceChain changes (regardless of whether user changed it)
+        if (sourceChain) {
+            fetchPools(sourceChain);
+        }
+        
+        // Only switch network if user manually changed sourceChain
+        if (address && userChangedSourceChain) {
             handleNetworkSwitch();
         }
-    }, [sourceChain, address, chainId])
+    }, [sourceChain, address, chainId, userChangedSourceChain])
 
     // Function to fetch bridge asset options
     async function fetchBridgePools(chainId: any) {
@@ -440,17 +471,17 @@ const Home: React.FC = () => {
         }
     }
 
-    // Fetch bridge asset options when bridge source chain changes and auto-switch network
+    // Fetch bridge asset options when bridge source chain changes and auto-switch network (only when user manually changed it)
     useEffect(() => {
         const handleBridgeNetworkSwitch = async () => {
-            if (address && bridgeSourceChain && activeTab === 'bridge' && !isSwitchingNetwork) {
+            if (address && bridgeSourceChain && activeTab === 'bridge' && !isSwitchingNetwork && userChangedSourceChain) {
                 const targetChainId = parseInt(bridgeSourceChain);
                 
-                // Only switch if chain is different AND not recently switched to this chain
+                // Only switch if chain is different AND user manually changed the bridge source chain
                 if (chainId !== targetChainId && lastSwitchedChain !== bridgeSourceChain) {
                     setIsSwitchingNetwork(true);
                     try {
-                        console.log(`Switching bridge network from ${chainId} to ${targetChainId}`);
+                        console.log(`User changed bridgeSourceChain, switching network from ${chainId} to ${targetChainId}`);
                         await switchChain({ chainId: targetChainId as 11155111 | 97 });
                         setLastSwitchedChain(bridgeSourceChain);
                         
@@ -477,9 +508,16 @@ const Home: React.FC = () => {
             }
         };
 
-        fetchBridgePools(bridgeSourceChain);
-        handleBridgeNetworkSwitch();
-    }, [bridgeSourceChain, address, chainId, activeTab])
+        // Always fetch bridge pools when bridgeSourceChain changes
+        if (bridgeSourceChain) {
+            fetchBridgePools(bridgeSourceChain);
+        }
+        
+        // Only switch network if user manually changed bridgeSourceChain
+        if (address && userChangedSourceChain && activeTab === 'bridge') {
+            handleBridgeNetworkSwitch();
+        }
+    }, [bridgeSourceChain, address, chainId, activeTab, userChangedSourceChain])
 
     // Get price data
     useEffect(() => {
@@ -1065,6 +1103,20 @@ const Home: React.FC = () => {
         }
     };
 
+    // Handle source chain selection by user
+    const handleSourceChainChange = (chainId: string) => {
+        console.log('🎯 User manually changed sourceChain from', sourceChain, 'to', chainId);
+        setUserChangedSourceChain(true);
+        setSourceChain(chainId);
+    };
+
+    // Handle bridge source chain selection by user  
+    const handleBridgeSourceChainChange = (chainId: string) => {
+        console.log('🎯 User manually changed bridgeSourceChain from', bridgeSourceChain, 'to', chainId);
+        setUserChangedSourceChain(true);
+        setBridgeSourceChain(chainId);
+    };
+
     return (
         <div className="container">
             <div className="main-layout">
@@ -1096,7 +1148,7 @@ const Home: React.FC = () => {
                             <Dropdown
                                 options={chainOptions}
                                 value={sourceChain}
-                                onChange={setSourceChain}
+                                onChange={handleSourceChainChange}
                                 placeholder="Select collateral chain"
                             />
 
@@ -1424,7 +1476,7 @@ const Home: React.FC = () => {
                             <Dropdown
                                 options={chainOptions}
                                 value={bridgeSourceChain}
-                                onChange={setBridgeSourceChain}
+                                onChange={handleBridgeSourceChainChange}
                                 placeholder="Select source chain"
                             />
 
@@ -1541,42 +1593,7 @@ const Home: React.FC = () => {
                                 </div>
                             )}
 
-                            {/* Enhanced Bridge Summary */}
-                            {bridgeAmount && bridgeTargetChain && (
-                                <div className="glass-card animate-slide-in" style={{
-                                    margin: 'var(--space-md) 0'
-                                }}>
-                                    <div className="section-title" style={{ marginBottom: 'var(--space-md)' }}>
-                                        <i className="fas fa-chart-bar" />
-                                        Bridge Summary
-                                    </div>
-                                    
-                                    <div style={{ display: 'grid', gap: 'var(--space-sm)' }}>
-                                        <div className="stat-row">
-                                            <span className="stat-label">Source Amount</span>
-                                            <span className="stat-value">{bridgeAmount} {bridgeAsset?.label}</span>
-                                        </div>
-                                        <div className="stat-row">
-                                            <span className="stat-label">Target Assets</span>
-                                            <span className="stat-value">{bridgeTargetAssets.length} types</span>
-                                        </div>
-                                        <div className="stat-row">
-                                            <span className="stat-label">Total Bridgeable</span>
-                                            <span className="stat-value text-gradient">
-                                                ${bridgeTargetAssets.reduce((sum, asset) => sum + asset.value, 0).toFixed(2)}
-                                            </span>
-                                        </div>
-                                        <div className="stat-row">
-                                            <span className="stat-label">Bridge Fee</span>
-                                            <span className="stat-value">~$2.50</span>
-                                        </div>
-                                        <div className="stat-row">
-                                            <span className="stat-label">Est. Time</span>
-                                            <span className="stat-value">~7 minutes</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+
 
                             {/* Bridge Execute Button */}
                             <button 

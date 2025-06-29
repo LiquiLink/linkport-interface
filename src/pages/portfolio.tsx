@@ -13,6 +13,7 @@ import { useToast } from '../components/Toast';
 import AddLiquidityModal from '../components/AddLiquidityModal';
 import WithdrawModal from '../components/WithdrawModal';
 import AnalyticsModal from '../components/AnalyticsModal';
+import RepayModal from '../components/RepayModal';
 
 interface Position {
     token: string;
@@ -59,6 +60,7 @@ const Portfolio: React.FC = () => {
     const [isBridgeModalOpen, setIsBridgeModalOpen] = useState(false);
     const [isAddLiquidityModalOpen, setIsAddLiquidityModalOpen] = useState(false);
     const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
+    const [isRepayModalOpen, setIsRepayModalOpen] = useState(false);
 
     // Utility functions for timeout and retry
     const withTimeout = (promise: Promise<any>, timeoutMs: number = 5000): Promise<any> => {
@@ -327,6 +329,10 @@ const Portfolio: React.FC = () => {
         setIsAnalyticsModalOpen(true);
     };
 
+    const handleRepay = () => {
+        setIsRepayModalOpen(true);
+    };
+
     const handleBrowsePools = () => {
         router.push('/pools');
     };
@@ -358,6 +364,14 @@ const Portfolio: React.FC = () => {
             setLoading(true);
         }
         showToast('Portfolio refreshed after adding liquidity', 'success');
+    };
+
+    const handleRepaySuccess = () => {
+        // Refresh portfolio data after successful repayment
+        if (Object.keys(assetPrices).length > 0) {
+            setLoading(true);
+        }
+        showToast('Portfolio refreshed after successful repayment', 'success');
     };
 
     // Retry function for when data loading fails
@@ -683,29 +697,36 @@ const Portfolio: React.FC = () => {
                                             className="button button-primary button-full"
                                             onClick={handleDeposit}
                                         >
-                                            Deposit Assets
+                                            💰 Deposit Assets
+                                        </button>
+                                        
+                                        <button 
+                                            className="button button-repay button-full"
+                                            onClick={handleRepay}
+                                            style={{
+                                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                                color: 'white',
+                                                border: 'none'
+                                            }}
+                                        >
+                                            💳 Repay Loans
                                         </button>
                                         
                                         <button 
                                             className="button button-secondary button-full"
                                             onClick={handleBridge}
                                         >
-                                            Cross-Chain Bridge
+                                            🌉 Cross-Chain Bridge
                                         </button>
                                         
                                         <button 
                                             className="button button-primary button-full"
                                             onClick={handleAnalytics}
                                         >
-                                            View Analytics
+                                            📊 View Analytics
                                         </button>
                                         
-                                        <button 
-                                            className="button button-secondary button-full"
-                                            onClick={handleBrowsePools}
-                                        >
-                                            Browse Pools
-                                        </button>
+
                                     </div>
                                 </div>
                             </div>
@@ -734,6 +755,12 @@ const Portfolio: React.FC = () => {
                 portfolioData={portfolioData}
                 userPositions={positions}
                 assetPrices={assetPrices}
+            />
+
+            <RepayModal
+                isOpen={isRepayModalOpen}
+                onClose={() => setIsRepayModalOpen(false)}
+                onSuccess={handleRepaySuccess}
             />
             
             {/* Bridge Modal - Quick Bridge to main interface */}
