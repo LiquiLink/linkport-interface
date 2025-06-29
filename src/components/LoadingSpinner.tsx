@@ -25,8 +25,8 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     const spinnerStyle: React.CSSProperties = {
         width: getSizeValue(),
         height: getSizeValue(),
-        border: `2px solid rgba(59, 130, 246, 0.2)`,
-        borderTop: `2px solid #3b82f6`,
+        border: `2px solid rgba(6, 182, 212, 0.2)`,
+        borderTop: `2px solid var(--accent-primary)`,
         borderRadius: '50%',
         animation: 'spin 1s linear infinite',
         display: inline ? 'inline-block' : 'block'
@@ -35,7 +35,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     const skeletonStyle: React.CSSProperties = {
         width: '100%',
         height: '20px',
-        background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+        background: 'linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%)',
         backgroundSize: '200% 100%',
         borderRadius: '4px',
         animation: 'shimmer 1.5s infinite',
@@ -59,7 +59,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
                     style={{
                         width: '6px',
                         height: '6px',
-                        backgroundColor: '#3b82f6',
+                        backgroundColor: 'var(--accent-primary)',
                         borderRadius: '50%',
                         animation: `bounce 1.4s ease-in-out ${i * 0.16}s infinite both`
                     }}
@@ -103,7 +103,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
                 alignItems: 'center',
                 justifyContent: inline ? 'flex-start' : 'center',
                 gap: text ? '8px' : '0',
-                color: 'var(--secondary-text)',
+                color: 'var(--text-secondary)',
                 fontSize: '14px'
             }}>
                 {renderLoader()}
@@ -142,7 +142,7 @@ export const LoadingValue: React.FC<LoadingValueProps> = ({
                     display: 'inline-block',
                     minWidth: '60px',
                     height: '1.2em',
-                    background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                    background: 'linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%)',
                     backgroundSize: '200% 100%',
                     borderRadius: '4px',
                     animation: 'shimmer 1.5s infinite'
@@ -164,12 +164,12 @@ export const PoolCardSkeleton: React.FC = () => (
             }
         `}</style>
         <div style={{
-            background: 'rgba(255, 255, 255, 0.7)',
+            background: 'var(--bg-card)',
             backdropFilter: 'blur(10px)',
-            borderRadius: '16px',
-            border: '1px solid var(--border-color)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--border-glass-strong)',
             padding: '24px',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+            boxShadow: 'var(--shadow-medium)'
         }}>
             {/* Header skeleton */}
             <div style={{
@@ -183,7 +183,7 @@ export const PoolCardSkeleton: React.FC = () => (
                         width: '48px',
                         height: '48px',
                         borderRadius: '50%',
-                        background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                        background: 'linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%)',
                         backgroundSize: '200% 100%',
                         animation: 'shimmer 1.5s infinite'
                     }} />
@@ -191,7 +191,7 @@ export const PoolCardSkeleton: React.FC = () => (
                         <div style={{
                             width: '80px',
                             height: '20px',
-                            background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                            background: 'linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%)',
                             backgroundSize: '200% 100%',
                             borderRadius: '4px',
                             marginBottom: '8px',
@@ -200,7 +200,7 @@ export const PoolCardSkeleton: React.FC = () => (
                         <div style={{
                             width: '120px',
                             height: '12px',
-                            background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                            background: 'linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%)',
                             backgroundSize: '200% 100%',
                             borderRadius: '4px',
                             animation: 'shimmer 1.5s infinite'
@@ -210,9 +210,9 @@ export const PoolCardSkeleton: React.FC = () => (
                 <div style={{
                     width: '80px',
                     height: '30px',
-                    background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                    background: 'linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%)',
                     backgroundSize: '200% 100%',
-                    borderRadius: '8px',
+                    borderRadius: 'var(--radius-md)',
                     animation: 'shimmer 1.5s infinite'
                 }} />
             </div>
@@ -229,7 +229,7 @@ export const PoolCardSkeleton: React.FC = () => (
                         <div style={{
                             width: '60px',
                             height: '12px',
-                            background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                            background: 'linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%)',
                             backgroundSize: '200% 100%',
                             borderRadius: '4px',
                             marginBottom: '8px',
@@ -238,7 +238,7 @@ export const PoolCardSkeleton: React.FC = () => (
                         <div style={{
                             width: '80px',
                             height: '18px',
-                            background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                            background: 'linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%)',
                             backgroundSize: '200% 100%',
                             borderRadius: '4px',
                             animation: 'shimmer 1.5s infinite'
@@ -252,17 +252,17 @@ export const PoolCardSkeleton: React.FC = () => (
                 <div style={{
                     flex: 1,
                     height: '44px',
-                    background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                    background: 'linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%)',
                     backgroundSize: '200% 100%',
-                    borderRadius: '8px',
+                    borderRadius: 'var(--radius-md)',
                     animation: 'shimmer 1.5s infinite'
                 }} />
                 <div style={{
                     flex: 1,
                     height: '44px',
-                    background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+                    background: 'linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%)',
                     backgroundSize: '200% 100%',
-                    borderRadius: '8px',
+                    borderRadius: 'var(--radius-md)',
                     animation: 'shimmer 1.5s infinite'
                 }} />
             </div>
