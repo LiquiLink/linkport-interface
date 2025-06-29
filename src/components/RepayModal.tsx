@@ -1,13 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useAccount, useChainId } from 'wagmi';
+import { parseEther } from 'viem';
 import { formatUnits } from 'viem';
 import { sepolia, bscTestnet } from 'wagmi/chains';
+import linkPortABI from '../abi/LinkPort.json';
+import ERC20ABI from '../abi/ERC20.json';
 import { useToast } from './Toast';
 import { getUserAssetBalance } from '../utils/balance';
 import useTransactions  from '../hooks/useTransactions';
+import { useTransactionCreator } from '../hooks/useTransactions';
+import { ethers } from 'ethers';
 import { TransactionFilter } from '../utils/transactionStorage';
-import { poolList } from '../config'
+import { chainSelector, linkPorts, poolList } from '../config'
 import { getLoan } from '../utils/pool';
+import { getAssetPriceFromPort } from '../utils/priceService';
+import { useWriteContract } from 'wagmi';
 
 interface RepayModalProps {
   isOpen: boolean;
@@ -20,6 +27,7 @@ interface BorrowedAsset {
   amount: string;
   value: number;
   chainId: number;
+  price: number;
   address: string;
   interestAccrued: number;
   healthFactor: number;
@@ -42,41 +50,62 @@ const RepayModal: React.FC<RepayModalProps> = ({
   const [userBalance, setUserBalance] = useState('0');
 
   const {
-    applyFilter,
-    filteredTransactions,
-  } = useTransactions();
+    createRepayTransaction
+  } = useTransactionCreator();
+
+  const debt = '0xa28C606a33AF8175F3bBf71d74796aDa360f4C49'
+
+  const { writeContract: writeContractRepay, isPending: isPendingRepay} = useWriteContract();
+  const { writeContract: writeContractApprove, isPending: isPendingApprove} = useWriteContract();
 
   // Load user's borrowed assets
   useEffect(() => {
     const loadBorrowedAssets = async () => {
-          const sourceAssetsPromises = poolList.filter(pool => pool.chainId === bscTestnet.id).map(async (pool) => {
+          const debtAssetsPromises = poolList.filter(pool => pool.chainId === bscTestnet.id).map(async (pool) => {
             let loan = null;
             if (address) {
                 try {
                     loan = await getLoan(
-                        pool.address, 
-                        '0xa28C606a33AF8175F3bBf71d74796aDa360f4C49',
+                        pool, 
+                        debt,
                         address,
                         sepolia.id
                     );
-                    console.log(`User ${pool.name} loan:`, loan);
+                    const [tokenAmount, amount, intrest, startTime ] = loan;
+                    if (loan != null) {
+                      const price = await getAssetPriceFromPort(pool.address, pool.chainId);
+                      const _amount = Number(amount) / 10 ** 18; // Assuming 18 decimals for simplicity
+                      const value = price.price * parseFloat(_amount) 
+                      return {
+                        symbol: pool.name,
+                        amount: _amount,
+                        value: value,
+                        chainId: pool.chainId,
+                        address: pool.address,
+                        price: price,
+                        timestamp: Number(startTime),
+                        interestAccrued: calculateInterest(_amount, Number(startTime)) + Number(intrest),
+                        healthFactor: calculateHealthFactor(value)
+                      };
+                    }
                 } catch (error) {
                     console.log("Failed to get user asset balance:", error);
                 }
-              return {
-                symbol: pool.name,
-                amount: loan.amount,
-                value: asset.value,
-                chainId: asset.chainId,
-                address: asset.address,
-                interestAccrued: calculateInterest(asset.amount, asset.timestamp),
-                healthFactor: calculateHealthFactor(asset.value)
-              };
             }
-            
         });
-        
-        const resolvedAssets = await Promise.all(sourceAssetsPromises);
+
+        const borrowedAssets = await Promise.all(debtAssetsPromises);
+        console.log('Borrowed assets:', borrowedAssets);
+        const assets: BorrowedAsset[] = borrowedAssets?.filter((asset: any) => asset != null && asset.amount > 0).map((asset: any) => ({
+            symbol: asset.symbol,
+            amount: asset.amount,
+            value: asset.value,
+            chainId: asset.chainId,
+            address: asset.address,
+            interestAccrued: calculateInterest(asset.amount, asset.timestamp),
+            healthFactor: calculateHealthFactor(asset.value)
+          })) || [];
+        setBorrowedAssets(assets);
       /*
       if (!address || !isOpen) return;
 
@@ -115,8 +144,6 @@ const RepayModal: React.FC<RepayModalProps> = ({
 
     loadBorrowedAssets();
   }, [address, isOpen]);
-
-  console.log("filtered :", filteredTransactions);
 
   // Load user balance for selected asset
   useEffect(() => {
@@ -171,30 +198,53 @@ const RepayModal: React.FC<RepayModalProps> = ({
       // Mock repay transaction - simulate 2 second delay
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Update local storage
-      const borrowedData = localStorage.getItem(`user_borrowings_${address}`);
-      if (borrowedData) {
-        const parsed = JSON.parse(borrowedData);
-        const updatedAssets = parsed.borrowedAssets?.map((asset: any) => {
-          if (asset.symbol === selectedAsset.symbol && asset.chainId === selectedAsset.chainId) {
-            const newAmount = Math.max(0, parseFloat(asset.amount) - parseFloat(repayAmount));
-            return {
-              ...asset,
-              amount: newAmount.toString(),
-              value: newAmount * asset.price || 1
-            };
+
+
+      const linkPort = linkPorts[bscTestnet.id];
+
+      await writeContractApprove({
+          address: selectedAsset.address as `0x${string}`,
+          abi: ERC20ABI,
+          functionName: 'approve',
+          args: [linkPort as `0x${string}`, parseEther(repayAmount)],
+          chainId: bscTestnet.id
+      }, 
+      {
+          onSuccess: (txHash) => {
+              console.log('✅ Approval successful:', txHash);
+              showToast('Approval confirmed! Now borrowing...', 'success');
+          },
+          onError: (error) => {
+              console.error('❌ Approval failed:', error);
+              showToast('Approval failed: ' + error.message, 'error');
           }
-          return asset;
-        }).filter((asset: any) => parseFloat(asset.amount) > 0);
+      });
 
-        const updatedData = {
-          ...parsed,
-          borrowedAssets: updatedAssets,
-          totalBorrowed: updatedAssets.reduce((sum: number, asset: any) => sum + asset.value, 0)
-        };
 
-        localStorage.setItem(`user_borrowings_${address}`, JSON.stringify(updatedData));
-      }
+      await writeContractRepay({
+          address: linkPort as `0x${string}`,
+          abi: linkPortABI,
+          functionName: 'repay',
+          args: [chainSelector[sepolia.id], debt, [selectedAsset.address], [parseEther(repayAmount)]],
+          chainId: bscTestnet.id
+      }, 
+      {
+          onSuccess: (txHash) => {
+              console.log('✅ Repay successful:', txHash);
+              createRepayTransaction(
+                  selectedAsset.symbol,
+                  repayAmount,
+                  repayAmount * Number(selectedAsset.price),
+                  txHash,
+                  selectedAsset.healthFactor
+              );
+              showToast('Repayment confirmed!', 'success');
+          },
+          onError: (error) => {
+              console.error('❌ Repayment failed:', error);
+              showToast('Repayment failed: ' + error.message, 'error');
+          }
+      });
 
       showToast(`Successfully repaid ${repayAmount} ${selectedAsset.symbol}`, 'success');
       onSuccess?.();

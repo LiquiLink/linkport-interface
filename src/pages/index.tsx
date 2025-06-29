@@ -1027,7 +1027,7 @@ const Home: React.FC = () => {
             });
 
 
-            await writeContractLoan({
+            await writeContractBridge({
                 address: linkPort as `0x${string}`,
                 abi: linkPortABI,
                 functionName: 'bridge',

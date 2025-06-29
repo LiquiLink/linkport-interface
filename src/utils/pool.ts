@@ -12,11 +12,13 @@ import { sep } from 'path';
 
 export async function getLoan(pool: any, asset: string, user: string, source: number) : Promise<any> {
     try {
+        const chainId = source == sepolia.id ? chainSelector[sepolia.id] : chainSelector[bscTestnet.id];
+        console.log(`Getting loan for asset ${asset} in pool ${pool.pool} on chain ${chainId} for user ${user}`);
         const loan = await readContract(config, {
             address: pool.pool,
             abi: LiquidityPoolABI,
-            functionName: 'getLoan',
-            args: [user, source, asset],
+            functionName: 'loans',
+            args: [user, chainId, asset],
             chainId: pool.chainId,
         });
 

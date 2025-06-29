@@ -227,38 +227,6 @@ const BridgeModal: React.FC<BridgeModalProps> = ({ isOpen, onClose, onSuccess })
         }
 
         setIsLoading(true);
-        try {
-            const sourcePool = poolList.find(pool => pool.id === bridgeAsset.value);
-            if (!sourcePool) {
-                throw new Error('Source pool not found');
-            }
-
-            const result = await bridge(
-                sourcePool,
-                bridgeAmount,
-                bridgeTargetAssets
-            );
-
-            if (result.success) {
-                showToastOnce('Bridge transaction completed successfully!', 'success');
-                
-                // Reset form
-                setTimeout(() => {
-                    setBridgeAmount('');
-                    setBridgeTargetAssets([]);
-                    fetchBridgePools(bridgeSourceChain);
-                    onSuccess?.();
-                    onClose();
-                }, 2000);
-            } else {
-                throw new Error(result.error || 'Bridge transaction failed');
-            }
-        } catch (error: any) {
-            console.error('Bridge failed:', error);
-            showToastOnce(error.message || 'Bridge failed. Please try again.', 'error');
-        } finally {
-            setIsLoading(false);
-        }
     };
 
     return (
