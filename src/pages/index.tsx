@@ -1276,7 +1276,7 @@ const Home: React.FC = () => {
 
                             {/* Execute Button */}
                             <button 
-                                className={`button-primary button-full ${(selectedAssets.length === 0 || !collateralAmount || calculateHealthFactor() <= 50) ? 'disabled' : ''}`}
+                                className={`button button-primary button-full ${(selectedAssets.length === 0 || !collateralAmount || calculateHealthFactor() <= 50) ? 'disabled' : ''}`}
                                 onClick={handleLendingExecute}
                                 disabled={
                                     selectedAssets.length === 0 || 
@@ -1463,7 +1463,7 @@ const Home: React.FC = () => {
 
                             {/* Bridge Execute Button */}
                             <button 
-                                className={`button-primary button-full ${(bridgeTargetAssets.length === 0 || !bridgeAmount || !bridgeTargetChain || !bridgeAsset) ? 'disabled' : ''}`}
+                                className={`button button-primary button-full ${(bridgeTargetAssets.length === 0 || !bridgeAmount || !bridgeTargetChain || !bridgeAsset) ? 'disabled' : ''}`}
                                 onClick={handleBridgeExecute}
                                 disabled={
                                     bridgeTargetAssets.length === 0 || 
