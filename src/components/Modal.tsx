@@ -31,11 +31,13 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
                 left: 0,
                 right: 0,
                 bottom: 0,
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                backgroundColor: 'rgba(15, 23, 42, 0.8)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                zIndex: 1000,
+                zIndex: 99999,
                 padding: '20px'
             }}
             onClick={onClose}
@@ -43,14 +45,15 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
             <div 
                 className="modal-content"
                 style={{
-                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95))',
-                    borderRadius: '20px',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-                                         backdropFilter: 'blur(20px)',
-                     width: '100%',
-                     ...getSizeClass(),
-                     maxHeight: '85vh',
+                    background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--border-glass-strong)',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(6, 182, 212, 0.1)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    width: '100%',
+                    ...getSizeClass(),
+                    maxHeight: '85vh',
                     overflow: 'hidden',
                     display: 'flex',
                     flexDirection: 'column'
@@ -60,7 +63,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
                 {/* Modal Header */}
                 <div style={{
                     padding: '24px 24px 16px 24px',
-                    borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
+                    borderBottom: '1px solid var(--border-glass)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center'
@@ -69,10 +72,11 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
                         margin: 0,
                         fontSize: '24px',
                         fontWeight: 700,
-                        color: 'var(--text-color)',
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'var(--text-primary)',
+                        background: 'var(--accent-gradient)',
                         WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent'
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text'
                     }}>
                         {title}
                     </h2>
@@ -83,21 +87,21 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
                             border: 'none',
                             fontSize: '24px',
                             cursor: 'pointer',
-                            color: 'var(--secondary-text)',
+                            color: 'var(--text-secondary)',
                             padding: '8px',
-                            borderRadius: '8px',
+                            borderRadius: 'var(--radius-sm)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             transition: 'all 0.2s ease'
                         }}
                         onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
-                            e.currentTarget.style.color = 'var(--text-color)';
+                            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                            e.currentTarget.style.color = 'var(--text-primary)';
                         }}
                         onMouseLeave={(e) => {
                             e.currentTarget.style.backgroundColor = 'transparent';
-                            e.currentTarget.style.color = 'var(--secondary-text)';
+                            e.currentTarget.style.color = 'var(--text-secondary)';
                         }}
                     >
                         ✕

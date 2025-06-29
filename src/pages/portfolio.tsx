@@ -497,7 +497,7 @@ const Portfolio: React.FC = () => {
                             <div className="portfolio-main-right">
                                 {/* Simplified Wallet Balances Summary */}
                                 <div className="portfolio-section">
-                                    <h3 className="section-title">
+                                    <h3 className="section-title" style={{ marginBottom: 'var(--space-lg)' }}>
                                         Wallet Balance Summary
                                     </h3>
                                     
@@ -551,7 +551,7 @@ const Portfolio: React.FC = () => {
 
                                 {/* Quick Actions */}
                                 <div className="portfolio-section">
-                                    <h3 className="section-title">
+                                    <h3 className="section-title" style={{ marginBottom: 'var(--space-lg)' }}>
                                         Quick Actions
                                     </h3>
                                     
@@ -964,6 +964,7 @@ const Portfolio: React.FC = () => {
                 .balance-summary {
                     display: grid;
                     gap: var(--space-md);
+                    margin-bottom: var(--space-lg);
                 }
 
                 .balance-card {

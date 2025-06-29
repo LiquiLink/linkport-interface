@@ -98,6 +98,18 @@ body {
   overflow-x: hidden;
 }
 
+/* Hide all scrollbars globally */
+html, body, * {
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE and Edge */
+}
+html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
 /* Simplified Scrollbar */
 ::-webkit-scrollbar {
   width: 4px;
@@ -520,6 +532,7 @@ body {
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-glass-strong);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  margin-bottom: var(--space-lg);
 }
 
 .health-label {

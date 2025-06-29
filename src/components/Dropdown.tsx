@@ -54,7 +54,7 @@ const Dropdown: React.FC<DropdownProps> = ({
                     cursor: disabled ? 'not-allowed' : 'pointer',
                     opacity: disabled ? 0.6 : 1,
                     background: isOpen ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%)' : 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.8) 100%)',
-                    borderColor: isOpen ? 'var(--accent-primary)' : 'var(--border-glass-strong)',
+                    borderColor: isOpen ? 'var(--accent-primary)' : 'rgba(59,130,246,0.32)',
                     color: 'var(--text-primary)',
                     padding: '12px 16px',
                     borderRadius: 'var(--radius-md)',

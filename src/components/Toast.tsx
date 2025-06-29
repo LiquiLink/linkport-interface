@@ -36,36 +36,42 @@ const Toast: React.FC<ToastProps> = ({
             right: '20px',
             maxWidth: '400px',
             padding: '16px 20px',
-            borderRadius: '12px',
-            background: 'rgba(255, 255, 255, 0.95)',
+            borderRadius: 'var(--radius-lg)',
+            background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%)',
             backdropFilter: 'blur(20px)',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
-            zIndex: 9999,
+            WebkitBackdropFilter: 'blur(20px)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(6, 182, 212, 0.1)',
+            border: '1px solid var(--border-glass-strong)',
+            zIndex: 99999,
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
             animation: 'slideInRight 0.3s ease-out',
             fontSize: '14px',
-            lineHeight: '1.5'
+            lineHeight: '1.5',
+            color: 'var(--text-primary)'
         };
 
         const typeStyles = {
             success: {
-                borderLeft: '4px solid #22c55e',
-                color: '#065f46'
+                borderLeft: '4px solid var(--success)',
+                background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(16, 185, 129, 0.1) 100%)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(16, 185, 129, 0.2)'
             },
             error: {
-                borderLeft: '4px solid #ef4444',  
-                color: '#991b1b'
+                borderLeft: '4px solid var(--danger)',
+                background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(239, 68, 68, 0.1) 100%)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(239, 68, 68, 0.2)'
             },
             warning: {
-                borderLeft: '4px solid #f59e0b',
-                color: '#92400e'
+                borderLeft: '4px solid var(--warning)',
+                background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(245, 158, 11, 0.1) 100%)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(245, 158, 11, 0.2)'
             },
             info: {
-                borderLeft: '4px solid #3b82f6',
-                color: '#1e40af'
+                borderLeft: '4px solid var(--accent-primary)',
+                background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(6, 182, 212, 0.1) 100%)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(6, 182, 212, 0.2)'
             }
         };
 
@@ -99,12 +105,12 @@ const Toast: React.FC<ToastProps> = ({
                 .toast-close-btn {
                     background: none;
                     border: none;
-                    color: inherit;
+                    color: var(--text-secondary);
                     cursor: pointer;
                     padding: 4px;
-                    border-radius: 4px;
+                    border-radius: var(--radius-sm);
                     opacity: 0.7;
-                    transition: opacity 0.2s ease;
+                    transition: all 0.2s ease;
                     font-size: 16px;
                     line-height: 1;
                     margin-left: auto;
@@ -113,7 +119,8 @@ const Toast: React.FC<ToastProps> = ({
                 
                 .toast-close-btn:hover {
                     opacity: 1;
-                    background: rgba(0, 0, 0, 0.1);
+                    background: rgba(255, 255, 255, 0.1);
+                    color: var(--text-primary);
                 }
             `}</style>
             

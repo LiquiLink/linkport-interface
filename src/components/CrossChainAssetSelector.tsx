@@ -444,7 +444,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                         fontWeight: 700,
                         color: getTotalBridgeValue() > getMaxBridgeValue() ? 'var(--danger)' : 'var(--success)'
                     }}>
-                        {getMaxBridgeValue() > 0 ? ((getTotalBridgeValue() / getMaxBridgeValue()) * 100).toFixed(1) : 'Infinity'}%
+                        {getMaxBridgeValue() > 0 ? ((getTotalBridgeValue() / getMaxBridgeValue()) * 100).toFixed(1) : '0'}%
                     </span>
                 </div>
 
