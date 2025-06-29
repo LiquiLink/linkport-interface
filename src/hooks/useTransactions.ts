@@ -79,7 +79,7 @@ const useTransactions = (): UseTransactionsReturn => {
                 allTransactions = TransactionStorage.getAllTransactions();
             }
             
-            // Get additional transactions from blockchain if user is connected
+            // Get additional transactions from blockchain if user is connected (but don't let it affect existing records)
             if (address && chainId) {
                 console.log('🔍 Fetching blockchain transaction history...');
                 try {
@@ -88,7 +88,8 @@ const useTransactions = (): UseTransactionsReturn => {
                         chainId
                     );
                     
-                    // Convert and merge with existing transactions
+                    // Convert and merge with existing transactions - but only ADD, never remove existing ones
+                    let hasNewTransactions = false;
                     for (const chainTx of chainTransactions) {
                         // Check if transaction already exists in storage
                         const existingTx = allTransactions.find(tx => tx.txHash === chainTx.hash);
@@ -102,17 +103,25 @@ const useTransactions = (): UseTransactionsReturn => {
                                     userAddress: address,
                                     chainId
                                 } as Omit<Transaction, 'id' | 'timestamp'>);
+                                hasNewTransactions = true;
+                                console.log('✅ Added new blockchain transaction:', newTx.action);
                             } catch (error) {
                                 console.warn('Failed to add blockchain transaction to storage:', error);
                             }
                         }
                     }
                     
-                    // Reload transactions after adding blockchain transactions
-                    allTransactions = TransactionStorage.getAllTransactions();
+                    // Only reload if we actually added new transactions
+                    if (hasNewTransactions) {
+                        allTransactions = TransactionStorage.getAllTransactions();
+                        console.log('✅ Blockchain sync completed, new transactions added');
+                    } else {
+                        console.log('✅ Blockchain sync completed, no new transactions');
+                    }
                 } catch (error) {
                     console.warn('Failed to fetch blockchain transactions:', error);
                     // Continue with local transactions even if blockchain fetch fails
+                    // This ensures existing records are never lost due to network issues
                 }
             }
             
