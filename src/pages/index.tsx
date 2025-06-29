@@ -583,6 +583,23 @@ const Home: React.FC = () => {
         if (assets.length > 0 && shouldAutoCalculate) {
             const totalBorrowValue = assets.reduce((sum, asset) => sum + asset.value, 0);
             
+            // Debug: detailed asset information
+            console.log('🔍 Debug asset calculation:', {
+                assetsArray: assets,
+                assetValues: assets.map(asset => ({ 
+                    id: asset.id,
+                    symbol: asset.symbol,
+                    token: asset.token, 
+                    amount: asset.amount, 
+                    value: asset.value,
+                    percentage: asset.percentage
+                })),
+                totalBorrowValue: totalBorrowValue,
+                useExistingStaking: useExistingStaking,
+                totalStakingValue: totalStakingValue,
+                collateralAssetPrice: assetPrices[collateralAsset.token]
+            });
+            
             if (totalBorrowValue > 0) {
                 // Calculate required total collateral value (LTV = 75%)
                 const requiredTotalCollateralValue = totalBorrowValue / 0.75;
@@ -592,7 +609,7 @@ const Home: React.FC = () => {
                 const requiredNewCollateralValue = Math.max(0, requiredTotalCollateralValue - existingStakingValue);
                 
                 // Convert to collateral asset amount
-                const assetPrice = assetPrices[collateralAsset.token]?.price || 2400;
+                const assetPrice = assetPrices[collateralAsset.token]?.price || 1; // Use 1 as fallback for stablecoins
                 const requiredCollateralAmount = requiredNewCollateralValue / assetPrice;
                 
                 // Auto-fill only when appropriate
@@ -600,10 +617,16 @@ const Home: React.FC = () => {
                 
                 console.log('🔄 Auto-calculated collateral:', {
                     totalBorrowValue: `$${totalBorrowValue.toFixed(2)}`,
-                    requiredCollateral: `${requiredCollateralAmount.toFixed(6)} ${collateralAsset.token}`,
-                    assetPrice: `$${assetPrice}`,
+                    requiredTotalCollateralValue: `$${requiredTotalCollateralValue.toFixed(2)}`,
                     existingStakingValue: `$${existingStakingValue.toFixed(2)}`,
-                    reason: 'Empty input, auto-calculating'
+                    requiredNewCollateralValue: `$${requiredNewCollateralValue.toFixed(2)}`,
+                    assetPrice: `$${assetPrice}`,
+                    requiredCollateral: `${requiredCollateralAmount.toFixed(6)} ${collateralAsset.token}`,
+                    reason: 'Empty input, auto-calculating',
+                    calculations: {
+                        ltv: '75%',
+                        formula: `${totalBorrowValue} / 0.75 - ${existingStakingValue} = ${requiredNewCollateralValue}`
+                    }
                 });
             }
         } else {
