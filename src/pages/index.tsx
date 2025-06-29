@@ -569,8 +569,8 @@ const Home: React.FC = () => {
             return;
         }
         
-        // Only auto-calculate when user hasn't manually input AND collateral is empty or very small
-        const shouldAutoCalculate = !isManualInput && (collateralAmount === '' || parseFloat(collateralAmount || '0') < 0.001);
+        // Only auto-calculate when user hasn't manually input AND collateral is truly empty (not just cleared by user)
+        const shouldAutoCalculate = !isManualInput && collateralAmount === '';
         
         if (assets.length > 0 && collateralAsset && shouldAutoCalculate) {
             const totalBorrowValue = assets.reduce((sum, asset) => sum + asset.value, 0);
@@ -648,13 +648,24 @@ const Home: React.FC = () => {
     
     // Handle manual collateral input
     const handleCollateralAmountChange = (value: string) => {
-        // Always mark as manual input when user actively types
-        setIsManualInput(value !== '');
+        // Mark as manual input when user actively types, but preserve manual state when clearing
+        // This prevents auto-calculation from immediately filling when user wants to clear
+        if (value !== '') {
+            setIsManualInput(true);
+        }
+        // When clearing, only reset manual input if user hasn't selected assets yet
+        else if (selectedAssets.length === 0) {
+            setIsManualInput(false);
+        }
+        // If user has selected assets and clears input, keep manual flag to prevent auto-fill
+        // User explicitly wants the field empty
+        
         setCollateralAmount(value);
         
         console.log('🎯 User input change:', {
             value,
-            isManualInput: value !== '',
+            isManualInput: value !== '' || selectedAssets.length > 0,
+            selectedAssetsCount: selectedAssets.length,
             timestamp: new Date().toLocaleTimeString()
         });
     };
