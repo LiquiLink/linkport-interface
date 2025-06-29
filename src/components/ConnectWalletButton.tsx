@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Dialog } from '@headlessui/react';
 import { useAccount, useDisconnect, useConnect, useChainId, useChains } from 'wagmi';
 import { injected } from 'wagmi/connectors';
+import FaucetABI from '../abi/FAUCET.json';
+import { writeContract } from 'wagmi/actions';
+import { config } from '../config';
+import { sepolia } from 'viem/chains';
+import { write } from 'fs';
 
 const connectorOptions = [
     { 
@@ -26,8 +31,6 @@ const WalletConnect: React.FC = () => {
     const [copyPopup, setCopyPopup] = useState(false);
     // Remove duplicate console.log to prevent excessive logging
 
-    const jwt = typeof window !== 'undefined' ? localStorage.getItem('jwt') || '' : '';
-
     const handleConnect = async (connector: any, name: string) => {
         setConnecting(name);
         try {
@@ -37,6 +40,18 @@ const WalletConnect: React.FC = () => {
         } finally {
             setConnecting(null);
         }
+    };
+
+    const handleFaucet = async () => {
+        if (!address) return;
+        await writeContract(config, {
+            address: "0x55851ccf213bb56482eb712aaafd7baa767cc1ee" as `0x${string}`,
+            abi: FaucetABI,
+            functionName: 'claim',
+            args: [],
+            chain: sepolia,
+            account: address,
+        });
     };
 
     const handleCopy = async () => {
@@ -69,6 +84,30 @@ const WalletConnect: React.FC = () => {
             <div className="flex items-center gap-2">
                 {isConnected && address ? (
                     <>
+                        {chainId && chainId == sepolia.id && <button
+                            onClick={handleFaucet}
+                            title={address}
+                            style={{ 
+                                color: 'var(--text-primary)', 
+                                background: 'rgba(6, 182, 212, 0.1)', 
+                                border: '1px solid var(--accent-primary)', 
+                                borderRadius: 'var(--radius-md)',
+                                padding: '6px 12px',
+                                fontSize: '13px',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                transition: 'all var(--transition-normal)'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'rgba(6, 182, 212, 0.2)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'rgba(6, 182, 212, 0.1)';
+                            }}
+                        >
+                            Faucet
+                        </button>
+                }
                         <button
                             onClick={handleCopy}
                             title={address}
