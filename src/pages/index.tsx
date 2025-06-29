@@ -1057,7 +1057,7 @@ const Home: React.FC = () => {
                 address: collateralAsset.token as `0x${string}`,
                 abi: ERC20ABI,
                 functionName: 'approve',
-                args: [linkPort as `0x${string}`, parseEther(collateralAmount)],
+                args: [linkPort as `0x${string}`, parseEther(bridgeAmount)],
                 chainId: chainId == sepolia.id ? sepolia.id : bscTestnet.id,
                 chain: chainId == sepolia.id ? sepolia : bscTestnet,
                 account: address,
