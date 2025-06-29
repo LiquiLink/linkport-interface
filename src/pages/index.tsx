@@ -151,10 +151,10 @@ const Home: React.FC = () => {
         fetchUserStakingPositions(sourceChain);
     }, [sourceChain, address, assetPrices]);
 
-    // Auto-recalculate collateral when staking option changes
+    // Auto-recalculate collateral when staking option changes (but respect user input)
     useEffect(() => {
-        // Allow recalculation if: no manual input OR collateral amount is empty
-        const shouldAutoCalculate = !isManualInput || collateralAmount === '';
+        // Only auto-calculate if: no manual input AND collateral is empty
+        const shouldAutoCalculate = !isManualInput && collateralAmount === '';
         
         if (selectedAssets.length > 0 && collateralAsset && shouldAutoCalculate) {
             const totalBorrowValue = selectedAssets.reduce((sum, asset) => sum + asset.value, 0);
@@ -171,9 +171,17 @@ const Home: React.FC = () => {
                 const assetPrice = assetPrices[collateralAsset.token]?.price || 2400;
                 const requiredCollateralAmount = requiredNewCollateralValue / assetPrice;
                 
-                // Auto-fill the collateral amount input
+                // Auto-fill only when input is completely empty
                 setCollateralAmount(requiredCollateralAmount.toFixed(6));
+                
+                console.log('🔄 useEffect auto-calculated collateral:', {
+                    trigger: 'Staking/Asset/Price change',
+                    totalBorrowValue: `$${totalBorrowValue.toFixed(2)}`,
+                    requiredCollateral: `${requiredCollateralAmount.toFixed(6)} ${collateralAsset.token}`
+                });
             }
+        } else if (isManualInput) {
+            console.log('🚫 useEffect skipping auto-calculation - user has manually input');
         }
     }, [useExistingStaking, totalStakingValue, selectedAssets, collateralAsset, assetPrices, isManualInput]); // 移除collateralAmount依赖
 
@@ -554,13 +562,17 @@ const Home: React.FC = () => {
         
         // Clear collateral amount when no assets are selected
         if (assets.length === 0) {
-            setCollateralAmount('');
-            setIsManualInput(false);
+            // Only clear if user hasn't manually input anything
+            if (!isManualInput) {
+                setCollateralAmount('');
+            }
             return;
         }
         
-        // Only auto-calculate when NOT in manual input mode (respect user input)
-        if (assets.length > 0 && collateralAsset && !isManualInput) {
+        // Only auto-calculate when user hasn't manually input AND collateral is empty or very small
+        const shouldAutoCalculate = !isManualInput && (collateralAmount === '' || parseFloat(collateralAmount || '0') < 0.001);
+        
+        if (assets.length > 0 && collateralAsset && shouldAutoCalculate) {
             const totalBorrowValue = assets.reduce((sum, asset) => sum + asset.value, 0);
             
             if (totalBorrowValue > 0) {
@@ -575,7 +587,7 @@ const Home: React.FC = () => {
                 const assetPrice = assetPrices[collateralAsset.token]?.price || 2400;
                 const requiredCollateralAmount = requiredNewCollateralValue / assetPrice;
                 
-                // Auto-fill the collateral amount input only when user hasn't manually input
+                // Auto-fill only when input is empty
                 setCollateralAmount(requiredCollateralAmount.toFixed(6));
                 
                 console.log('🔄 Auto-calculated collateral:', {
@@ -583,11 +595,16 @@ const Home: React.FC = () => {
                     requiredCollateral: `${requiredCollateralAmount.toFixed(6)} ${collateralAsset.token}`,
                     assetPrice: `$${assetPrice}`,
                     existingStakingValue: `$${existingStakingValue.toFixed(2)}`,
-                    isManualInput: 'false (allowing auto-calculation)'
+                    reason: 'Empty input, auto-calculating'
                 });
             }
-        } else if (isManualInput) {
-            console.log('🚫 Skipping auto-calculation - user is manually inputting');
+        } else {
+            const reason = isManualInput ? 'User is manually inputting' : 'Collateral amount already has value';
+            console.log(`🚫 Skipping auto-calculation - ${reason}`, {
+                isManualInput,
+                collateralAmount,
+                assetsCount: assets.length
+            });
         }
     };
 
@@ -631,14 +648,15 @@ const Home: React.FC = () => {
     
     // Handle manual collateral input
     const handleCollateralAmountChange = (value: string) => {
-        if (value === '') {
-            // Reset manual input flag when user clears the input
-            setIsManualInput(false);
-        } else {
-            // Mark as manual input when user types non-empty value
-            setIsManualInput(true);
-        }
+        // Always mark as manual input when user actively types
+        setIsManualInput(value !== '');
         setCollateralAmount(value);
+        
+        console.log('🎯 User input change:', {
+            value,
+            isManualInput: value !== '',
+            timestamp: new Date().toLocaleTimeString()
+        });
     };
 
     // Force single toast display function
