@@ -37,13 +37,37 @@ const MultiAssetSelector: React.FC<MultiAssetSelectorProps> = ({
       const poolPromises = poolList.filter(pool => pool.chainId === chainId).map(async pool => {
         const price = await getAssetPriceFromPort(pool.address, pool.chainId);
         console.log("Asset price for", pool.tokens[0], "on chain", pool.chainId, ":", price);
+        
+        // Set reasonable fallback prices for different assets
+        let fallbackPrice = 0;
+        const symbol = pool.tokens[0].toUpperCase();
+        switch (symbol) {
+          case 'USDT':
+          case 'USDC':
+          case 'DAI':
+            fallbackPrice = 1; // Stablecoins
+            break;
+          case 'ETH':
+          case 'WETH':
+            fallbackPrice = 2400; // ETH
+            break;
+          case 'BNB':
+            fallbackPrice = 660; // BNB
+            break;
+          case 'LINK':
+            fallbackPrice = 15; // LINK
+            break;
+          default:
+            fallbackPrice = 1; // Default for unknown assets
+        }
+        
         return getBalance(pool.address, pool.pool, pool.chainId).then(async balance => {
           return {
             id: pool.id,
             symbol: pool.tokens[0],
             name: pool.name,
             icon: pool.tokens[0].toUpperCase(),
-            price: price?.price || 0,
+            price: price?.price || fallbackPrice,
             balance: parseFloat(formatUnits(balance, 18)), // Assuming 18 decimals for simplicity
             isNative: pool.isNative,
             token: pool.address,
@@ -121,9 +145,22 @@ const MultiAssetSelector: React.FC<MultiAssetSelectorProps> = ({
     const asset = availableAssets.find(a => a.id === assetId);
     if (!asset) return;
 
+    console.log('🧮 updateAssetAmount called:', { 
+      assetId, 
+      amount, 
+      assetPrice: asset.price,
+      assetSymbol: asset.symbol 
+    });
+
     const updatedAssets = selectedAssets.map(sa => {
       if (sa.id === assetId) {
         const value = amount * asset.price;
+        console.log('💰 Asset value calculation:', {
+          symbol: asset.symbol,
+          amount,
+          price: asset.price,
+          calculatedValue: value
+        });
         return { ...sa, amount, value };
       }
       return sa;
@@ -131,11 +168,14 @@ const MultiAssetSelector: React.FC<MultiAssetSelectorProps> = ({
 
     // Recalculate percentages
     const totalValue = updatedAssets.reduce((sum, asset) => sum + asset.value, 0);
+    console.log('📊 Total borrowing value in MultiAssetSelector:', totalValue);
+    
     const assetsWithPercentage = updatedAssets.map(asset => ({
       ...asset,
       percentage: totalValue > 0 ? (asset.value / totalValue) * 100 : 0
     }));
 
+    console.log('📤 Sending assets to parent:', assetsWithPercentage);
     setSelectedAssets(assetsWithPercentage);
   };
 

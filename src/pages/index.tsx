@@ -183,7 +183,7 @@ const Home: React.FC = () => {
         } else if (isManualInput) {
             console.log('🚫 useEffect skipping auto-calculation - user has manually input');
         }
-    }, [useExistingStaking, totalStakingValue, selectedAssets, collateralAsset, assetPrices, isManualInput]); // 移除collateralAmount依赖
+    }, [useExistingStaking, totalStakingValue, selectedAssets, collateralAsset, assetPrices, isManualInput]); // Remove collateralAmount dependency
 
     // Update collateral calculation to include staking if enabled
     const calculateTotalCollateralValue = () => {
@@ -574,27 +574,33 @@ const Home: React.FC = () => {
         const currentCollateralAmount = collateralAmount;
         const hasCollateralValue = currentCollateralAmount !== '' && parseFloat(currentCollateralAmount || '0') > 0;
         
-        // Only auto-calculate when:
+        // Auto-calculate when:
         // 1. User hasn't manually input (isManualInput is false)
-        // 2. AND collateral field is truly empty or zero
-        // 3. AND we have collateral asset selected
-        const shouldAutoCalculate = !isManualInput && !hasCollateralValue && collateralAsset;
+        // 2. AND we have collateral asset selected
+        // 3. AND (collateral field is empty OR this is borrowing assets change - not manual input)
+        const shouldAutoCalculate = !isManualInput && collateralAsset;
         
         if (assets.length > 0 && shouldAutoCalculate) {
             const totalBorrowValue = assets.reduce((sum, asset) => sum + asset.value, 0);
             
             // Debug: detailed asset information
-            console.log('🔍 Debug asset calculation:', {
+            console.log('🔍 Debug asset calculation - DETAILED:', {
                 assetsArray: assets,
-                assetValues: assets.map(asset => ({ 
+                assetsCount: assets.length,
+                individualAssets: assets.map(asset => ({ 
                     id: asset.id,
                     symbol: asset.symbol,
                     token: asset.token, 
                     amount: asset.amount, 
                     value: asset.value,
-                    percentage: asset.percentage
+                    percentage: asset.percentage,
+                    type: typeof asset.value,
+                    isNumber: !isNaN(asset.value)
                 })),
                 totalBorrowValue: totalBorrowValue,
+                totalBorrowValueType: typeof totalBorrowValue,
+                calculationStep: `${assets.map(a => `${a.symbol}: ${a.amount} × price = $${a.value}`).join(', ')}`,
+                sumCalculation: `Total = ${assets.map(a => a.value).join(' + ')} = ${totalBorrowValue}`,
                 useExistingStaking: useExistingStaking,
                 totalStakingValue: totalStakingValue,
                 collateralAssetPrice: assetPrices[collateralAsset.token]
@@ -632,15 +638,16 @@ const Home: React.FC = () => {
         } else {
             let reason = 'Unknown';
             if (isManualInput) reason = 'User is manually inputting';
-            else if (hasCollateralValue) reason = 'Collateral amount already has value';
             else if (!collateralAsset) reason = 'No collateral asset selected';
+            else if (assets.length === 0) reason = 'No borrowing assets selected';
             
             console.log(`🚫 Skipping auto-calculation - ${reason}`, {
                 isManualInput,
                 currentCollateralAmount,
                 hasCollateralValue,
                 assetsCount: assets.length,
-                hasCollateralAsset: !!collateralAsset
+                hasCollateralAsset: !!collateralAsset,
+                shouldAutoCalculate: shouldAutoCalculate
             });
         }
     };
@@ -685,23 +692,21 @@ const Home: React.FC = () => {
     
     // Handle manual collateral input
     const handleCollateralAmountChange = (value: string) => {
-        // Mark as manual input when user actively types, but preserve manual state when clearing
-        // This prevents auto-calculation from immediately filling when user wants to clear
-        if (value !== '') {
-            setIsManualInput(true);
-        }
-        // When clearing, only reset manual input if user hasn't selected assets yet
-        else if (selectedAssets.length === 0) {
-            setIsManualInput(false);
-        }
-        // If user has selected assets and clears input, keep manual flag to prevent auto-fill
-        // User explicitly wants the field empty
-        
         setCollateralAmount(value);
+        
+        // Set manual input state based on whether user is actively typing
+        // When user clears the field, reset manual input to allow reverse calculation
+        if (value === '') {
+            setIsManualInput(false);
+            console.log('🔄 User cleared collateral field - enabling reverse calculation');
+        } else {
+            setIsManualInput(true);
+            console.log('🎯 User typing in collateral field - disabling reverse calculation');
+        }
         
         console.log('🎯 User input change:', {
             value,
-            isManualInput: value !== '' || selectedAssets.length > 0,
+            isManualInput: value !== '',
             selectedAssetsCount: selectedAssets.length,
             timestamp: new Date().toLocaleTimeString()
         });
