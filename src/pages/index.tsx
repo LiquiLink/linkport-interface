@@ -552,18 +552,15 @@ const Home: React.FC = () => {
     const handleAssetsChange = (assets: AssetAllocation[]) => {
         setSelectedAssets(assets);
         
-        // Reset manual input flag when assets change significantly or when starting fresh
+        // Clear collateral amount when no assets are selected
         if (assets.length === 0) {
-            setIsManualInput(false);
             setCollateralAmount('');
+            setIsManualInput(false);
             return;
         }
         
-        // Auto-calculate required collateral based on selected borrowing assets
-        // Allow calculation if: no manual input OR collateral amount is empty
-        const shouldAutoCalculate = !isManualInput || collateralAmount === '';
-        
-        if (assets.length > 0 && collateralAsset && shouldAutoCalculate) {
+        // Always auto-calculate when borrowing assets change (reverse calculation)
+        if (assets.length > 0 && collateralAsset) {
             const totalBorrowValue = assets.reduce((sum, asset) => sum + asset.value, 0);
             
             if (totalBorrowValue > 0) {
@@ -578,13 +575,18 @@ const Home: React.FC = () => {
                 const assetPrice = assetPrices[collateralAsset.token]?.price || 2400;
                 const requiredCollateralAmount = requiredNewCollateralValue / assetPrice;
                 
-                // Auto-fill the collateral amount input
+                // Auto-fill the collateral amount input (always update when borrowing changes)
                 setCollateralAmount(requiredCollateralAmount.toFixed(6));
                 
-                // If we just auto-calculated, reset the manual input flag
-                if (collateralAmount === '') {
-                    setIsManualInput(false);
-                }
+                // Reset manual input flag when auto-calculating
+                setIsManualInput(false);
+                
+                console.log('🔄 Auto-calculated collateral:', {
+                    totalBorrowValue: `$${totalBorrowValue.toFixed(2)}`,
+                    requiredCollateral: `${requiredCollateralAmount.toFixed(6)} ${collateralAsset.token}`,
+                    assetPrice: `$${assetPrice}`,
+                    existingStakingValue: `$${existingStakingValue.toFixed(2)}`
+                });
             }
         }
     };
@@ -1028,10 +1030,13 @@ const Home: React.FC = () => {
                                         <input
                                             type="text"
                                             className="amount-input"
-                                            placeholder={selectedAssets.length > 0 ? "Auto-calculated" : (useExistingStaking ? "Additional amount" : "Enter amount")}
+                                            placeholder={selectedAssets.length > 0 ? "Auto-calculated (editable)" : (useExistingStaking ? "Additional amount" : "Enter amount")}
                                             value={collateralAmount}
+                                            disabled={false}
+                                            readOnly={false}
                                             onChange={(e) => {
                                                 const value = e.target.value;
+                                                console.log('📝 Input change:', value);
                                                 if (value === '' || /^[0-9]*\.?[0-9]*$/.test(value)) {
                                                     const dotCount = (value.match(/\./g) || []).length;
                                                     if (dotCount <= 1) {
@@ -1046,6 +1051,7 @@ const Home: React.FC = () => {
                                                 }
                                             }}
                                             onKeyDown={(e) => {
+                                                console.log('⌨️ Key pressed:', e.key);
                                                 const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
                                                 const isNumber = /^[0-9]$/.test(e.key);
                                                 const isDot = e.key === '.';
@@ -1057,6 +1063,12 @@ const Home: React.FC = () => {
                                                 if (isDot && collateralAmount.includes('.')) {
                                                     e.preventDefault();
                                                 }
+                                            }}
+                                            onFocus={() => {
+                                                console.log('🎯 Input focused');
+                                            }}
+                                            onBlur={() => {
+                                                console.log('🔚 Input blurred');
                                             }}
                                         />
                                         <div className="amount-value">${calculateUSDValue(collateralAmount, collateralAsset?.token || 'ETH')}</div>
