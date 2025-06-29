@@ -569,10 +569,18 @@ const Home: React.FC = () => {
             return;
         }
         
-        // Only auto-calculate when user hasn't manually input AND collateral is truly empty (not just cleared by user)
-        const shouldAutoCalculate = !isManualInput && collateralAmount === '';
+        // Check current collateral amount value to determine if we should auto-calculate
+        // This prevents race conditions with state updates
+        const currentCollateralAmount = collateralAmount;
+        const hasCollateralValue = currentCollateralAmount !== '' && parseFloat(currentCollateralAmount || '0') > 0;
         
-        if (assets.length > 0 && collateralAsset && shouldAutoCalculate) {
+        // Only auto-calculate when:
+        // 1. User hasn't manually input (isManualInput is false)
+        // 2. AND collateral field is truly empty or zero
+        // 3. AND we have collateral asset selected
+        const shouldAutoCalculate = !isManualInput && !hasCollateralValue && collateralAsset;
+        
+        if (assets.length > 0 && shouldAutoCalculate) {
             const totalBorrowValue = assets.reduce((sum, asset) => sum + asset.value, 0);
             
             if (totalBorrowValue > 0) {
@@ -587,7 +595,7 @@ const Home: React.FC = () => {
                 const assetPrice = assetPrices[collateralAsset.token]?.price || 2400;
                 const requiredCollateralAmount = requiredNewCollateralValue / assetPrice;
                 
-                // Auto-fill only when input is empty
+                // Auto-fill only when appropriate
                 setCollateralAmount(requiredCollateralAmount.toFixed(6));
                 
                 console.log('🔄 Auto-calculated collateral:', {
@@ -599,11 +607,17 @@ const Home: React.FC = () => {
                 });
             }
         } else {
-            const reason = isManualInput ? 'User is manually inputting' : 'Collateral amount already has value';
+            let reason = 'Unknown';
+            if (isManualInput) reason = 'User is manually inputting';
+            else if (hasCollateralValue) reason = 'Collateral amount already has value';
+            else if (!collateralAsset) reason = 'No collateral asset selected';
+            
             console.log(`🚫 Skipping auto-calculation - ${reason}`, {
                 isManualInput,
-                collateralAmount,
-                assetsCount: assets.length
+                currentCollateralAmount,
+                hasCollateralValue,
+                assetsCount: assets.length,
+                hasCollateralAsset: !!collateralAsset
             });
         }
     };
