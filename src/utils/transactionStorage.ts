@@ -47,14 +47,37 @@ export interface TransactionStats {
 }
 
 class TransactionStorage {
-    private static readonly STORAGE_KEY = 'linkport_transactions';
+    private static readonly STORAGE_KEY = 'liquilink_transactions';
+    private static readonly OLD_STORAGE_KEY = 'linkport_transactions'; // For migration
     private static readonly MAX_TRANSACTIONS = 1000; // Limit storage quantity to avoid oversized localStorage
+
+    /**
+     * Migrate data from old storage key to new one
+     */
+    private static migrateOldData(): void {
+        try {
+            const oldData = localStorage.getItem(this.OLD_STORAGE_KEY);
+            const newData = localStorage.getItem(this.STORAGE_KEY);
+            
+            if (oldData && !newData) {
+                console.log('🔄 Migrating transaction data from old storage key...');
+                localStorage.setItem(this.STORAGE_KEY, oldData);
+                localStorage.removeItem(this.OLD_STORAGE_KEY);
+                console.log('✅ Transaction data migration completed');
+            }
+        } catch (error) {
+            console.error('❌ Failed to migrate transaction data:', error);
+        }
+    }
 
     /**
      * Get all transaction records
      */
     static getAllTransactions(): Transaction[] {
         try {
+            // Check for data migration first
+            this.migrateOldData();
+            
             const stored = localStorage.getItem(this.STORAGE_KEY);
             if (!stored) return [];
             
