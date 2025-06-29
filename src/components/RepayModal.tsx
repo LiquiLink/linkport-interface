@@ -195,9 +195,6 @@ const RepayModal: React.FC<RepayModalProps> = ({
 
     setIsLoading(true);
     try {
-      // Mock repay transaction - simulate 2 second delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
 
 
       const linkPort = linkPorts[bscTestnet.id];
