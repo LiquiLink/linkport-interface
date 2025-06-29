@@ -5,7 +5,8 @@ import MultiAssetSelector from './MultiAssetSelector';
 import { useAccount, useChainId, useSwitchChain } from 'wagmi';
 import { bscTestnet, sepolia } from 'wagmi/chains';
 import { poolList } from '../config';
-import { getUserAssetBalance, getUserPosition } from '../utils/balance';
+import { getUserAssetBalance } from '../utils/balance';
+import { getUserPosition } from '../utils/pool';
 import { formatUnits } from 'ethers';
 import { Asset, AssetAllocation } from '../utils/types';
 import { getAssetPriceFromPort, PriceData } from '../utils/priceService';
@@ -210,42 +211,25 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onSuccess 
         }
     }
 
-    // Handle network switching
+    // Handle network switching with user confirmation
     useEffect(() => {
-        const handleNetworkSwitch = async () => {
-            if (address && sourceChain && !isSwitchingNetwork) {
-                const targetChainId = parseInt(sourceChain);
-                
-                if (chainId !== targetChainId && lastSwitchedChain !== sourceChain) {
-                    setIsSwitchingNetwork(true);
-                    try {
-                        await switchChain({ chainId: targetChainId as 11155111 | 97 });
-                        setLastSwitchedChain(sourceChain);
-                        
-                        setTimeout(() => {
-                            showToastOnce(`Switched to ${getChainName(sourceChain)}`, 'success');
-                        }, 100);
-                        
-                        setTimeout(() => {
-                            setLastSwitchedChain('');
-                        }, 3000);
-                    } catch (error: any) {
-                        console.error('Failed to switch network:', error);
-                        if (error?.code === 4001) {
-                            showToastOnce('Network switch cancelled by user', 'warning');
-                        } else {
-                            showToastOnce('Failed to switch network. Please switch manually in your wallet.', 'error');
-                        }
-                    } finally {
-                        setTimeout(() => setIsSwitchingNetwork(false), 500);
-                    }
-                }
-            }
-        };
-
         fetchPools(sourceChain);
-        if (address) {
-            handleNetworkSwitch();
+        
+        // Show network switch suggestion instead of auto-switching
+        if (address && sourceChain && chainId && !isSwitchingNetwork) {
+            const targetChainId = parseInt(sourceChain);
+            if (chainId !== targetChainId && lastSwitchedChain !== sourceChain) {
+                // Only show a toast notification, don't auto-switch
+                showToastOnce(
+                    `Selected chain: ${getChainName(sourceChain)}. Current wallet chain: ${getChainName(chainId.toString())}. You may need to switch manually.`, 
+                    'info'
+                );
+                setLastSwitchedChain(sourceChain);
+                
+                setTimeout(() => {
+                    setLastSwitchedChain('');
+                }, 5000);
+            }
         }
     }, [sourceChain, address, chainId]);
 
@@ -395,12 +379,75 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onSuccess 
                         Step 1: Select Collateral Source Chain
                     </h3>
                     <ImprovedNetworkSelector
-                        label="Source Chain"
                         value={sourceChain}
                         onChange={setSourceChain}
                         options={chainOptions}
                         description="Choose the network where your collateral is located"
                     />
+                    
+                    {/* Network Switch Helper */}
+                    {address && sourceChain && chainId && parseInt(sourceChain) !== chainId && (
+                        <div style={{
+                            marginTop: '12px',
+                            padding: '12px',
+                            background: 'rgba(245, 158, 11, 0.1)',
+                            borderRadius: '8px',
+                            border: '1px solid rgba(245, 158, 11, 0.3)'
+                        }}>
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: '12px'
+                            }}>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{
+                                        fontSize: '14px',
+                                        fontWeight: 500,
+                                        color: '#d97706',
+                                        marginBottom: '4px'
+                                    }}>
+                                        Network Mismatch
+                                    </div>
+                                    <div style={{
+                                        fontSize: '13px',
+                                        color: 'var(--secondary-text)',
+                                        lineHeight: 1.4
+                                    }}>
+                                        Your wallet is on {getChainName(chainId.toString())}, but you selected {getChainName(sourceChain)}. 
+                                        Switch networks to deposit collateral.
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={async () => {
+                                        setIsSwitchingNetwork(true);
+                                        try {
+                                            await switchChain({ chainId: parseInt(sourceChain) as 11155111 | 97 });
+                                            showToastOnce(`Switched to ${getChainName(sourceChain)}`, 'success');
+                                        } catch (error: any) {
+                                            console.error('Failed to switch network:', error);
+                                            if (error?.code === 4001) {
+                                                showToastOnce('Network switch cancelled', 'warning');
+                                            } else {
+                                                showToastOnce('Failed to switch network', 'error');
+                                            }
+                                        } finally {
+                                            setIsSwitchingNetwork(false);
+                                        }
+                                    }}
+                                    disabled={isSwitchingNetwork}
+                                    className="button primary compact"
+                                    style={{
+                                        minWidth: '80px',
+                                        fontSize: '13px',
+                                        padding: '8px 12px'
+                                    }}
+                                >
+                                    {isSwitchingNetwork ? 'Switching...' : 'Switch'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Step 2: Choose Collateral Asset and Amount */}

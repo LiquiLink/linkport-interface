@@ -1,15 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import Head from 'next/head';
-import Navigation from './Navigation';
 import { useAccount, useChainId } from 'wagmi';
-import { getNetworkStatus, getProtocolStats, NetworkStatus, ProtocolStats } from '../utils/networkService';
+import { getNetworkStatus, getProtocolStats, getCongestionColor, NetworkStatus, ProtocolStats } from '../utils/networkService';
 import { getMultipleAssetPrices, PriceData } from '../utils/priceService';
 
-interface LayoutProps {
-    children: React.ReactNode;
-}
-
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const GlobalNetworkStatus: React.FC = () => {
     const { address } = useAccount();
     const chainId = useChainId();
     
@@ -65,6 +59,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         return networkStatus.congestionLevel || 'Low';
     };
 
+    const formatPrice = (price: number) => {
+        return `$${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    };
+
     const getCongestionColorLocal = (level: string) => {
         switch (level.toLowerCase()) {
             case 'high': return '#ef4444';
@@ -76,18 +74,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     return (
         <>
-            <Head>
-                <title>Liquilink - Cross-chain DeFi Platform</title>
-                <meta name="description" content="Cross-chain DeFi lending and liquidity platform powered by Chainlink CCIP" />
-                <meta name="viewport" content="width=device-width, initial-scale=1" />
-                <link rel="icon" href="/logo.png" type="image/png" />
-            </Head>
-            <Navigation />
-            <main>
-                {children}
-            </main>
-
-            {/* Global Network Status Button - Top Right */}
+            {/* Network Status Button - Top Right */}
             <button
                 onClick={() => setIsNetworkInfoOpen(!isNetworkInfoOpen)}
                 style={{
@@ -123,7 +110,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 Network: {getCongestionLevel()}
             </button>
 
-            {/* Global Network Information Popup */}
+            {/* Network Information Popup */}
             {isNetworkInfoOpen && (
                 <div
                     style={{
@@ -354,36 +341,36 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                             </div>
                         </div>
                     </div>
-
-                    {/* CSS for animations */}
-                    <style jsx>{`
-                        @keyframes fadeIn {
-                            from { opacity: 0; }
-                            to { opacity: 1; }
-                        }
-                        @keyframes pulse {
-                            0%, 100% { opacity: 1; }
-                            50% { opacity: 0.5; }
-                        }
-                        .stat-row.compact {
-                            display: flex;
-                            justify-content: space-between;
-                            align-items: center;
-                            font-size: 13px;
-                            color: #374151;
-                        }
-                        .stat-row.compact span:first-child {
-                            color: #6b7280;
-                        }
-                        .stat-row.compact span:last-child {
-                            font-weight: 500;
-                            color: #1f2937;
-                        }
-                    `}</style>
                 </div>
             )}
+
+            {/* CSS for animations */}
+            <style jsx>{`
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes pulse {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0.5; }
+                }
+                .stat-row.compact {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    font-size: 13px;
+                    color: #374151;
+                }
+                .stat-row.compact span:first-child {
+                    color: #6b7280;
+                }
+                .stat-row.compact span:last-child {
+                    font-weight: 500;
+                    color: #1f2937;
+                }
+            `}</style>
         </>
     );
 };
 
-export default Layout;
+export default GlobalNetworkStatus; 

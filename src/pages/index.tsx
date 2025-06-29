@@ -15,7 +15,7 @@ import { formatUnits } from 'ethers';
 import { format } from 'path';
 import { Asset, AssetAllocation } from '../utils/types';
 import { getAssetPrice, getAssetPriceFromPort, getMultipleAssetPrices, formatPrice, PriceData, getMultipleAssetPricesFromPort } from '../utils/priceService';
-import { getNetworkStatus, getProtocolStats, getCongestionColor, NetworkStatus, ProtocolStats } from '../utils/networkService';
+
 import { useToast } from '../components/Toast';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther } from 'viem';
@@ -63,9 +63,6 @@ const Home: React.FC = () => {
     
     // Manual input control
     const [isManualInput, setIsManualInput] = useState<boolean>(false);
-    
-    // Network information popup state
-    const [isNetworkInfoOpen, setIsNetworkInfoOpen] = useState<boolean>(false);
 
     const { address } = useAccount()
     const chainId = useChainId();
@@ -73,10 +70,8 @@ const Home: React.FC = () => {
     const { writeContract } = useWriteContract();
     const { switchChain } = useSwitchChain();
 
-    // Price and network status
+    // Price data
     const [assetPrices, setAssetPrices] = useState<Record<string, PriceData>>({});
-    const [networkStatus, setNetworkStatus] = useState<NetworkStatus | null>(null);
-    const [protocolStats, setProtocolStats] = useState<ProtocolStats | null>(null);
 
     // Dropdown options definition
     const chainOptions = [
@@ -490,33 +485,8 @@ const Home: React.FC = () => {
         loadAssetPrices();
     }, [sourceChain]);
 
-    // Get network status
-    useEffect(() => {
-        async function loadNetworkStatus() {
-            if (chainId) {
-                const status = await getNetworkStatus(chainId);
-                setNetworkStatus(status);
-            }
-        }
-        loadNetworkStatus();
-        
-        // Update network status every 30 seconds
-        const interval = setInterval(loadNetworkStatus, 30000);
-        return () => clearInterval(interval);
-    }, [chainId]);
 
-    // Get protocol statistics
-    useEffect(() => {
-        async function loadProtocolStats() {
-            const stats = await getProtocolStats();
-            setProtocolStats(stats);
-        }
-        loadProtocolStats();
-        
-        // Update protocol statistics every 5 minutes
-        const interval = setInterval(loadProtocolStats, 300000);
-        return () => clearInterval(interval);
-    }, []);
+
 
 
     const handleTabChange = (tab: string) => {
@@ -703,10 +673,7 @@ const Home: React.FC = () => {
         return `$${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
 
-    const getCongestionLevel = () => {
-        if (!networkStatus) return 'Medium';
-        return networkStatus.congestionLevel.charAt(0).toUpperCase() + networkStatus.congestionLevel.slice(1);
-    };
+
 
     const handleMaxBridge = () => {
         if (bridgeAsset && bridgeAsset.amount) {
@@ -910,41 +877,6 @@ const Home: React.FC = () => {
 
     return (
         <div className="container">
-            {/* Network Status Button - Top Right */}
-            <button
-                onClick={() => setIsNetworkInfoOpen(!isNetworkInfoOpen)}
-                style={{
-                    position: 'fixed',
-                    top: '20px',
-                    right: '20px',
-                    zIndex: 1001,
-                    background: 'rgba(255, 255, 255, 0.95)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '12px',
-                    padding: '8px 16px',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    color: getCongestionColor(getCongestionLevel())
-                }}
-                onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.02)';
-                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.15)';
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-                }}
-            >
-                <i className="fas fa-network-wired" style={{ fontSize: '12px' }}></i>
-                Network Congestion: {getCongestionLevel()}
-            </button>
 
             <div className="main-layout">
                 {/* Left Panel - Main Trading Interface */}
@@ -995,11 +927,10 @@ const Home: React.FC = () => {
                                     marginBottom: '16px',
                                     border: '1px solid rgba(34, 197, 94, 0.2)'
                                 }}>
-                                    {/* Header with total value */}
+                                    {/* Header without USD display */}
                                     <div style={{
                                         display: 'flex',
                                         alignItems: 'center',
-                                        justifyContent: 'space-between',
                                         marginBottom: '8px'
                                     }}>
                                         <div style={{
@@ -1011,13 +942,6 @@ const Home: React.FC = () => {
                                             gap: '6px'
                                         }}>
                                             💰 Your Staking on {getChainName(sourceChain).split(' ')[0]}
-                                        </div>
-                                        <div style={{
-                                            fontSize: '15px',
-                                            fontWeight: 700,
-                                            color: '#047857'
-                                        }}>
-                                            ${totalStakingValue.toFixed(2)}
                                         </div>
                                     </div>
                                     
@@ -1188,47 +1112,11 @@ const Home: React.FC = () => {
                                 placeholder="Select lending chain"
                             />
 
-                            {/* Cross-chain Info */}
-                            <div style={{
-                                background: 'rgba(255, 255, 255, 0.6)',
-                                borderRadius: '12px',
-                                padding: '12px',
-                                marginBottom: '16px'
-                            }}>
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    fontSize: '14px',
-                                    color: 'var(--secondary-text)'
-                                }}>
-                                    {sourceChain === targetChain ? (
-                                        <>
-                                            <i className="fas fa-layer-group" style={{ color: 'var(--accent-color)' }}></i>
-                                            <span>Same Chain Lending on {getChainName(sourceChain)}</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <i className="fas fa-route" style={{ color: 'var(--accent-color)' }}></i>
-                                            <span>Cross-chain Path: {getChainName(sourceChain)} → {getChainName(targetChain)}</span>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
 
 
 
-                            {/* Health Factor */}
-                            <div className="health-indicator">
-                                <div className="health-label">Health Factor</div>
-                                <div className="health-bar">
-                                    <div 
-                                        className="health-fill" 
-                                        style={{ width: `${calculateHealthFactor()}%` }}
-                                    ></div>
-                                </div>
-                                <div className="health-value">{calculateHealthFactor().toFixed(0)}%</div>
-                            </div>
+
+
 
                             {/* Health Factor Warning */}
                             {calculateHealthFactor() <= 50 && selectedAssets.length > 0 && collateralAmount && (
@@ -1515,6 +1403,81 @@ const Home: React.FC = () => {
                             </div>
                         </div>
 
+                        {/* Health Factor - Prominent Display */}
+                        <div style={{
+                            background: calculateHealthFactor() > 75 ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05))' : 
+                                       calculateHealthFactor() > 50 ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(251, 191, 36, 0.05))' : 
+                                       'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05))',
+                            borderRadius: '16px',
+                            padding: '20px',
+                            marginBottom: '20px',
+                            border: `2px solid ${calculateHealthFactor() > 75 ? 'rgba(34, 197, 94, 0.2)' : 
+                                               calculateHealthFactor() > 50 ? 'rgba(251, 191, 36, 0.2)' : 
+                                               'rgba(239, 68, 68, 0.2)'}`,
+                            position: 'relative'
+                        }}>
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                marginBottom: '12px'
+                            }}>
+                                <div style={{
+                                    fontSize: '16px',
+                                    fontWeight: 700,
+                                    color: 'var(--text-color)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                }}>
+                                    <i className="fas fa-heart-pulse" style={{
+                                        color: calculateHealthFactor() > 75 ? '#22c55e' : 
+                                               calculateHealthFactor() > 50 ? '#f59e0b' : 
+                                               '#ef4444'
+                                    }}></i>
+                                    Health Factor
+                                </div>
+                                <div style={{
+                                    fontSize: '24px',
+                                    fontWeight: 800,
+                                    color: calculateHealthFactor() > 75 ? '#22c55e' : 
+                                           calculateHealthFactor() > 50 ? '#f59e0b' : 
+                                           '#ef4444'
+                                }}>
+                                    {calculateHealthFactor().toFixed(0)}%
+                                </div>
+                            </div>
+                            
+                            {/* Health Factor Progress Bar */}
+                            <div style={{
+                                width: '100%',
+                                height: '8px',
+                                background: 'rgba(0, 0, 0, 0.1)',
+                                borderRadius: '4px',
+                                overflow: 'hidden',
+                                marginBottom: '8px'
+                            }}>
+                                <div style={{
+                                    height: '100%',
+                                    width: `${Math.min(100, calculateHealthFactor())}%`,
+                                    background: calculateHealthFactor() > 75 ? 'linear-gradient(90deg, #22c55e, #16a34a)' : 
+                                               calculateHealthFactor() > 50 ? 'linear-gradient(90deg, #f59e0b, #d97706)' : 
+                                               'linear-gradient(90deg, #ef4444, #dc2626)',
+                                    transition: 'width 0.3s ease'
+                                }}></div>
+                            </div>
+                            
+                            <div style={{
+                                fontSize: '12px',
+                                color: 'var(--secondary-text)',
+                                textAlign: 'center'
+                            }}>
+                                {calculateHealthFactor() > 75 ? '✅ Healthy - Low Risk' : 
+                                 calculateHealthFactor() > 50 ? '⚠️ Moderate Risk' : 
+                                 '🚨 High Risk - Increase Collateral'}
+                            </div>
+                        </div>
+
                         {/* Total Collateral */}
                         <div style={{
                             background: 'rgba(255, 255, 255, 0.6)',
@@ -1591,26 +1554,6 @@ const Home: React.FC = () => {
                                     <span>Est. Interest Rate</span>
                                     <span>2.5%</span>
                                 </div>
-                                
-                                {/* Health Factor Mini Display */}
-                                <div className="stat-row compact" style={{
-                                    background: calculateHealthFactor() > 75 ? 'rgba(34, 197, 94, 0.08)' : 
-                                               calculateHealthFactor() > 50 ? 'rgba(251, 191, 36, 0.08)' : 
-                                               'rgba(239, 68, 68, 0.08)',
-                                    padding: '8px 12px',
-                                    borderRadius: '8px',
-                                    marginTop: '8px'
-                                }}>
-                                    <span>Health Factor</span>
-                                    <span style={{ 
-                                        fontWeight: 600,
-                                        color: calculateHealthFactor() > 75 ? '#22c55e' : 
-                                               calculateHealthFactor() > 50 ? '#f59e0b' : 
-                                               '#ef4444'
-                                    }}>
-                                        {calculateHealthFactor().toFixed(0)}%
-                                    </span>
-                                </div>
                             </div>
                         </div>
 
@@ -1667,189 +1610,7 @@ const Home: React.FC = () => {
                 </div>
             </div>
 
-            {/* Network Information Popup */}
-            {isNetworkInfoOpen && (
-                <div
-                    style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: 'rgba(0, 0, 0, 0.3)',
-                        backdropFilter: 'blur(4px)',
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        justifyContent: 'flex-end',
-                        padding: '70px 20px 20px 20px',
-                        zIndex: 1000,
-                        animation: 'fadeIn 0.2s ease'
-                    }}
-                    onClick={() => setIsNetworkInfoOpen(false)}
-                >
-                    <div
-                        style={{
-                            background: 'rgba(255, 255, 255, 0.95)',
-                            backdropFilter: 'blur(10px)',
-                            borderRadius: '16px',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
-                            padding: '20px',
-                            minWidth: '350px',
-                            maxWidth: '400px',
-                            maxHeight: '80vh',
-                            overflowY: 'auto',
-                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
-                            transform: isNetworkInfoOpen ? 'translateX(0)' : 'translateX(100%)',
-                            transition: 'transform 0.3s ease',
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {/* Header */}
-                        <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            marginBottom: '20px',
-                            paddingBottom: '12px',
-                            borderBottom: '1px solid rgba(0, 0, 0, 0.1)'
-                        }}>
-                            <h3 style={{
-                                margin: 0,
-                                fontSize: '18px',
-                                fontWeight: 600,
-                                color: '#1e1e1e'
-                            }}>
-                                🌐 Network Information
-                            </h3>
-                            <button
-                                onClick={() => setIsNetworkInfoOpen(false)}
-                                style={{
-                                    background: 'rgba(0, 0, 0, 0.1)',
-                                    border: 'none',
-                                    borderRadius: '50%',
-                                    width: '32px',
-                                    height: '32px',
-                                    cursor: 'pointer',
-                                    fontSize: '18px',
-                                    color: '#666',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}
-                            >
-                                ×
-                            </button>
-                        </div>
 
-                        {/* Network Status */}
-                        <div style={{
-                            background: 'rgba(255, 255, 255, 0.7)',
-                            borderRadius: '12px',
-                            padding: '16px',
-                            marginBottom: '16px'
-                        }}>
-                            <h4 style={{ fontSize: '14px', marginBottom: '12px', color: '#1e1e1e' }}>
-                                Network Status
-                            </h4>
-                            <div style={{ display: 'grid', gap: '8px' }}>
-                                <div className="stat-row compact">
-                                    <span>Gas Price</span>
-                                    <span>{networkStatus ? `${networkStatus.gasPriceGwei.standard} Gwei` : '20.00 Gwei'}</span>
-                                </div>
-                                <div className="stat-row compact">
-                                    <span>Network Congestion</span>
-                                    <span style={{ 
-                                        color: networkStatus ? getCongestionColor(networkStatus.congestionLevel) : '#f59e0b',
-                                        fontWeight: 600
-                                    }}>
-                                        {getCongestionLevel()}
-                                    </span>
-                                </div>
-                                <div className="stat-row compact">
-                                    <span>Est. Confirmation</span>
-                                    <span>{networkStatus ? networkStatus.estimatedConfirmationTime : '~2 minutes'}</span>
-                                </div>
-                                <div className="stat-row compact">
-                                    <span>Block Time</span>
-                                    <span>{networkStatus ? `${networkStatus.blockTime}s` : '12s'}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Fee Breakdown */}
-                        <div style={{
-                            background: 'rgba(255, 255, 255, 0.7)',
-                            borderRadius: '12px',
-                            padding: '16px',
-                            marginBottom: '16px'
-                        }}>
-                            <h4 style={{ fontSize: '14px', marginBottom: '12px', color: '#1e1e1e' }}>
-                                Fee Breakdown
-                            </h4>
-                            <div style={{ display: 'grid', gap: '8px' }}>
-                                <div className="stat-row compact">
-                                    <span>Gas Fee (Standard)</span>
-                                    <span>{networkStatus ? `$${((parseFloat(networkStatus.gasPriceGwei.standard) * 21000 / 1e9) * (assetPrices.ETH?.price || 3000)).toFixed(2)}` : '$5.20'}</span>
-                                </div>
-                                <div className="stat-row compact">
-                                    <span>Bridge Fee</span>
-                                    <span>~$2.50</span>
-                                </div>
-                                <div className="stat-row compact">
-                                    <span>Protocol Fee</span>
-                                    <span>0.1%</span>
-                                </div>
-                                <div style={{
-                                    paddingTop: '8px',
-                                    borderTop: '1px solid rgba(0, 0, 0, 0.1)',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    fontWeight: 600
-                                }}>
-                                    <span>Est. Total Fee</span>
-                                    <span style={{ color: '#3b82f6' }}>
-                                        {networkStatus ? 
-                                            `$${((parseFloat(networkStatus.gasPriceGwei.standard) * 21000 / 1e9) * (assetPrices.ETH?.price || 3000) + 2.5).toFixed(2)}` 
-                                            : '~$7.70'
-                                        }
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Protocol Statistics */}
-                        <div style={{
-                            background: 'rgba(255, 255, 255, 0.7)',
-                            borderRadius: '12px',
-                            padding: '16px'
-                        }}>
-                            <h4 style={{ fontSize: '14px', marginBottom: '12px', color: '#1e1e1e' }}>
-                                Protocol Statistics
-                            </h4>
-                            <div style={{ display: 'grid', gap: '8px' }}>
-                                <div className="stat-row compact">
-                                    <span>Total Value Locked</span>
-                                    <span>{protocolStats ? protocolStats.totalValueLocked : '$2.5B'}</span>
-                                </div>
-                                <div className="stat-row compact">
-                                    <span>Active Users</span>
-                                    <span>{protocolStats ? protocolStats.totalUsers.toLocaleString() : '125,432'}</span>
-                                </div>
-                                <div className="stat-row compact">
-                                    <span>Success Rate</span>
-                                    <span style={{ color: '#22c55e', fontWeight: 600 }}>
-                                        {protocolStats ? `${protocolStats.successRate}%` : '99.8%'}
-                                    </span>
-                                </div>
-                                <div className="stat-row compact">
-                                    <span>Avg. Bridge Time</span>
-                                    <span>{protocolStats ? protocolStats.averageTransactionTime : '~7 minutes'}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Toast Container for notifications */}
             <ToastContainer />

@@ -5,6 +5,7 @@ import TransactionStorage, {
     TransactionFilter, 
     TransactionStats 
 } from '../utils/transactionStorage';
+import TransactionTracker from '../utils/transactionTracker';
 
 interface UseTransactionsReturn {
     transactions: Transaction[];
@@ -51,13 +52,69 @@ const useTransactions = (): UseTransactionsReturn => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Load transactions from localStorage
-    const refreshTransactions = useCallback(() => {
+    // Load transactions from localStorage and update from blockchain
+    const refreshTransactions = useCallback(async () => {
         try {
             setIsLoading(true);
             setError(null);
             
-            const allTransactions = TransactionStorage.getAllTransactions();
+            let allTransactions = TransactionStorage.getAllTransactions();
+            
+            // Update pending transactions status from blockchain
+            if (allTransactions.some(tx => tx.status === 'pending')) {
+                console.log('📋 Updating pending transaction statuses...');
+                const updatedTransactions = await TransactionTracker.updatePendingTransactions(allTransactions);
+                
+                // Save updated transactions back to storage
+                for (const updatedTx of updatedTransactions) {
+                    if (updatedTx.status !== allTransactions.find(tx => tx.id === updatedTx.id)?.status) {
+                        TransactionStorage.updateTransaction(updatedTx.id, {
+                            status: updatedTx.status,
+                            blockNumber: updatedTx.blockNumber,
+                            gasUsed: updatedTx.gasUsed
+                        });
+                    }
+                }
+                
+                allTransactions = TransactionStorage.getAllTransactions();
+            }
+            
+            // Get additional transactions from blockchain if user is connected
+            if (address && chainId) {
+                console.log('🔍 Fetching blockchain transaction history...');
+                try {
+                    const chainTransactions = await TransactionTracker.getUserTransactionHistory(
+                        address,
+                        chainId
+                    );
+                    
+                    // Convert and merge with existing transactions
+                    for (const chainTx of chainTransactions) {
+                        // Check if transaction already exists in storage
+                        const existingTx = allTransactions.find(tx => tx.txHash === chainTx.hash);
+                        
+                        if (!existingTx) {
+                            // Create new transaction record for unknown blockchain transactions
+                            const newTx = TransactionTracker.convertToTransaction(chainTx, address, chainId);
+                            try {
+                                TransactionStorage.addTransaction({
+                                    ...newTx,
+                                    userAddress: address,
+                                    chainId
+                                } as Omit<Transaction, 'id' | 'timestamp'>);
+                            } catch (error) {
+                                console.warn('Failed to add blockchain transaction to storage:', error);
+                            }
+                        }
+                    }
+                    
+                    // Reload transactions after adding blockchain transactions
+                    allTransactions = TransactionStorage.getAllTransactions();
+                } catch (error) {
+                    console.warn('Failed to fetch blockchain transactions:', error);
+                    // Continue with local transactions even if blockchain fetch fails
+                }
+            }
             
             // Filter by current user and chain if specified
             const userTransactions = address 
@@ -96,6 +153,18 @@ const useTransactions = (): UseTransactionsReturn => {
     useEffect(() => {
         refreshTransactions();
     }, [refreshTransactions]);
+
+    // Auto-refresh pending transactions every 30 seconds
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            if (transactions.some(tx => tx.status === 'pending')) {
+                console.log('🔄 Auto-refreshing pending transactions...');
+                await refreshTransactions();
+            }
+        }, 30000); // 30 seconds
+
+        return () => clearInterval(interval);
+    }, [transactions, refreshTransactions]);
 
     // Add new transaction
     const addTransaction = useCallback(async (

@@ -20,6 +20,7 @@ const History: React.FC = () => {
         clearFilter,
         exportTransactions,
         importTransactions,
+        refreshTransactions,
         currentFilter
     } = useTransactions();
 
@@ -229,6 +230,26 @@ const History: React.FC = () => {
                         {/* Action buttons */}
                         <div style={{ display: 'flex', gap: '8px' }}>
                             <button
+                                onClick={() => {
+                                    refreshTransactions();
+                                    showToast('Refreshing transaction history from blockchain...', 'info');
+                                }}
+                                disabled={isLoading}
+                                style={{
+                                    padding: '8px 12px',
+                                    fontSize: '12px',
+                                    borderRadius: '8px',
+                                    border: '1px solid var(--border-color)',
+                                    background: isLoading ? '#f3f4f6' : 'white',
+                                    color: isLoading ? '#9ca3af' : 'var(--accent-color)',
+                                    cursor: isLoading ? 'not-allowed' : 'pointer'
+                                }}
+                            >
+                                <i className={isLoading ? "fas fa-spinner fa-spin" : "fas fa-sync-alt"} style={{ marginRight: '4px' }}></i>
+                                {isLoading ? 'Syncing...' : 'Refresh'}
+                            </button>
+
+                            <button
                                 onClick={() => setShowExportModal(true)}
                                 style={{
                                     padding: '8px 12px',
@@ -342,7 +363,7 @@ const History: React.FC = () => {
                                 color: 'var(--secondary-text)',
                                 fontSize: '16px'
                             }}>
-                                Fetching your transactions from local storage
+                                Syncing transactions from blockchain and updating pending statuses...
                             </p>
                         </div>
                     ) : error ? (
@@ -506,7 +527,7 @@ const History: React.FC = () => {
                                         </div>
                                         <div>
                                             {stats.totalTransactions === 0 
-                                                ? 'Start using LinkPort to see your transaction history here.'
+                                                ? 'Start using Liquilink to see your transaction history here. Your on-chain transactions will be automatically detected.'
                                                 : 'No transactions found for the selected filters.'
                                             }
                                         </div>

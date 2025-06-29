@@ -7,10 +7,10 @@ const Navigation: React.FC = () => {
   const router = useRouter();
 
   const navigationItems = [
-    { href: '/', label: 'Assets' },
-    { href: '/pools', label: 'Pools' },
+    { href: '/', label: 'DeFi Hub' },
+    { href: '/pools', label: 'Liquidity Pools' },
     { href: '/portfolio', label: 'Portfolio' },
-    { href: '/history', label: 'History' },
+    { href: '/history', label: 'Transaction History' },
   ];
 
   return (
@@ -34,14 +34,31 @@ const Navigation: React.FC = () => {
         justifyContent: 'space-between',
         alignItems: 'center',
       }}>
-        <div style={{
-          fontSize: '24px',
-          fontWeight: 700,
-          color: 'var(--accent-color)',
-          letterSpacing: '0.5px',
-        }}>
-          LINKPORT
-        </div>
+        <Link href="/" style={{ textDecoration: 'none' }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            cursor: 'pointer',
+          }}>
+            <img 
+              src="/logo.png" 
+              alt="Liquilink Logo" 
+              style={{
+                height: '32px',
+                width: 'auto',
+              }}
+            />
+            <div style={{
+              fontSize: '24px',
+              fontWeight: 700,
+              color: 'var(--accent-color)',
+              letterSpacing: '0.5px',
+            }}>
+              LIQUILINK
+            </div>
+          </div>
+        </Link>
         
         <div style={{
           display: 'flex',

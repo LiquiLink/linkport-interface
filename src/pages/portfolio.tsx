@@ -92,25 +92,26 @@ const Portfolio: React.FC = () => {
         loadAssetPrices();
     }, [isClient, chainId]);
 
-    // Get user balance and position data
+    // Get user balance and position data from ALL chains
     useEffect(() => {
         async function fetchPortfolioData() {
-            if (!isClient || !address || !chainId) {
+            if (!isClient || !address) {
                 setLoading(false);
                 return;
             }
 
             setLoading(true);
             try {
-                console.log("🔥 Starting to load Portfolio data...");
+                console.log("🔥 Starting to load Portfolio data from all chains...");
                 
-                const currentChainPools = poolList.filter(pool => pool.chainId === chainId);
+                // Get data from ALL chains, not just current chain
+                const allPools = poolList; // Include all pools from all chains
                 const userPositions: Position[] = [];
                 const userBalances: {[key: string]: string} = {};
                 let totalValue = 0;
                 let totalLiquidity = 0;
 
-                for (const pool of currentChainPools) {
+                for (const pool of allPools) {
                     try {
                         // Get user balance
                         const balance = await getUserAssetBalance(
@@ -157,7 +158,7 @@ const Portfolio: React.FC = () => {
                                 amount: formattedShares,
                                 value: positionValue,
                                 type: 'liquidity',
-                                chain: chainId === 97 ? 'BSC Testnet' : 'Sepolia Testnet',
+                                chain: pool.chainId === 97 ? 'BSC Testnet' : 'Sepolia Testnet',
                                 poolId: pool.id,
                                 shares: formattedShares,
                                 apy: pool.apy
@@ -484,11 +485,11 @@ const Portfolio: React.FC = () => {
                             />
                         )}
 
-                        {/* Main Content - Two Column Layout */}
+                        {/* Main Content - New Layout: Liquidity First */}
                         <div className="portfolio-main">
-                            {/* Left Column */}
+                            {/* Left Column - Primary: Multi-Chain Liquidity Positions */}
                             <div>
-                                {/* Wallet Balances Section */}
+                                {/* Multi-Chain Liquidity Positions */}
                                 <div className="portfolio-section">
                                     <div style={{
                                         display: 'flex',
@@ -500,294 +501,323 @@ const Portfolio: React.FC = () => {
                                     }}>
                                         <h3 style={{
                                             margin: 0,
-                                            fontSize: '18px',
-                                            fontWeight: 600,
+                                            fontSize: '20px',
+                                            fontWeight: 700,
                                             color: 'var(--text-color)'
-                                        }}>Wallet Balances</h3>
+                                        }}>Multi-Chain Liquidity Positions</h3>
                                         <div style={{
-                                            width: '28px',
-                                            height: '28px',
+                                            width: '32px',
+                                            height: '32px',
                                             borderRadius: '50%',
-                                            background: 'var(--accent-color)',
+                                            background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
                                             color: 'white',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            fontSize: '12px'
+                                            fontSize: '14px'
                                         }}>
-                                            💰
+                                            🏊‍♂️
                                         </div>
                                     </div>
 
-                                    <div style={{ display: 'grid', gap: '12px' }}>
-                                        {poolList
-                                            .filter(pool => pool.chainId === chainId)
-                                            .map((pool) => {
-                                                const balance = balances[pool.id] || '0';
-                                                const balanceNum = parseFloat(balance);
-                                                const priceData = assetPrices[pool.name] || { price: 1 };
-                                                const value = balanceNum * priceData.price;
-
-                                                return (
-                                                    <div key={pool.id} style={{
-                                                        display: 'flex',
-                                                        justifyContent: 'space-between',
-                                                        alignItems: 'center',
-                                                        padding: '14px',
-                                                        background: 'rgba(255, 255, 255, 0.7)',
-                                                        borderRadius: '12px',
-                                                        border: `2px solid ${balanceNum > 0 ? 'rgba(34, 197, 94, 0.3)' : 'rgba(156, 163, 175, 0.3)'}`
-                                                    }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                            <div style={getTokenIconStyle(pool.name)}>{pool.name}</div>
-                                                            <div>
-                                                                <div style={{
-                                                                    fontSize: '15px',
-                                                                    fontWeight: 600,
-                                                                    color: 'var(--text-color)'
-                                                                }}>
-                                                                    {pool.name}
-                                                                </div>
-                                                                <div style={{
-                                                                    fontSize: '11px',
-                                                                    color: 'var(--secondary-text)'
-                                                                }}>
-                                                                    {getChainName(pool.chainId)} {pool.isNative && '(Native)'}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div style={{ textAlign: 'right' }}>
-                                                            <div style={{
-                                                                fontSize: '15px',
-                                                                fontWeight: 600,
-                                                                color: 'var(--text-color)'
-                                                            }}>
-                                                                {parseFloat(balance).toFixed(6)} {pool.name}
-                                                            </div>
-                                                            <div style={{
-                                                                fontSize: '13px',
-                                                                color: 'var(--secondary-text)'
-                                                            }}>
-                                                                {formatCurrency(value)}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })
-                                        }
-                                    </div>
-
-                                    {chainId && (
-                                        <div style={{
-                                            marginTop: '16px',
-                                            padding: '12px',
-                                            background: 'rgba(59, 130, 246, 0.1)',
-                                            borderRadius: '12px',
-                                            fontSize: '14px',
-                                            color: 'var(--secondary-text)',
-                                            textAlign: 'center'
-                                        }}>
-                                            💡 These are test tokens on {getChainName(chainId)}. 
-                                            <br />Get test tokens from faucets to interact with the protocol.
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Network Info */}
-                                <div className="portfolio-section" style={{ marginTop: '20px' }}>
-                                    <h3 style={{
-                                        marginBottom: '16px',
-                                        fontSize: '18px',
-                                        fontWeight: 600,
-                                        color: 'var(--text-color)'
-                                    }}>
-                                        Network Information
-                                    </h3>
-                                    
-                                    <div style={{
-                                        background: 'rgba(255, 255, 255, 0.7)',
-                                        borderRadius: '12px',
-                                        padding: '16px'
-                                    }}>
-                                        <div style={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            marginBottom: '8px'
-                                        }}>
-                                            <span style={{ color: 'var(--secondary-text)', fontSize: '14px' }}>Current Network</span>
-                                            <span style={{ 
-                                                fontWeight: 600, 
-                                                color: 'var(--text-color)',
-                                                fontSize: '16px'
-                                            }}>
-                                                {getChainName(chainId || 97)}
-                                            </span>
-                                        </div>
-                                        
-                                        <div style={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            marginBottom: '8px'
-                                        }}>
-                                            <span style={{ color: 'var(--secondary-text)', fontSize: '14px' }}>Chain ID</span>
-                                            <span style={{ 
-                                                fontWeight: 600, 
-                                                color: 'var(--text-color)',
-                                                fontSize: '16px'
-                                            }}>
-                                                {chainId || 97}
-                                            </span>
-                                        </div>
-
-                                        <div style={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center'
-                                        }}>
-                                            <span style={{ color: 'var(--secondary-text)', fontSize: '14px' }}>Status</span>
-                                            <span style={{ 
-                                                fontWeight: 600, 
-                                                color: '#22c55e',
-                                                fontSize: '16px'
-                                            }}>
-                                                Connected
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Right Column */}
-                            <div>
-                                {/* Liquidity Positions */}
-                                <div className="portfolio-section">
-                                    <h3 style={{
-                                        marginBottom: '20px',
-                                        fontSize: '18px',
-                                        fontWeight: 600,
-                                        color: 'var(--text-color)'
-                                    }}>
-                                        Liquidity Positions
-                                    </h3>
-                                    
                                     {positions.length === 0 ? (
                                         <div style={{
                                             textAlign: 'center',
-                                            padding: '40px 20px',
+                                            padding: '60px 20px',
                                             background: 'rgba(255, 255, 255, 0.7)',
-                                            borderRadius: '12px',
+                                            borderRadius: '16px',
                                             border: '2px dashed rgba(156, 163, 175, 0.5)'
                                         }}>
                                             <div style={{
-                                                fontSize: '32px',
-                                                marginBottom: '12px',
+                                                fontSize: '48px',
+                                                marginBottom: '16px',
                                                 color: 'var(--secondary-text)'
                                             }}>
-                                                🏊‍♂️
+                                                🌊
                                             </div>
                                             <h4 style={{
-                                                fontSize: '16px',
+                                                fontSize: '18px',
                                                 fontWeight: 600,
                                                 color: 'var(--text-color)',
-                                                marginBottom: '8px'
+                                                marginBottom: '12px'
                                             }}>
-                                                No Liquidity Positions
+                                                No Active Liquidity Positions
                                             </h4>
                                             <p style={{
                                                 color: 'var(--secondary-text)',
-                                                fontSize: '14px',
-                                                marginBottom: '16px'
+                                                fontSize: '16px',
+                                                marginBottom: '24px',
+                                                maxWidth: '400px',
+                                                margin: '0 auto 24px'
                                             }}>
-                                                Provide liquidity to pools to start earning rewards
+                                                Start providing liquidity across multiple chains to earn fees and rewards from our DeFi protocol
                                             </p>
-                                                                        <button 
-                                className="button primary compact"
-                                onClick={handleBrowsePools}
-                            >
-                                Browse Pools
-                            </button>
+                                            <button 
+                                                className="button primary"
+                                                onClick={handleBrowsePools}
+                                                style={{
+                                                    padding: '12px 24px',
+                                                    fontSize: '16px'
+                                                }}
+                                            >
+                                                Explore Pools
+                                            </button>
                                         </div>
                                     ) : (
-                                        <div style={{ display: 'grid', gap: '12px' }}>
-                                            {positions.map((position, index) => (
-                                                <div key={index} style={{
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'center',
-                                                    padding: '14px',
-                                                    background: 'rgba(255, 255, 255, 0.7)',
-                                                    borderRadius: '12px',
-                                                    border: '2px solid rgba(59, 130, 246, 0.3)'
-                                                }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                        <div className="token-icon placeholder">{position.token}</div>
-                                                        <div>
-                                                            <div style={{
-                                                                fontSize: '15px',
+                                        <div style={{ display: 'grid', gap: '16px' }}>
+                                            {/* Group liquidity positions by chain */}
+                                            {[97, 11155111].map(chainIdToShow => {
+                                                const chainPositions = positions.filter(pos => 
+                                                    pos.chain.includes(chainIdToShow === 97 ? 'BSC' : 'Sepolia')
+                                                );
+                                                
+                                                if (chainPositions.length === 0) return null;
+                                                
+                                                return (
+                                                    <div key={chainIdToShow} style={{
+                                                        border: `2px solid ${chainIdToShow === chainId ? 'rgba(59, 130, 246, 0.4)' : 'rgba(156, 163, 175, 0.3)'}`,
+                                                        borderRadius: '16px',
+                                                        padding: '20px',
+                                                        background: chainIdToShow === chainId ? 
+                                                            'linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.03))' : 
+                                                            'rgba(255, 255, 255, 0.6)'
+                                                    }}>
+                                                        <div style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'space-between',
+                                                            marginBottom: '16px'
+                                                        }}>
+                                                            <h4 style={{
+                                                                margin: 0,
+                                                                fontSize: '18px',
                                                                 fontWeight: 600,
-                                                                color: 'var(--text-color)'
+                                                                color: 'var(--text-color)',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '10px'
                                                             }}>
-                                                                {position.token} Pool
-                                                            </div>
-                                                            <div style={{
-                                                                fontSize: '11px',
-                                                                color: 'var(--secondary-text)'
-                                                            }}>
-                                                                {position.chain} • APY: {position.apy}
+                                                                <span style={{
+                                                                    fontSize: '20px'
+                                                                }}>
+                                                                    {chainIdToShow === 97 ? '🟡' : '🔵'}
+                                                                </span>
+                                                                {getChainName(chainIdToShow)}
+                                                            </h4>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                {chainIdToShow === chainId && (
+                                                                    <span style={{
+                                                                        padding: '6px 10px',
+                                                                        background: 'rgba(34, 197, 94, 0.15)',
+                                                                        color: '#22c55e',
+                                                                        fontSize: '12px',
+                                                                        fontWeight: 600,
+                                                                        borderRadius: '8px'
+                                                                    }}>
+                                                                        Connected
+                                                                    </span>
+                                                                )}
+                                                                <span style={{
+                                                                    padding: '6px 10px',
+                                                                    background: 'rgba(59, 130, 246, 0.15)',
+                                                                    color: '#3b82f6',
+                                                                    fontSize: '12px',
+                                                                    fontWeight: 600,
+                                                                    borderRadius: '8px'
+                                                                }}>
+                                                                    {chainPositions.length} Position{chainPositions.length > 1 ? 's' : ''}
+                                                                </span>
                                                             </div>
                                                         </div>
-                                                        <div style={{
-                                                            padding: '3px 6px',
-                                                            borderRadius: '6px',
-                                                            fontSize: '11px',
-                                                            fontWeight: 500,
-                                                            background: 'rgba(59, 130, 246, 0.15)',
-                                                            color: '#3b82f6'
-                                                        }}>
-                                                            Liquidity
+                                                        
+                                                        <div style={{ display: 'grid', gap: '12px' }}>
+                                                            {chainPositions.map((position, index) => (
+                                                                <div key={`${chainIdToShow}-${index}`} style={{
+                                                                    display: 'flex',
+                                                                    justifyContent: 'space-between',
+                                                                    alignItems: 'center',
+                                                                    padding: '16px',
+                                                                    background: 'rgba(255, 255, 255, 0.8)',
+                                                                    borderRadius: '12px',
+                                                                    border: '1px solid rgba(59, 130, 246, 0.2)',
+                                                                    transition: 'all 0.2s ease',
+                                                                    cursor: 'pointer'
+                                                                }}>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                                                        <div style={{
+                                                                            width: '44px',
+                                                                            height: '44px',
+                                                                            borderRadius: '12px',
+                                                                            background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                                                                            color: 'white',
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            fontSize: '16px',
+                                                                            fontWeight: 600
+                                                                        }}>
+                                                                            {position.token.slice(0, 2)}
+                                                                        </div>
+                                                                        <div>
+                                                                            <div style={{
+                                                                                fontSize: '16px',
+                                                                                fontWeight: 600,
+                                                                                color: 'var(--text-color)',
+                                                                                marginBottom: '4px'
+                                                                            }}>
+                                                                                {position.token} Liquidity Pool
+                                                                            </div>
+                                                                            <div style={{
+                                                                                fontSize: '13px',
+                                                                                color: 'var(--secondary-text)',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                gap: '8px'
+                                                                            }}>
+                                                                                <span>APY: {position.apy}</span>
+                                                                                <span style={{
+                                                                                    width: '4px',
+                                                                                    height: '4px',
+                                                                                    borderRadius: '50%',
+                                                                                    background: 'var(--secondary-text)'
+                                                                                }}></span>
+                                                                                <span style={{
+                                                                                    padding: '2px 6px',
+                                                                                    background: 'rgba(34, 197, 94, 0.1)',
+                                                                                    color: '#22c55e',
+                                                                                    borderRadius: '4px',
+                                                                                    fontSize: '11px',
+                                                                                    fontWeight: 500
+                                                                                }}>
+                                                                                    Active
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div style={{ textAlign: 'right' }}>
+                                                                        <div style={{
+                                                                            fontSize: '16px',
+                                                                            fontWeight: 600,
+                                                                            color: 'var(--text-color)',
+                                                                            marginBottom: '4px'
+                                                                        }}>
+                                                                            {parseFloat(position.shares).toFixed(4)} LP
+                                                                        </div>
+                                                                        <div style={{
+                                                                            fontSize: '14px',
+                                                                            color: '#22c55e',
+                                                                            fontWeight: 500
+                                                                        }}>
+                                                                            {formatCurrency(position.value)}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
                                                         </div>
                                                     </div>
-                                                    <div style={{ textAlign: 'right' }}>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Right Column - Secondary: Simplified Overview */}
+                            <div>
+                                {/* Simplified Wallet Balances Summary */}
+                                <div className="portfolio-section">
+                                    <h3 style={{
+                                        marginBottom: '16px',
+                                        fontSize: '16px',
+                                        fontWeight: 600,
+                                        color: 'var(--text-color)'
+                                    }}>
+                                        Wallet Balance Summary
+                                    </h3>
+                                    
+                                    <div style={{ display: 'grid', gap: '12px' }}>
+                                        {[97, 11155111].map(chainIdToShow => {
+                                            const chainPools = poolList.filter(pool => pool.chainId === chainIdToShow);
+                                            const chainTotalValue = chainPools.reduce((total, pool) => {
+                                                const balance = balances[pool.id] || '0';
+                                                const balanceNum = parseFloat(balance);
+                                                const priceData = assetPrices[pool.name] || { price: 1 };
+                                                return total + (balanceNum * priceData.price);
+                                            }, 0);
+                                            const hasBalance = chainTotalValue > 0;
+                                            
+                                            return (
+                                                <div key={chainIdToShow} style={{
+                                                    padding: '16px',
+                                                    background: hasBalance ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.7)',
+                                                    borderRadius: '12px',
+                                                    border: `1px solid ${hasBalance ? 'rgba(34, 197, 94, 0.3)' : 'rgba(156, 163, 175, 0.2)'}`
+                                                }}>
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center'
+                                                    }}>
                                                         <div style={{
-                                                            fontSize: '15px',
-                                                            fontWeight: 600,
-                                                            color: 'var(--text-color)'
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '8px'
                                                         }}>
-                                                            {parseFloat(position.shares).toFixed(6)} LP
+                                                            <span style={{ fontSize: '16px' }}>
+                                                                {chainIdToShow === 97 ? '🟡' : '🔵'}
+                                                            </span>
+                                                            <div>
+                                                                <div style={{
+                                                                    fontSize: '14px',
+                                                                    fontWeight: 600,
+                                                                    color: 'var(--text-color)'
+                                                                }}>
+                                                                    {getChainName(chainIdToShow)}
+                                                                </div>
+                                                                <div style={{
+                                                                    fontSize: '12px',
+                                                                    color: 'var(--secondary-text)'
+                                                                }}>
+                                                                    {chainPools.length} assets
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                         <div style={{
-                                                            fontSize: '13px',
-                                                            color: 'var(--secondary-text)'
+                                                            textAlign: 'right'
                                                         }}>
-                                                            {formatCurrency(position.value)}
+                                                            <div style={{
+                                                                fontSize: '16px',
+                                                                fontWeight: 600,
+                                                                color: hasBalance ? '#22c55e' : 'var(--secondary-text)'
+                                                            }}>
+                                                                {formatCurrency(chainTotalValue)}
+                                                            </div>
+                                                            {chainIdToShow === chainId && (
+                                                                <div style={{
+                                                                    fontSize: '11px',
+                                                                    color: '#22c55e',
+                                                                    fontWeight: 500
+                                                                }}>
+                                                                    Current
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                    
+                                            );
+                                        })}
+                                    </div>
+
                                     <div style={{
-                                        display: 'flex',
-                                        gap: '8px',
-                                        marginTop: '16px'
+                                        marginTop: '12px',
+                                        padding: '12px',
+                                        background: 'rgba(59, 130, 246, 0.1)',
+                                        borderRadius: '8px',
+                                        fontSize: '12px',
+                                        color: 'var(--secondary-text)',
+                                        textAlign: 'center'
                                     }}>
-                                        <button 
-                                            className="button primary compact" 
-                                            style={{ flex: 1 }}
-                                            onClick={handleAddLiquidity}
-                                        >
-                                            Add Liquidity
-                                        </button>
-                                        <button 
-                                            className="button secondary compact" 
-                                            style={{ flex: 1 }}
-                                            onClick={handleWithdraw}
-                                        >
-                                            Withdraw
-                                        </button>
+                                        💡 These are testnet tokens. Get them from faucets to test the protocol.
                                     </div>
                                 </div>
 
@@ -795,67 +825,77 @@ const Portfolio: React.FC = () => {
                                 <div className="portfolio-section" style={{ marginTop: '20px' }}>
                                     <h3 style={{
                                         marginBottom: '16px',
-                                        fontSize: '18px',
+                                        fontSize: '16px',
                                         fontWeight: 600,
                                         color: 'var(--text-color)'
                                     }}>
                                         Quick Actions
                                     </h3>
                                     
-                                    <div className="quick-actions-grid">
+                                    <div style={{ display: 'grid', gap: '10px' }}>
                                         <button 
-                                            className="action-card" 
-                                            style={{
-                                                background: 'rgba(59, 130, 246, 0.1)',
-                                                border: '2px solid rgba(59, 130, 246, 0.3)',
-                                                color: '#3b82f6'
-                                            }}
+                                            className="button primary compact"
                                             onClick={handleDeposit}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '8px',
+                                                padding: '12px 16px',
+                                                fontSize: '14px'
+                                            }}
                                         >
-                                            <i className="fas fa-plus-circle" style={{ fontSize: '20px', marginBottom: '8px' }}></i>
-                                            <span style={{ fontSize: '14px', fontWeight: 500 }}>Deposit</span>
+                                            💰 Deposit Assets
                                         </button>
                                         
                                         <button 
-                                            className="action-card" 
-                                            style={{
-                                                background: 'rgba(34, 197, 94, 0.1)',
-                                                border: '2px solid rgba(34, 197, 94, 0.3)',
-                                                color: '#22c55e'
-                                            }}
-                                            onClick={handleWithdraw}
-                                        >
-                                            <i className="fas fa-minus-circle" style={{ fontSize: '20px', marginBottom: '8px' }}></i>
-                                            <span style={{ fontSize: '14px', fontWeight: 500 }}>Withdraw</span>
-                                        </button>
-                                        
-                                        <button 
-                                            className="action-card" 
-                                            style={{
-                                                background: 'rgba(245, 158, 11, 0.1)',
-                                                border: '2px solid rgba(245, 158, 11, 0.3)',
-                                                color: '#f59e0b'
-                                            }}
+                                            className="button secondary compact"
                                             onClick={handleBridge}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '8px',
+                                                padding: '12px 16px',
+                                                fontSize: '14px'
+                                            }}
                                         >
-                                            <i className="fas fa-exchange-alt" style={{ fontSize: '20px', marginBottom: '8px' }}></i>
-                                            <span style={{ fontSize: '14px', fontWeight: 500 }}>Bridge</span>
+                                            🌉 Cross-Chain Bridge
                                         </button>
                                         
                                         <button 
-                                            className="action-card" 
-                                            style={{
-                                                background: 'rgba(139, 92, 246, 0.1)',
-                                                border: '2px solid rgba(139, 92, 246, 0.3)',
-                                                color: '#8b5cf6'
-                                            }}
+                                            className="button primary compact"
                                             onClick={handleAnalytics}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '8px',
+                                                padding: '12px 16px',
+                                                fontSize: '14px'
+                                            }}
                                         >
-                                            <i className="fas fa-chart-line" style={{ fontSize: '20px', marginBottom: '8px' }}></i>
-                                            <span style={{ fontSize: '14px', fontWeight: 500 }}>Analytics</span>
+                                            📊 View Analytics
+                                        </button>
+                                        
+                                        <button 
+                                            className="button secondary compact"
+                                            onClick={handleBrowsePools}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '8px',
+                                                padding: '12px 16px',
+                                                fontSize: '14px'
+                                            }}
+                                        >
+                                            🏊‍♂️ Browse Pools
                                         </button>
                                     </div>
                                 </div>
+
+
                             </div>
                         </div>
                     </>

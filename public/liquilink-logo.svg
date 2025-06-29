@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="160" height="40" viewBox="0 0 160 40" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Hexagon gradient from green to blue -->
+    <linearGradient id="hexGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00D4AA;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#00B4D8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0077B6;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Inner elements gradient -->
+    <linearGradient id="innerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00F5FF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0096C7;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Hexagon border -->
+  <path d="M12 4 L28 4 L36 20 L28 36 L12 36 L4 20 Z" 
+        stroke="url(#hexGradient)" 
+        stroke-width="3" 
+        fill="none" 
+        opacity="0.9"/>
+  
+  <!-- Inner connecting elements -->
+  <g transform="translate(20, 20)">
+    <!-- First element (top-left) -->
+    <path d="M-8 -6 Q-4 -10 0 -6 Q4 -2 0 2 Q-4 6 -8 2 Q-12 -2 -8 -6 Z" 
+          fill="url(#innerGradient)" 
+          opacity="0.9"/>
+    
+    <!-- Second element (top-right) -->
+    <path d="M8 -6 Q12 -10 16 -6 Q20 -2 16 2 Q12 6 8 2 Q4 -2 8 -6 Z" 
+          fill="url(#innerGradient)" 
+          opacity="0.8"/>
+    
+    <!-- Third element (bottom-center) -->
+    <path d="M0 6 Q4 2 8 6 Q12 10 8 14 Q4 18 0 14 Q-4 10 0 6 Z" 
+          fill="url(#innerGradient)" 
+          opacity="0.7"/>
+    
+    <!-- Connecting lines -->
+    <path d="M0 -2 L8 2 M8 2 L4 10 M4 10 L-4 6 M-4 6 L0 -2" 
+          stroke="url(#innerGradient)" 
+          stroke-width="1.5" 
+          opacity="0.6"/>
+  </g>
+  
+  <!-- LIQUILINK text (no subtitle) -->
+  <text x="48" y="26" 
+        font-family="Arial, sans-serif" 
+        font-size="16" 
+        font-weight="bold" 
+        fill="#1E1E1E">
+    LIQUILINK
+  </text>
+</svg> 

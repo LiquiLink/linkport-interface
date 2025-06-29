@@ -113,7 +113,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     );
 };
 
-// 数据值的加载状态组件
+// Loading state component for data values
 interface LoadingValueProps {
     isLoading: boolean;
     value: string | number;
@@ -154,7 +154,7 @@ export const LoadingValue: React.FC<LoadingValueProps> = ({
     return <span>{prefix}{value}{suffix}</span>;
 };
 
-// 卡片骨架加载组件
+// Pool card skeleton loading component
 export const PoolCardSkeleton: React.FC = () => (
     <>
         <style>{`
