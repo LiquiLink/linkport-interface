@@ -1035,10 +1035,12 @@ const Home: React.FC = () => {
                                                 if (value === '' || /^[0-9]*\.?[0-9]*$/.test(value)) {
                                                     const dotCount = (value.match(/\./g) || []).length;
                                                     if (dotCount <= 1) {
-                                                        if (value === '' || parseFloat(value) <= parseFloat(collateralAsset.amount)) {
-                                                            handleCollateralAmountChange(value);
-                                                        } else {
-                                                            showToast('Insufficient collateral balance', 'warning');
+                                                        // Always allow input, just warn if exceeding balance
+                                                        handleCollateralAmountChange(value);
+                                                        
+                                                        // Show warning only when user inputs a value exceeding balance
+                                                        if (value !== '' && parseFloat(value) > parseFloat(collateralAsset.amount || '0')) {
+                                                            showToast('Warning: Amount exceeds available balance', 'warning');
                                                         }
                                                     }
                                                 }
