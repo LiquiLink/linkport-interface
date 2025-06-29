@@ -137,8 +137,64 @@ const useTransactions = (): UseTransactionsReturn => {
             
             setFilteredTransactions(filtered);
             
-            // Update stats
-            const transactionStats = TransactionStorage.getTransactionStats(address, chainId);
+            // Calculate stats based on the actual displayed user transactions
+            const calculateStatsFromTransactions = (txs: Transaction[]): TransactionStats => {
+                const completed = txs.filter(tx => tx.status === 'completed');
+                const pending = txs.filter(tx => tx.status === 'pending');
+                const failed = txs.filter(tx => tx.status === 'failed');
+
+                // Calculate total transaction volume (USD)
+                const totalVolume = completed.reduce((sum, tx) => {
+                    const value = parseFloat(tx.value.replace(/[$,]/g, '')) || 0;
+                    return sum + value;
+                }, 0);
+
+                // Count most frequently used tokens
+                const tokenCounts: { [key: string]: number } = {};
+                txs.forEach(tx => {
+                    tokenCounts[tx.token] = (tokenCounts[tx.token] || 0) + 1;
+                });
+                const mostUsedToken = Object.keys(tokenCounts).length > 0 
+                    ? Object.keys(tokenCounts).reduce((a, b) => 
+                        tokenCounts[a] > tokenCounts[b] ? a : b
+                      )
+                    : 'N/A';
+
+                // Count most frequently used chains
+                const chainCounts: { [key: number]: number } = {};
+                txs.forEach(tx => {
+                    chainCounts[tx.chainId] = (chainCounts[tx.chainId] || 0) + 1;
+                });
+                const mostUsedChainId = Object.keys(chainCounts).length > 0
+                    ? Object.keys(chainCounts).reduce((a, b) => 
+                        chainCounts[parseInt(a)] > chainCounts[parseInt(b)] ? a : b
+                      )
+                    : '0';
+                const mostUsedChain = mostUsedChainId === '97' ? 'BSC Testnet' : 
+                                     mostUsedChainId === '11155111' ? 'Sepolia Testnet' : 'Unknown';
+
+                // Calculate average gas fees
+                const gasTransactions = completed.filter(tx => tx.gasUsed && tx.gasPrice);
+                const totalGasUsed = gasTransactions.reduce((sum, tx) => 
+                    sum + parseInt(tx.gasUsed || '0'), 0
+                );
+                const avgGasPrice = gasTransactions.length > 0 ? 
+                    gasTransactions.reduce((sum, tx) => sum + parseInt(tx.gasPrice || '0'), 0) / gasTransactions.length : 0;
+
+                return {
+                    totalTransactions: txs.length,
+                    completedTransactions: completed.length,
+                    pendingTransactions: pending.length,
+                    failedTransactions: failed.length,
+                    totalVolume,
+                    totalGasUsed: totalGasUsed.toString(),
+                    avgGasPrice: avgGasPrice.toString(),
+                    mostUsedToken,
+                    mostUsedChain
+                };
+            };
+            
+            const transactionStats = calculateStatsFromTransactions(userTransactions);
             setStats(transactionStats);
             
         } catch (err) {
