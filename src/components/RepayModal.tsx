@@ -15,6 +15,7 @@ import { chainSelector, linkPorts, poolList } from '../config'
 import { getLoan } from '../utils/pool';
 import { getAssetPriceFromPort } from '../utils/priceService';
 import { useWriteContract } from 'wagmi';
+import { parseMutationArgs } from '@tanstack/react-query';
 
 interface RepayModalProps {
   isOpen: boolean;
@@ -48,6 +49,7 @@ const RepayModal: React.FC<RepayModalProps> = ({
   const [repayAmount, setRepayAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [userBalance, setUserBalance] = useState('0');
+  const [isRepayLoading, setIsRepayLoading] = useState(false);
 
   const {
     createRepayTransaction
@@ -75,7 +77,7 @@ const RepayModal: React.FC<RepayModalProps> = ({
                     if (loan != null) {
                       const price = await getAssetPriceFromPort(pool.address, pool.chainId);
                       const _amount = Number(amount) / 10 ** 18; // Assuming 18 decimals for simplicity
-                      const value = price.price * parseFloat(_amount) 
+                      const value = price ? price?.price * _amount : _amount;
                       return {
                         symbol: pool.name,
                         amount: _amount,
@@ -99,6 +101,7 @@ const RepayModal: React.FC<RepayModalProps> = ({
         const assets: BorrowedAsset[] = borrowedAssets?.filter((asset: any) => asset != null && asset.amount > 0).map((asset: any) => ({
             symbol: asset.symbol,
             amount: asset.amount,
+            price: asset.price?.price || 0,
             value: asset.value,
             chainId: asset.chainId,
             address: asset.address,
@@ -168,10 +171,10 @@ const RepayModal: React.FC<RepayModalProps> = ({
   }, [selectedAsset, address]);
 
   // Calculate interest (simple 2.5% APR for demo)
-  const calculateInterest = (principal: string, timestamp: number): number => {
+  const calculateInterest = (principal: number, timestamp: number): number => {
     const timeElapsed = (Date.now() - timestamp) / (1000 * 60 * 60 * 24 * 365); // years
     const interestRate = 0.025; // 2.5% APR
-    return parseFloat(principal) * interestRate * timeElapsed;
+    return principal * interestRate * timeElapsed;
   };
 
   // Calculate health factor based on debt value
@@ -193,24 +196,60 @@ const RepayModal: React.FC<RepayModalProps> = ({
       return;
     }
 
-    setIsLoading(true);
+    setIsRepayLoading(true);
+
     try {
 
-
       const linkPort = linkPorts[bscTestnet.id];
+
+      const executeRepay = async () => {
+            await writeContractRepay({
+                address: linkPort as `0x${string}`,
+                abi: linkPortABI,
+                functionName: 'repay',
+                args: [chainSelector[sepolia.id], debt, [selectedAsset.address], [parseEther(repayAmount)]],
+                chainId: bscTestnet.id,
+                chain: bscTestnet,
+                account: address
+            }, 
+            {
+                onSuccess: (txHash) => {
+                    console.log('✅ Repay successful:', txHash);
+                    createRepayTransaction(
+                        selectedAsset.symbol,
+                        repayAmount,
+                        (Number(repayAmount) * Number(selectedAsset.price)).toString(),
+                        txHash
+                    );
+                    showToast('Repayment confirmed!', 'success');
+                },
+                onError: (error) => {
+                    console.error('❌ Repayment failed:', error);
+                    showToast('Repayment failed: ' + error.message, 'error');
+                }
+            });
+
+            showToast(`Successfully repaid ${repayAmount} ${selectedAsset.symbol}`, 'success');
+            onSuccess?.();
+            onClose();
+
+      }
 
       await writeContractApprove({
           address: selectedAsset.address as `0x${string}`,
           abi: ERC20ABI,
           functionName: 'approve',
           args: [linkPort as `0x${string}`, parseEther(repayAmount)],
-          chainId: bscTestnet.id
-      }, 
+          chainId: bscTestnet.id,
+          chain: bscTestnet,
+          account: address
+      },
       {
           onSuccess: (txHash) => {
               console.log('✅ Approval successful:', txHash);
               showToast('Approval confirmed! Now borrowing...', 'success');
-          },
+              executeRepay();
+            },
           onError: (error) => {
               console.error('❌ Approval failed:', error);
               showToast('Approval failed: ' + error.message, 'error');
@@ -218,40 +257,12 @@ const RepayModal: React.FC<RepayModalProps> = ({
       });
 
 
-      await writeContractRepay({
-          address: linkPort as `0x${string}`,
-          abi: linkPortABI,
-          functionName: 'repay',
-          args: [chainSelector[sepolia.id], debt, [selectedAsset.address], [parseEther(repayAmount)]],
-          chainId: bscTestnet.id
-      }, 
-      {
-          onSuccess: (txHash) => {
-              console.log('✅ Repay successful:', txHash);
-              createRepayTransaction(
-                  selectedAsset.symbol,
-                  repayAmount,
-                  repayAmount * Number(selectedAsset.price),
-                  txHash,
-                  selectedAsset.healthFactor
-              );
-              showToast('Repayment confirmed!', 'success');
-          },
-          onError: (error) => {
-              console.error('❌ Repayment failed:', error);
-              showToast('Repayment failed: ' + error.message, 'error');
-          }
-      });
-
-      showToast(`Successfully repaid ${repayAmount} ${selectedAsset.symbol}`, 'success');
-      onSuccess?.();
-      onClose();
 
     } catch (error) {
       console.error('Repay failed:', error);
       showToast('Repayment failed. Please try again.', 'error');
     } finally {
-      setIsLoading(false);
+      setIsRepayLoading(false);
     }
   };
 

@@ -8,7 +8,7 @@ import  ERC20ABI  from '../abi/ERC20.json'
 import Dropdown from '../components/Dropdown';
 import { poolList, chainSelector } from '../config';
 import linkPortABI from '../abi/LinkPort.json';
-import { getUserPosition, loan, bridge} from '@/utils/pool';
+import { getUserPosition } from '@/utils/pool';
 import { linkPorts } from '../config';
 import { getUserAssetBalance, getBalance } from '../utils/balance';
 import { getMapToken } from '../utils/port';
@@ -24,6 +24,7 @@ import { parseEther } from 'viem';
 import { useTransactionCreator } from '../hooks/useTransactions';
 import { getTokenIconStyle } from '../utils/ui';
 import { create } from 'domain';
+import { exec } from 'child_process';
 
 // Interface for user staking positions
 interface StakingPosition {
@@ -846,7 +847,7 @@ const Home: React.FC = () => {
             const totalBorrowValue = selectedAssets.reduce((sum, asset) => sum + asset.value, 0);
 
             const linkPort = chainId == sepolia.id ? linkPorts[sepolia.id] : linkPorts[bscTestnet.id];
-            const destChainSelector = targetChain == sepolia.id ? chainSelector[sepolia.id] : chainSelector[bscTestnet.id];
+            const destChainSelector = Number(targetChain) == sepolia.id ? chainSelector[sepolia.id] : chainSelector[bscTestnet.id];
 
             await writeContractApprove({
                 address: collateralAsset.token as `0x${string}`,
@@ -854,6 +855,8 @@ const Home: React.FC = () => {
                 functionName: 'approve',
                 args: [linkPort as `0x${string}`, parseEther(collateralAmount)],
                 chainId: chainId == sepolia.id ? sepolia.id : bscTestnet.id,
+                chain: chainId == sepolia.id ? sepolia : bscTestnet,
+                account: address,
             }, 
             {
                 onSuccess: (txHash) => {
@@ -866,13 +869,14 @@ const Home: React.FC = () => {
                 }
             });
 
-
             await writeContractLoan({
                 address: linkPort as `0x${string}`,
                 abi: linkPortABI,
                 functionName: 'loan',
-                args: [destChainSelector, collateralAsset.token, selectedAssets.map(asset => asset.token), selectedAssets.map(asset => parseEther(asset.amount.toString())), selectedAssets.map(asset => parseEther((asset.value * collateralAmount / totalBorrowValue).toString()))],
+                args: [destChainSelector, collateralAsset.token, selectedAssets.map(asset => asset.token), selectedAssets.map(asset => parseEther(asset.amount.toString())), selectedAssets.map(asset => parseEther((asset.value * Number(collateralAmount) / totalBorrowValue).toString()))],
                 chainId: chainId == sepolia.id ? sepolia.id : bscTestnet.id,
+                chain: chainId == sepolia.id ? sepolia : bscTestnet,
+                account: address,
             }, 
             {
                 onSuccess: async (txHash) => {
@@ -1005,8 +1009,46 @@ const Home: React.FC = () => {
             // Show processing notification
             showToast('Initiating cross-chain bridge...', 'info', { autoClose: false });
 
+
             const linkPort = chainId == sepolia.id ? linkPorts[sepolia.id] : linkPorts[bscTestnet.id];
-            const destChainSelector = bridgeTargetChain == sepolia.id ? chainSelector[sepolia.id] : chainSelector[bscTestnet.id];
+            const destChainSelector = Number(bridgeTargetChain) == sepolia.id ? chainSelector[sepolia.id] : chainSelector[bscTestnet.id];
+
+            const executeBridge = async () => {
+                await writeContractBridge({
+                    address: linkPort as `0x${string}`,
+                    abi: linkPortABI,
+                    functionName: 'bridge',
+                    args: [destChainSelector, bridgeAsset.token, parseEther(bridgeAmount), mapTokens, bridgeTargetAssets.map(asset => parseEther(asset.value.toString()))],
+                    chainId: chainId == sepolia.id ? sepolia.id : bscTestnet.id,
+                    chain: chainId == sepolia.id ? sepolia : bscTestnet,
+                    account: address,
+                }, 
+                {
+                    onSuccess: async (txHash) => {
+                        console.log('✅ Bridge successful:', txHash)
+                        try {
+                            await createBridgeTransaction(
+                                bridgeAsset.label,
+                                bridgeAmount,
+                                totalTargetValue.toString(),
+                                getChainName(bridgeSourceChain),
+                                getChainName(bridgeTargetChain),
+                                txHash
+                            );
+                            console.log('📝 Transaction record created');
+                        } catch (error) {
+                            console.error('❌ Failed to create transaction record:', error);
+                        }
+                        showToast('Approval confirmed! Now depositing...', 'success');
+                    },
+                    onError: (error) => {
+                        console.error('❌ Approval failed:', error);
+                        showToast('Approval failed: ' + error.message, 'error');
+                    }
+                })
+
+
+            }
 
             await writeContractApprove({
                 address: collateralAsset.token as `0x${string}`,
@@ -1014,11 +1056,14 @@ const Home: React.FC = () => {
                 functionName: 'approve',
                 args: [linkPort as `0x${string}`, parseEther(collateralAmount)],
                 chainId: chainId == sepolia.id ? sepolia.id : bscTestnet.id,
+                chain: chainId == sepolia.id ? sepolia : bscTestnet,
+                account: address,
             }, 
             {
                 onSuccess: (txHash) => {
                     console.log('✅ Approval successful:', txHash);
                     showToast('Approval confirmed! Now borrowing...', 'success');
+                    executeBridge();
                 },
                 onError: (error) => {
                     console.error('❌ Approval failed:', error);
@@ -1026,39 +1071,6 @@ const Home: React.FC = () => {
                 }
             });
 
-
-            await writeContractBridge({
-                address: linkPort as `0x${string}`,
-                abi: linkPortABI,
-                functionName: 'bridge',
-                args: [destChainSelector, bridgeAsset.token, parseEther(bridgeAmount), mapTokens, bridgeTargetAssets.map(asset => parseEther(asset.value.toString()))],
-                chainId: chainId == sepolia.id ? sepolia.id : bscTestnet.id,
-            }, 
-            {
-                onSuccess: async (txHash) => {
-                    console.log('✅ Bridge successful:', txHash)
-                    try {
-                        await createBridgeTransaction(
-                            bridgeAsset.label,
-                            bridgeAmount,
-                            totalTargetValue.toString(),
-                            getChainName(bridgeSourceChain),
-                            getChainName(bridgeTargetChain),
-                            txHash
-                        );
-                        console.log('📝 Transaction record created');
-                    } catch (error) {
-                        console.error('❌ Failed to create transaction record:', error);
-                    }
-                    showToast('Approval confirmed! Now depositing...', 'success');
-                },
-                onError: (error) => {
-                    console.error('❌ Approval failed:', error);
-                    showToast('Approval failed: ' + error.message, 'error');
-                }
-            })
-
-            bridge(bridgeSourceChain, bridgeTargetChain, bridgeAsset.token, parseEther(bridgeAmount), mapTokens, bridgeTargetAssets.map(asset => parseEther(asset.value.toString())));
 
             // Simulate wallet interaction
             showToast('Wallet interaction initiated...', 'info');

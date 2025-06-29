@@ -5,6 +5,7 @@ import { useAccount, useChainId, useReadContract, useWriteContract } from 'wagmi
 import LiquidityPoolABI  from '../abi/LiquidityPool.json';
 import ERC20ABI from '../abi/ERC20.json';
 import { poolList } from  '../config';
+import { sepolia, bscTestnet } from 'wagmi/chains';
 import { getBalance, getUserAssetBalance } from '../utils/balance';
 import { getPoolTvl, getUserPosition } from '../utils/pool';
 import { useTransactionCreator } from '../hooks/useTransactions';
@@ -160,7 +161,9 @@ const Pools: React.FC = () => {
                         address: selectedPool.address as `0x${string}`,
                         abi: ERC20ABI,
                         functionName: 'approve',
-                        args: [selectedPool.pool, amount]
+                        args: [selectedPool.pool, amount],
+                        chain: chainId == sepolia.id ? sepolia : bscTestnet,
+                        account: address,
                     }, {
                         onSuccess: async (approvalTxHash) => {
                             console.log('✅ Approval successful:', approvalTxHash);
@@ -200,6 +203,8 @@ const Pools: React.FC = () => {
                     functionName: 'depositNative',
                     value: amount,
                     args: [],
+                    chain: chainId == sepolia.id ? sepolia : bscTestnet,
+                    account: address,
                 }, {
                     onSuccess: async (txHash) => {
                         console.log('✅ Native token deposit transaction submitted:', txHash);
@@ -216,7 +221,9 @@ const Pools: React.FC = () => {
                     address: pool.pool as `0x${string}`,
                     abi: LiquidityPoolABI,
                     functionName: 'deposit',
-                    args: [amount]
+                    args: [amount],
+                    chain: chainId == sepolia.id ? sepolia : bscTestnet,
+                    account: address,
                 }, {
                     onSuccess: async (txHash) => {
                         console.log('✅ ERC20 deposit transaction submitted:', txHash);
@@ -273,7 +280,9 @@ const Pools: React.FC = () => {
                 address: selectedPool.pool as `0x${string}`,
                 abi: LiquidityPoolABI,
                 functionName: 'withdraw',
-                args: [amount]
+                args: [amount],
+                chain: chainId == sepolia.id ? sepolia : bscTestnet,
+                account: address,
             }, {
                 onSuccess: async (txHash) => {
                     console.log('✅ Withdraw transaction submitted:', txHash);
