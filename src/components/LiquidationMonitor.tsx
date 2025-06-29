@@ -224,6 +224,47 @@ const LiquidationMonitor: React.FC = () => {
                 </div>
             </div>
 
+            {/* Liquidation Opportunities */}
+            <div className="liquidation-opportunities">
+                <div className="opportunities-header">
+                    ⚡ Liquidation Opportunities
+                </div>
+                <div className="opportunities-content">
+                    <p>
+                        <strong>Earn liquidation rewards</strong> by liquidating unhealthy positions from other users. 
+                        Liquidators receive a 5% bonus on the collateral they obtain.
+                    </p>
+                    <div className="opportunities-stats">
+                        <div className="stat-item">
+                            <div className="stat-value">3</div>
+                            <div className="stat-label">Liquidatable Positions</div>
+                        </div>
+                        <div className="stat-item">
+                            <div className="stat-value">$24k</div>
+                            <div className="stat-label">Total Collateral at Risk</div>
+                        </div>
+                        <div className="stat-item">
+                            <div className="stat-value">5%</div>
+                            <div className="stat-label">Liquidation Bonus</div>
+                        </div>
+                    </div>
+                    <div className="opportunities-actions">
+                        <button 
+                            className="liquidate-btn"
+                            onClick={() => {
+                                // This would open a liquidation modal
+                                alert('Liquidation Center: Mock functionality - In real implementation, this would open a liquidation interface showing available positions to liquidate.');
+                            }}
+                        >
+                            ⚡ Open Liquidation Center
+                        </button>
+                        <div className="liquidate-note">
+                            💡 Liquidate positions with health factor &lt; 1.0 to earn rewards
+                        </div>
+                    </div>
+                </div>
+            </div>
+
                             {/* Health factor chart */}
             <div className="health-chart">
                 <div className="chart-header">
@@ -496,6 +537,80 @@ const LiquidationMonitor: React.FC = () => {
                 .marker.danger span { color: #ef4444; }
                 .marker.warning span { color: #f59e0b; }
                 .marker.safe span { color: #10b981; }
+
+                .liquidation-opportunities {
+                    background: rgba(255, 255, 255, 0.05);
+                    border-radius: 16px;
+                    padding: 20px;
+                    margin-bottom: 24px;
+                }
+
+                .opportunities-header {
+                    font-size: 16px;
+                    font-weight: 700;
+                    margin-bottom: 12px;
+                    color: #6ee7b7;
+                }
+
+                .opportunities-content {
+                    line-height: 1.5;
+                }
+
+                .opportunities-content p {
+                    margin: 0 0 16px 0;
+                    opacity: 0.9;
+                }
+
+                .opportunities-stats {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                    gap: 12px;
+                }
+
+                .stat-item {
+                    background: rgba(255, 255, 255, 0.05);
+                    padding: 12px;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    opacity: 0.9;
+                }
+
+                .stat-value {
+                    font-size: 20px;
+                    font-weight: 700;
+                    margin-bottom: 4px;
+                }
+
+                .stat-label {
+                    font-size: 12px;
+                    opacity: 0.6;
+                }
+
+                .opportunities-actions {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+
+                .liquidate-btn {
+                    padding: 10px 16px;
+                    border: none;
+                    border-radius: 10px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    background: #10b981;
+                    color: white;
+                }
+
+                .liquidate-btn:hover {
+                    background: #059669;
+                }
+
+                .liquidate-note {
+                    font-size: 12px;
+                    opacity: 0.6;
+                }
 
                 @media (max-width: 768px) {
                     .liquidation-monitor {
