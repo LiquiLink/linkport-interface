@@ -94,7 +94,7 @@ body {
   color: var(--text-primary);
   line-height: 1.4;
   min-height: 100vh;
-  padding-top: 72px; /* 匹配新的导航栏高度 */
+  padding-top: 100px; /* Increased from 72px to provide better spacing below navigation */
   overflow-x: hidden;
 }
 
@@ -177,15 +177,15 @@ body {
   gap: var(--space-sm); /* Further reduced gap */
   max-width: 1300px; /* Reduced for better screen utilization */
   margin: 0 auto;
-  min-height: calc(100vh - 80px); /* Further reduced */
+  min-height: calc(100vh - 120px); /* Updated to account for increased body padding */
   align-items: start;
 }
 
 .main-trading-panel {
   position: sticky;
-  top: 70px; /* Further reduced */
+  top: 100px; /* Updated to match new body padding-top */
   height: fit-content;
-  max-height: calc(100vh - 80px);
+  max-height: calc(100vh - 120px); /* Updated to account for increased body padding */
   overflow-y: auto;
 }
 
@@ -193,7 +193,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm); /* Further reduced gap */
-  min-height: calc(100vh - 80px);
+  min-height: calc(100vh - 120px); /* Updated to account for increased body padding */
 }
 
 .info-panel {
@@ -768,7 +768,7 @@ body {
   }
   
   body {
-    padding-top: 60px;
+    padding-top: 80px; /* Increased from 60px for better mobile spacing */
   }
   
   .glass-card {
@@ -782,7 +782,7 @@ body {
 
 @media (max-width: 480px) {
   body {
-    padding-top: 55px;
+    padding-top: 75px; /* Increased from 55px for better mobile spacing */
   }
   
   .container {
