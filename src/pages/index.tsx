@@ -7,11 +7,13 @@ import { useAccount, useChainId, useProof, useSwitchChain } from 'wagmi';
 import  ERC20ABI  from '../abi/ERC20.json'
 import Dropdown from '../components/Dropdown';
 import { poolList, chainSelector } from '../config';
+import linkPortABI from '../abi/LinkPort.json';
 import { getUserPosition, loan, bridge} from '@/utils/pool';
 import { linkPorts } from '../config';
 import { getUserAssetBalance, getBalance } from '../utils/balance';
 import { getMapToken } from '../utils/port';
 import { formatUnits } from 'ethers';
+import { config } from '../config'
 import { format } from 'path';
 import { Asset, AssetAllocation } from '../utils/types';
 import { getAssetPrice, getAssetPriceFromPort, getMultipleAssetPrices, formatPrice, PriceData, getMultipleAssetPricesFromPort } from '../utils/priceService';
@@ -19,7 +21,9 @@ import { getAssetPrice, getAssetPriceFromPort, getMultipleAssetPrices, formatPri
 import { useToast } from '../components/Toast';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther } from 'viem';
+import { useTransactionCreator } from '../hooks/useTransactions';
 import { getTokenIconStyle } from '../utils/ui';
+import { create } from 'domain';
 
 // Interface for user staking positions
 interface StakingPosition {
@@ -78,6 +82,11 @@ const Home: React.FC = () => {
         { value: sepolia.id.toString(), label: 'Ethereum Sepolia', icon: 'ETH', description: 'Layer 1 - High Security'},
         { value: bscTestnet.id.toString(), label: 'BNB Testnet', icon: 'BNB', description: 'Binance Smart Chain'}
     ];
+
+    const { 
+        createBorrowTransaction, 
+        createBridgeTransaction 
+    } = useTransactionCreator();
 
     // Fetch user staking positions on the selected chain
     async function fetchUserStakingPositions(chainId: any) {
@@ -753,6 +762,9 @@ const Home: React.FC = () => {
             setBridgeAmount(bridgeAsset.amount);
         }
     };
+    const { writeContract: writeContractLoan, isPending: isPendingLoan} = useWriteContract();
+    const { writeContract: writeContractBridge, isPending: isPendingBridge} = useWriteContract();
+    const { writeContract: writeContractApprove, isPending: isPendingApprove} = useWriteContract();
 
     // Handle lending operation
     const handleLendingExecute = async () => {
@@ -795,7 +807,58 @@ const Home: React.FC = () => {
 
             const totalBorrowValue = selectedAssets.reduce((sum, asset) => sum + asset.value, 0);
 
-            loan(sourceChain, targetChain, collateralAsset.token, selectedAssets.map(asset => asset.token), selectedAssets.map(asset => parseEther(asset.amount.toString())), selectedAssets.map(asset => parseEther((asset.value * collateralAmount / totalBorrowValue).toString())));
+            const linkPort = chainId == sepolia.id ? linkPorts[sepolia.id] : linkPorts[bscTestnet.id];
+            const destChainSelector = targetChain == sepolia.id ? chainSelector[sepolia.id] : chainSelector[bscTestnet.id];
+
+            await writeContractApprove({
+                address: collateralAsset.token as `0x${string}`,
+                abi: ERC20ABI,
+                functionName: 'approve',
+                args: [linkPort as `0x${string}`, parseEther(collateralAmount)],
+                chainId: chainId == sepolia.id ? sepolia.id : bscTestnet.id,
+            }, 
+            {
+                onSuccess: (txHash) => {
+                    console.log('✅ Approval successful:', txHash);
+                    showToast('Approval confirmed! Now borrowing...', 'success');
+                },
+                onError: (error) => {
+                    console.error('❌ Approval failed:', error);
+                    showToast('Approval failed: ' + error.message, 'error');
+                }
+            });
+
+
+            await writeContractLoan({
+                address: linkPort as `0x${string}`,
+                abi: linkPortABI,
+                functionName: 'loan',
+                args: [destChainSelector, collateralAsset.token, selectedAssets.map(asset => asset.token), selectedAssets.map(asset => parseEther(asset.amount.toString())), selectedAssets.map(asset => parseEther((asset.value * collateralAmount / totalBorrowValue).toString()))],
+                chainId: chainId == sepolia.id ? sepolia.id : bscTestnet.id,
+            }, 
+            {
+                onSuccess: async (txHash) => {
+                    console.log('✅ Borrow successful:', txHash)
+                    try {
+                        await createBorrowTransaction(
+                            collateralAsset.symbol,
+                            collateralAmount,
+                            totalBorrowValue.toString(),
+                            getChainName(sourceChain),
+                            getChainName(targetChain),
+                            txHash,
+                        );
+                        console.log('📝 Transaction record created');
+                    } catch (error) {
+                        console.error('❌ Failed to create transaction record:', error);
+                    }
+                    showToast('Approval confirmed! Now depositing...', 'success');
+                },
+                onError: (error) => {
+                    console.error('❌ Approval failed:', error);
+                    showToast('Approval failed: ' + error.message, 'error');
+                }
+            })
 
             // Get collateral smart contract information
             const poolData = poolList.find(pool => 
