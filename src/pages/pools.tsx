@@ -635,6 +635,292 @@ const Pools: React.FC = () => {
 
             {/* Toast Container for notifications */}
             <ToastContainer />
+
+            {/* Deposit Modal */}
+            {isDepositModalOpen && selectedPool && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0, 0, 0, 0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    padding: '20px'
+                }} onClick={() => setIsDepositModalOpen(false)}>
+                    <div style={{
+                        background: 'var(--bg-glass-strong)',
+                        backdropFilter: 'blur(20px)',
+                        borderRadius: 'var(--radius-lg)',
+                        border: '1px solid var(--border-glass-strong)',
+                        padding: '24px',
+                        maxWidth: '400px',
+                        width: '100%',
+                        boxShadow: 'var(--shadow-large)'
+                    }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '20px'
+                        }}>
+                            <h3 style={{
+                                fontSize: '20px',
+                                fontWeight: 600,
+                                color: 'var(--text-primary)',
+                                margin: 0
+                            }}>
+                                Deposit {selectedPool.name}
+                            </h3>
+                            <button
+                                onClick={() => setIsDepositModalOpen(false)}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: 'var(--text-secondary)',
+                                    fontSize: '20px',
+                                    cursor: 'pointer',
+                                    padding: '4px'
+                                }}
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <div style={{ marginBottom: '16px' }}>
+                            <label style={{
+                                display: 'block',
+                                fontSize: '14px',
+                                fontWeight: 500,
+                                color: 'var(--text-primary)',
+                                marginBottom: '8px'
+                            }}>
+                                Amount
+                            </label>
+                            <input
+                                type="number"
+                                value={depositAmount}
+                                onChange={(e) => setDepositAmount(e.target.value)}
+                                placeholder="0.0"
+                                style={{
+                                    width: '100%',
+                                    padding: '12px',
+                                    borderRadius: 'var(--radius-md)',
+                                    border: '1px solid var(--border-glass-strong)',
+                                    background: 'var(--bg-secondary)',
+                                    color: 'var(--text-primary)',
+                                    fontSize: '16px'
+                                }}
+                            />
+                            <div style={{
+                                fontSize: '12px',
+                                color: 'var(--text-secondary)',
+                                marginTop: '4px'
+                            }}>
+                                Available: <LoadingValue
+                                    isLoading={loadingBalances[selectedPool.id] || false}
+                                    value={userBalances[selectedPool.id] ? parseFloat(userBalances[selectedPool.id]).toFixed(4) : '0'}
+                                /> {selectedPool.name}
+                            </div>
+                            {depositAmount && (
+                                <div style={{
+                                    fontSize: '12px',
+                                    color: 'var(--text-secondary)',
+                                    marginTop: '4px'
+                                }}>
+                                    ≈ {calculateUSDValue(depositAmount, selectedPool.name)}
+                                </div>
+                            )}
+                        </div>
+
+                        <div style={{
+                            display: 'flex',
+                            gap: '12px'
+                        }}>
+                            <button
+                                onClick={() => setIsDepositModalOpen(false)}
+                                style={{
+                                    flex: 1,
+                                    padding: '12px',
+                                    borderRadius: 'var(--radius-md)',
+                                    border: '1px solid var(--border-glass-strong)',
+                                    background: 'var(--bg-secondary)',
+                                    color: 'var(--text-primary)',
+                                    fontSize: '14px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleDeposit}
+                                disabled={!depositAmount || isPendingDeposit || isPendingApprove || isApproving}
+                                style={{
+                                    flex: 1,
+                                    padding: '12px',
+                                    borderRadius: 'var(--radius-md)',
+                                    border: 'none',
+                                    background: 'var(--accent-gradient)',
+                                    color: 'white',
+                                    fontSize: '14px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    opacity: (!depositAmount || isPendingDeposit || isPendingApprove || isApproving) ? 0.5 : 1
+                                }}
+                            >
+                                {isPendingDeposit || isPendingApprove || isApproving ? 'Processing...' : 'Deposit'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Withdraw Modal */}
+            {isWithdrawModalOpen && selectedPool && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0, 0, 0, 0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    padding: '20px'
+                }} onClick={() => setIsWithdrawModalOpen(false)}>
+                    <div style={{
+                        background: 'var(--bg-glass-strong)',
+                        backdropFilter: 'blur(20px)',
+                        borderRadius: 'var(--radius-lg)',
+                        border: '1px solid var(--border-glass-strong)',
+                        padding: '24px',
+                        maxWidth: '400px',
+                        width: '100%',
+                        boxShadow: 'var(--shadow-large)'
+                    }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '20px'
+                        }}>
+                            <h3 style={{
+                                fontSize: '20px',
+                                fontWeight: 600,
+                                color: 'var(--text-primary)',
+                                margin: 0
+                            }}>
+                                Withdraw {selectedPool.name}
+                            </h3>
+                            <button
+                                onClick={() => setIsWithdrawModalOpen(false)}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: 'var(--text-secondary)',
+                                    fontSize: '20px',
+                                    cursor: 'pointer',
+                                    padding: '4px'
+                                }}
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <div style={{ marginBottom: '16px' }}>
+                            <label style={{
+                                display: 'block',
+                                fontSize: '14px',
+                                fontWeight: 500,
+                                color: 'var(--text-primary)',
+                                marginBottom: '8px'
+                            }}>
+                                Amount
+                            </label>
+                            <input
+                                type="number"
+                                value={withdrawAmount}
+                                onChange={(e) => setWithdrawAmount(e.target.value)}
+                                placeholder="0.0"
+                                style={{
+                                    width: '100%',
+                                    padding: '12px',
+                                    borderRadius: 'var(--radius-md)',
+                                    border: '1px solid var(--border-glass-strong)',
+                                    background: 'var(--bg-secondary)',
+                                    color: 'var(--text-primary)',
+                                    fontSize: '16px'
+                                }}
+                            />
+                            <div style={{
+                                fontSize: '12px',
+                                color: 'var(--text-secondary)',
+                                marginTop: '4px'
+                            }}>
+                                Your position: <LoadingValue
+                                    isLoading={loadingPositions[selectedPool.id] || false}
+                                    value={userPositions[selectedPool.id] ? parseFloat(userPositions[selectedPool.id]).toFixed(4) : '0'}
+                                /> {selectedPool.name}
+                            </div>
+                            {withdrawAmount && (
+                                <div style={{
+                                    fontSize: '12px',
+                                    color: 'var(--text-secondary)',
+                                    marginTop: '4px'
+                                }}>
+                                    ≈ {calculateUSDValue(withdrawAmount, selectedPool.name)}
+                                </div>
+                            )}
+                        </div>
+
+                        <div style={{
+                            display: 'flex',
+                            gap: '12px'
+                        }}>
+                            <button
+                                onClick={() => setIsWithdrawModalOpen(false)}
+                                style={{
+                                    flex: 1,
+                                    padding: '12px',
+                                    borderRadius: 'var(--radius-md)',
+                                    border: '1px solid var(--border-glass-strong)',
+                                    background: 'var(--bg-secondary)',
+                                    color: 'var(--text-primary)',
+                                    fontSize: '14px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleWithdraw}
+                                disabled={!withdrawAmount || isPendingWithdraw}
+                                style={{
+                                    flex: 1,
+                                    padding: '12px',
+                                    borderRadius: 'var(--radius-md)',
+                                    border: 'none',
+                                    background: 'var(--accent-gradient)',
+                                    color: 'white',
+                                    fontSize: '14px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    opacity: (!withdrawAmount || isPendingWithdraw) ? 0.5 : 1
+                                }}
+                            >
+                                {isPendingWithdraw ? 'Processing...' : 'Withdraw'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </Layout>
     );
 };
