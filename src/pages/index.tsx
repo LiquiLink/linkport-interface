@@ -841,7 +841,7 @@ const Home: React.FC = () => {
                     console.log('✅ Borrow successful:', txHash)
                     try {
                         await createBorrowTransaction(
-                            collateralAsset.symbol,
+                            collateralAsset.label,
                             collateralAmount,
                             totalBorrowValue.toString(),
                             getChainName(sourceChain),
@@ -943,6 +943,7 @@ const Home: React.FC = () => {
         }
 
         try {
+            let totalTargetValue =  bridgeTargetAssets.reduce((sum, asset) => sum + asset.value, 0)
             console.log('🌉 Executing cross-chain bridge operation:', {
                 sourceChain: getChainName(bridgeSourceChain),
                 targetChain: getChainName(bridgeTargetChain),
@@ -950,7 +951,7 @@ const Home: React.FC = () => {
                 sourceAmount: bridgeAmount,
                 sourceValue: calculateUSDValue(bridgeAmount, bridgeAsset.label),
                 targetAssets: bridgeTargetAssets,
-                totalTargetValue: bridgeTargetAssets.reduce((sum, asset) => sum + asset.value, 0)
+                totalTargetValue: totalTargetValue
             });
 
             console.log("bridge",bridgeTargetAssets, bridgeTargetChain);
@@ -965,6 +966,59 @@ const Home: React.FC = () => {
 
             // Show processing notification
             showToast('Initiating cross-chain bridge...', 'info', { autoClose: false });
+
+            const linkPort = chainId == sepolia.id ? linkPorts[sepolia.id] : linkPorts[bscTestnet.id];
+            const destChainSelector = bridgeTargetChain == sepolia.id ? chainSelector[sepolia.id] : chainSelector[bscTestnet.id];
+
+            await writeContractApprove({
+                address: collateralAsset.token as `0x${string}`,
+                abi: ERC20ABI,
+                functionName: 'approve',
+                args: [linkPort as `0x${string}`, parseEther(collateralAmount)],
+                chainId: chainId == sepolia.id ? sepolia.id : bscTestnet.id,
+            }, 
+            {
+                onSuccess: (txHash) => {
+                    console.log('✅ Approval successful:', txHash);
+                    showToast('Approval confirmed! Now borrowing...', 'success');
+                },
+                onError: (error) => {
+                    console.error('❌ Approval failed:', error);
+                    showToast('Approval failed: ' + error.message, 'error');
+                }
+            });
+
+
+            await writeContractLoan({
+                address: linkPort as `0x${string}`,
+                abi: linkPortABI,
+                functionName: 'bridge',
+                args: [destChainSelector, bridgeAsset.token, parseEther(bridgeAmount), mapTokens, bridgeTargetAssets.map(asset => parseEther(asset.value.toString()))],
+                chainId: chainId == sepolia.id ? sepolia.id : bscTestnet.id,
+            }, 
+            {
+                onSuccess: async (txHash) => {
+                    console.log('✅ Bridge successful:', txHash)
+                    try {
+                        await createBridgeTransaction(
+                            bridgeAsset.label,
+                            bridgeAmount,
+                            totalTargetValue.toString(),
+                            getChainName(bridgeSourceChain),
+                            getChainName(bridgeTargetChain),
+                            txHash
+                        );
+                        console.log('📝 Transaction record created');
+                    } catch (error) {
+                        console.error('❌ Failed to create transaction record:', error);
+                    }
+                    showToast('Approval confirmed! Now depositing...', 'success');
+                },
+                onError: (error) => {
+                    console.error('❌ Approval failed:', error);
+                    showToast('Approval failed: ' + error.message, 'error');
+                }
+            })
 
             bridge(bridgeSourceChain, bridgeTargetChain, bridgeAsset.token, parseEther(bridgeAmount), mapTokens, bridgeTargetAssets.map(asset => parseEther(asset.value.toString())));
 
