@@ -153,32 +153,148 @@ const WalletConnect: React.FC = () => {
                             Connect Wallet
                         </button>
                         <Dialog open={showModal} onClose={() => setShowModal(false)} className="relative z-50">
-                            <div className="fixed inset-0 bg-black/40" aria-hidden="true" />
+                            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" aria-hidden="true" />
                             <div className="fixed inset-0 flex items-center justify-center p-4">
-                                <Dialog.Panel className="w-full max-w-xs bg-white rounded shadow-lg p-6 relative">
+                                <Dialog.Panel className="w-full max-w-sm glass-card glass-card-glow animate-scale-in" style={{
+                                    background: 'linear-gradient(135deg, var(--bg-card) 0%, rgba(30, 41, 59, 0.8) 100%)',
+                                    border: '1px solid var(--border-glass-strong)',
+                                    borderRadius: 'var(--radius-lg)',
+                                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(6, 182, 212, 0.1)',
+                                    padding: 'var(--space-lg)',
+                                    position: 'relative',
+                                    backdropFilter: 'blur(10px)',
+                                    WebkitBackdropFilter: 'blur(10px)'
+                                }}>
                                     <button
                                         onClick={() => setShowModal(false)}
-                                        className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl font-bold"
+                                        className="absolute top-3 right-3 text-gray-400 hover:text-gray-300 text-2xl font-bold transition-colors duration-200"
                                         aria-label="Close"
-                                        style={{ lineHeight: 1, color: 'var(--secondary-text)', background: 'none', border: 'none' }}
+                                        style={{ 
+                                            lineHeight: 1, 
+                                            color: 'var(--text-tertiary)', 
+                                            background: 'none', 
+                                            border: 'none',
+                                            width: '32px',
+                                            height: '32px',
+                                            borderRadius: 'var(--radius-sm)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                                            e.currentTarget.style.color = 'var(--text-primary)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.backgroundColor = 'transparent';
+                                            e.currentTarget.style.color = 'var(--text-tertiary)';
+                                        }}
                                     >
                                         ×
                                     </button>
-                                    <Dialog.Title className="font-bold mb-2 mt-2" style={{ color: 'var(--text-color)' }}>Select Wallet</Dialog.Title>
-                                    {connectorOptions.map((option) => (
-                                        <button
-                                            key={option.name}
-                                            onClick={() => handleConnect(option.connector, option.name)}
-                                            style={{ background: 'var(--input-background)', color: 'var(--text-color)', padding: '8px 16px', borderRadius: '8px', border: 'none', textAlign: 'left', width: '100%', marginBottom: '8px', fontWeight: 500, opacity: connecting ? 0.7 : 1 }}
-                                            disabled={!!connecting}
-                                        >
-                                            {connecting === option.name
-                                                ? `Connecting to ${option.name}...`
-                                                : option.name}
-                                        </button>
-                                    ))}
+                                    <Dialog.Title className="font-bold mb-6 mt-2" style={{ 
+                                        color: 'var(--text-primary)',
+                                        fontSize: '20px',
+                                        fontWeight: 700,
+                                        textAlign: 'center'
+                                    }}>
+                                        Connect Wallet
+                                    </Dialog.Title>
+                                    <div className="space-y-3">
+                                        {connectorOptions.map((option) => (
+                                            <button
+                                                key={option.name}
+                                                onClick={() => handleConnect(option.connector, option.name)}
+                                                className="w-full transition-all duration-200"
+                                                style={{ 
+                                                    background: connecting === option.name 
+                                                        ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%)'
+                                                        : 'linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%)',
+                                                    color: 'var(--text-primary)', 
+                                                    padding: 'var(--space-md) var(--space-lg)', 
+                                                    borderRadius: 'var(--radius-md)', 
+                                                    border: connecting === option.name 
+                                                        ? '1px solid var(--accent-primary)'
+                                                        : '1px solid var(--border-glass-strong)', 
+                                                    textAlign: 'left', 
+                                                    width: '100%', 
+                                                    fontWeight: 600,
+                                                    fontSize: '14px',
+                                                    opacity: connecting && connecting !== option.name ? 0.5 : 1,
+                                                    cursor: connecting ? 'not-allowed' : 'pointer',
+                                                    boxShadow: connecting === option.name 
+                                                        ? '0 4px 12px rgba(6, 182, 212, 0.2)'
+                                                        : '0 2px 8px rgba(0, 0, 0, 0.2)',
+                                                    transition: 'all var(--transition-normal)',
+                                                    position: 'relative'
+                                                }}
+                                                disabled={!!connecting}
+                                                onMouseEnter={(e) => {
+                                                    if (!connecting) {
+                                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.3)';
+                                                        e.currentTarget.style.borderColor = 'var(--accent-primary)';
+                                                    }
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    if (!connecting) {
+                                                        e.currentTarget.style.transform = 'translateY(0)';
+                                                        e.currentTarget.style.boxShadow = connecting === option.name 
+                                                            ? '0 4px 12px rgba(6, 182, 212, 0.2)'
+                                                            : '0 2px 8px rgba(0, 0, 0, 0.2)';
+                                                        e.currentTarget.style.borderColor = connecting === option.name 
+                                                            ? 'var(--accent-primary)'
+                                                            : 'var(--border-glass-strong)';
+                                                    }
+                                                }}
+                                            >
+                                                <div style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 'var(--space-md)'
+                                                }}>
+                                                    <div style={{
+                                                        width: '32px',
+                                                        height: '32px',
+                                                        background: 'var(--accent-gradient)',
+                                                        borderRadius: '50%',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        color: 'white',
+                                                        fontSize: '16px'
+                                                    }}>
+                                                        <i className="fab fa-ethereum" />
+                                                    </div>
+                                                    <span>
+                                                        {connecting === option.name
+                                                            ? `Connecting to ${option.name}...`
+                                                            : option.name}
+                                                    </span>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
                                     {error && (
-                                        <span className="text-xs mt-2" style={{ color: 'var(--error-color)' }}>{error.message}</span>
+                                        <div style={{
+                                            marginTop: 'var(--space-md)',
+                                            padding: 'var(--space-md)',
+                                            background: 'var(--danger-bg)',
+                                            border: '1px solid var(--danger)',
+                                            borderRadius: 'var(--radius-md)',
+                                            color: 'var(--danger)',
+                                            fontSize: '13px',
+                                            fontWeight: 500
+                                        }}>
+                                            <div style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 'var(--space-sm)'
+                                            }}>
+                                                <i className="fas fa-exclamation-triangle" />
+                                                {error.message}
+                                            </div>
+                                        </div>
                                     )}
                                 </Dialog.Panel>
                             </div>

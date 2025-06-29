@@ -390,13 +390,13 @@ const Pools: React.FC = () => {
             <Layout>
                 <div className="container">
                     <div className="glass-card" style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center', padding: '60px 40px' }}>
-                        <div style={{ fontSize: '48px', marginBottom: '20px', color: 'var(--secondary-text)' }}>
+                        <div style={{ fontSize: '48px', marginBottom: '20px', color: 'var(--text-secondary)' }}>
                             🔗
                         </div>
-                        <h2 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--text-color)', marginBottom: '12px' }}>
+                        <h2 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px' }}>
                             Connect Your Wallet
                         </h2>
-                        <p style={{ color: 'var(--secondary-text)', fontSize: '16px', lineHeight: 1.5 }}>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '16px', lineHeight: 1.5 }}>
                             Connect your wallet to view and interact with liquidity pools on {getChainName(chainId || 97)}.
                         </p>
                     </div>
@@ -413,13 +413,13 @@ const Pools: React.FC = () => {
                         <h2 style={{ 
                             fontSize: '28px',
                             fontWeight: 600,
-                            color: 'var(--text-color)',
+                            color: 'var(--text-primary)',
                             marginBottom: '8px'
                         }}>
                             Liquidity Pools Overview
                         </h2>
                         <p style={{ 
-                            color: 'var(--secondary-text)',
+                            color: 'var(--text-secondary)',
                             fontSize: '16px'
                         }}>
                             Provide liquidity and earn rewards on {getChainName(chainId || 97)}
@@ -438,18 +438,18 @@ const Pools: React.FC = () => {
                         <div style={{
                             textAlign: 'center',
                             padding: '48px 24px',
-                            background: 'rgba(255, 255, 255, 0.6)',
+                            background: 'var(--bg-card)',
                             backdropFilter: 'blur(10px)',
-                            borderRadius: '16px',
-                            border: '1px solid var(--border-color)'
+                            borderRadius: 'var(--radius-lg)',
+                            border: '1px solid var(--border-glass-strong)'
                         }}>
-                            <div style={{ fontSize: '32px', marginBottom: '16px', color: 'var(--secondary-text)' }}>
+                            <div style={{ fontSize: '32px', marginBottom: '16px', color: 'var(--text-secondary)' }}>
                                 🏊‍♂️
                             </div>
-                            <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-color)', marginBottom: '8px' }}>
+                            <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
                                 No Pools Available
                             </div>
-                            <div style={{ color: 'var(--secondary-text)' }}>
+                            <div style={{ color: 'var(--text-secondary)' }}>
                                 Switch to a supported network to view available pools.
                             </div>
                         </div>
@@ -457,13 +457,13 @@ const Pools: React.FC = () => {
                         <div style={{ display: 'grid', gap: '20px' }}>
                             {pools.map((pool) => (
                                 <div key={pool.id} style={{
-                                    background: 'rgba(255, 255, 255, 0.7)',
+                                    background: 'var(--bg-card)',
                                     backdropFilter: 'blur(10px)',
-                                    borderRadius: '16px',
-                                    border: '1px solid var(--border-color)',
+                                    borderRadius: 'var(--radius-lg)',
+                                    border: '1px solid var(--border-glass-strong)',
                                     padding: '24px',
                                     transition: 'all 0.2s ease',
-                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+                                    boxShadow: 'var(--shadow-medium)'
                                 }}>
                                     <div style={{
                                         display: 'flex',
@@ -492,14 +492,14 @@ const Pools: React.FC = () => {
                                                 <h3 style={{
                                                     fontSize: '20px',
                                                     fontWeight: 600,
-                                                    color: 'var(--text-color)',
+                                                    color: 'var(--text-primary)',
                                                     marginBottom: '4px'
                                                 }}>
                                                     {pool.name}
                                                 </h3>
                                                 <div style={{
                                                     fontSize: '12px',
-                                                    color: 'var(--secondary-text)'
+                                                    color: 'var(--text-secondary)'
                                                 }}>
                                                     {getChainName(pool.chainId)} {pool.isNative && '(Native)'}
                                                 </div>
@@ -508,9 +508,9 @@ const Pools: React.FC = () => {
                                         
                                         <div style={{
                                             padding: '6px 12px',
-                                            borderRadius: '8px',
-                                            background: 'rgba(34, 197, 94, 0.15)',
-                                            color: '#22c55e',
+                                            borderRadius: 'var(--radius-md)',
+                                            background: 'var(--success-bg)',
+                                            color: 'var(--success)',
                                             fontSize: '14px',
                                             fontWeight: 600
                                         }}>
@@ -527,7 +527,7 @@ const Pools: React.FC = () => {
                                         <div>
                                             <div style={{
                                                 fontSize: '12px',
-                                                color: 'var(--secondary-text)',
+                                                color: 'var(--text-secondary)',
                                                 marginBottom: '4px'
                                             }}>
                                                 TVL
@@ -535,7 +535,7 @@ const Pools: React.FC = () => {
                                             <div style={{
                                                 fontSize: '18px',
                                                 fontWeight: 600,
-                                                color: 'var(--text-color)'
+                                                color: 'var(--text-primary)'
                                             }}>
                                                 <LoadingValue
                                                     isLoading={loadingTvls[pool.id] || false}
@@ -547,7 +547,7 @@ const Pools: React.FC = () => {
                                         <div>
                                             <div style={{
                                                 fontSize: '12px',
-                                                color: 'var(--secondary-text)',
+                                                color: 'var(--text-secondary)',
                                                 marginBottom: '4px'
                                             }}>
                                                 Your Position
@@ -555,7 +555,7 @@ const Pools: React.FC = () => {
                                             <div style={{
                                                 fontSize: '18px',
                                                 fontWeight: 600,
-                                                color: 'var(--text-color)'
+                                                color: 'var(--text-primary)'
                                             }}>
                                                 <LoadingValue
                                                     isLoading={loadingPositions[pool.id] || false}
@@ -567,7 +567,7 @@ const Pools: React.FC = () => {
                                         <div>
                                             <div style={{
                                                 fontSize: '12px',
-                                                color: 'var(--secondary-text)',
+                                                color: 'var(--text-secondary)',
                                                 marginBottom: '4px'
                                             }}>
                                                 24h Volume
@@ -575,7 +575,7 @@ const Pools: React.FC = () => {
                                             <div style={{
                                                 fontSize: '18px',
                                                 fontWeight: 600,
-                                                color: 'var(--text-color)'
+                                                color: 'var(--text-primary)'
                                             }}>
                                                 $89K
                                             </div>
@@ -592,9 +592,9 @@ const Pools: React.FC = () => {
                                             style={{
                                                 flex: 1,
                                                 padding: '12px 16px',
-                                                borderRadius: '8px',
+                                                borderRadius: 'var(--radius-md)',
                                                 border: 'none',
-                                                background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                                                background: 'var(--accent-gradient)',
                                                 color: 'white',
                                                 fontSize: '14px',
                                                 fontWeight: 600,
@@ -612,10 +612,10 @@ const Pools: React.FC = () => {
                                             style={{
                                                 flex: 1,
                                                 padding: '12px 16px',
-                                                borderRadius: '8px',
-                                                border: '1px solid var(--border-color)',
-                                                background: 'white',
-                                                color: 'var(--text-color)',
+                                                borderRadius: 'var(--radius-md)',
+                                                border: '1px solid var(--border-glass-strong)',
+                                                background: 'var(--bg-secondary)',
+                                                color: 'var(--text-primary)',
                                                 fontSize: '14px',
                                                 fontWeight: 600,
                                                 cursor: 'pointer',
