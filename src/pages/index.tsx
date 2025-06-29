@@ -175,7 +175,7 @@ const Home: React.FC = () => {
                 setCollateralAmount(requiredCollateralAmount.toFixed(6));
             }
         }
-    }, [useExistingStaking, totalStakingValue, selectedAssets, collateralAsset, assetPrices, isManualInput, collateralAmount]);
+    }, [useExistingStaking, totalStakingValue, selectedAssets, collateralAsset, assetPrices, isManualInput]); // 移除collateralAmount依赖
 
     // Update collateral calculation to include staking if enabled
     const calculateTotalCollateralValue = () => {
@@ -559,8 +559,8 @@ const Home: React.FC = () => {
             return;
         }
         
-        // Always auto-calculate when borrowing assets change (reverse calculation)
-        if (assets.length > 0 && collateralAsset) {
+        // Only auto-calculate when NOT in manual input mode (respect user input)
+        if (assets.length > 0 && collateralAsset && !isManualInput) {
             const totalBorrowValue = assets.reduce((sum, asset) => sum + asset.value, 0);
             
             if (totalBorrowValue > 0) {
@@ -575,19 +575,19 @@ const Home: React.FC = () => {
                 const assetPrice = assetPrices[collateralAsset.token]?.price || 2400;
                 const requiredCollateralAmount = requiredNewCollateralValue / assetPrice;
                 
-                // Auto-fill the collateral amount input (always update when borrowing changes)
+                // Auto-fill the collateral amount input only when user hasn't manually input
                 setCollateralAmount(requiredCollateralAmount.toFixed(6));
-                
-                // Reset manual input flag when auto-calculating
-                setIsManualInput(false);
                 
                 console.log('🔄 Auto-calculated collateral:', {
                     totalBorrowValue: `$${totalBorrowValue.toFixed(2)}`,
                     requiredCollateral: `${requiredCollateralAmount.toFixed(6)} ${collateralAsset.token}`,
                     assetPrice: `$${assetPrice}`,
-                    existingStakingValue: `$${existingStakingValue.toFixed(2)}`
+                    existingStakingValue: `$${existingStakingValue.toFixed(2)}`,
+                    isManualInput: 'false (allowing auto-calculation)'
                 });
             }
+        } else if (isManualInput) {
+            console.log('🚫 Skipping auto-calculation - user is manually inputting');
         }
     };
 
