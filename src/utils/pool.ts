@@ -29,6 +29,25 @@ export async function getLoan(pool: any, asset: string, user: string, source: nu
     }
 }
 
+export async function getUserIntrest(pool: any, asset: string, user: string, source: number) : Promise<any> {
+    try {
+        const chainId = source == sepolia.id ? chainSelector[sepolia.id] : chainSelector[bscTestnet.id];
+        console.log(`Getting loan for asset ${asset} in pool ${pool.pool} on chain ${chainId} for user ${user}`);
+        const loan = await readContract(config, {
+            address: pool.pool,
+            abi: LiquidityPoolABI,
+            functionName: 'getUserInterest',
+            args: [user, chainId, asset],
+            chainId: pool.chainId,
+        });
+
+        return loan;
+    } catch (error) {
+        console.error(`Error getting loan for asset ${asset} in pool ${pool.name}:`, error);
+        return null;
+    }
+}
+
 
 export async function getPoolTvl(pool: any) : Promise<BigNumberish> {
     try {

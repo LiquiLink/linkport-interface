@@ -12,7 +12,7 @@ import { useTransactionCreator } from '../hooks/useTransactions';
 import { ethers } from 'ethers';
 import { TransactionFilter } from '../utils/transactionStorage';
 import { chainSelector, linkPorts, poolList } from '../config'
-import { getLoan } from '../utils/pool';
+import { getLoan, getUserIntrest } from '../utils/pool';
 import { getAssetPriceFromPort } from '../utils/priceService';
 import { useWriteContract } from 'wagmi';
 import { parseMutationArgs } from '@tanstack/react-query';
@@ -32,6 +32,7 @@ interface BorrowedAsset {
   address: string;
   interestAccrued: number;
   healthFactor: number;
+  pool: string;
 }
 
 const RepayModal: React.FC<RepayModalProps> = ({
@@ -73,6 +74,12 @@ const RepayModal: React.FC<RepayModalProps> = ({
                         address,
                         sepolia.id
                     );
+                    let intrestAccrued = await getUserIntrest(
+                        pool, 
+                        debt,
+                        address,
+                        sepolia.id
+                    );
                     const [tokenAmount, amount, intrest, startTime ] = loan;
                     if (loan != null) {
                       const price = await getAssetPriceFromPort(pool.address, pool.chainId);
@@ -84,9 +91,10 @@ const RepayModal: React.FC<RepayModalProps> = ({
                         value: value,
                         chainId: pool.chainId,
                         address: pool.address,
+                        pool: pool.pool,
                         price: price,
                         timestamp: Number(startTime),
-                        interestAccrued: calculateInterest(_amount, Number(startTime)) + Number(intrest),
+                        interestAccrued: intrestAccrued ? Number(intrestAccrued) / 10 ** 18 : 0, // Assuming 18 decimals for interest
                         healthFactor: calculateHealthFactor(value)
                       };
                     }
@@ -103,9 +111,10 @@ const RepayModal: React.FC<RepayModalProps> = ({
             amount: asset.amount,
             price: asset.price?.price || 0,
             value: asset.value,
+            pool: asset.pool,
             chainId: asset.chainId,
             address: asset.address,
-            interestAccrued: calculateInterest(asset.amount, asset.timestamp),
+            interestAccrued: asset.interestAccrued,
             healthFactor: calculateHealthFactor(asset.value)
           })) || [];
         setBorrowedAssets(assets);
@@ -172,9 +181,9 @@ const RepayModal: React.FC<RepayModalProps> = ({
 
   // Calculate interest (simple 2.5% APR for demo)
   const calculateInterest = (principal: number, timestamp: number): number => {
-    const timeElapsed = (Date.now() - timestamp) / (1000 * 60 * 60 * 24 * 365); // years
-    const interestRate = 0.025; // 2.5% APR
-    return principal * interestRate * timeElapsed;
+    const timeElapsed = Date.now() - timestamp
+    const interestRate = 0.20; // 2.5% APR
+    return principal * interestRate * timeElapsed / 86400 * 365;
   };
 
   // Calculate health factor based on debt value
@@ -239,7 +248,7 @@ const RepayModal: React.FC<RepayModalProps> = ({
           address: selectedAsset.address as `0x${string}`,
           abi: ERC20ABI,
           functionName: 'approve',
-          args: [linkPort as `0x${string}`, parseEther(repayAmount)],
+          args: [selectedAsset.pool as `0x${string}`, parseEther(repayAmount)],
           chainId: bscTestnet.id,
           chain: bscTestnet,
           account: address
