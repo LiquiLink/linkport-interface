@@ -1028,7 +1028,7 @@ const Home: React.FC = () => {
                                         <input
                                             type="text"
                                             className="amount-input"
-                                            placeholder={selectedAssets.length > 0 ? "Auto-calculated based on borrowing" : (useExistingStaking ? "Enter additional amount (optional)" : "Enter amount")}
+                                            placeholder={selectedAssets.length > 0 ? "Auto-calculated" : (useExistingStaking ? "Additional amount" : "Enter amount")}
                                             value={collateralAmount}
                                             onChange={(e) => {
                                                 const value = e.target.value;
