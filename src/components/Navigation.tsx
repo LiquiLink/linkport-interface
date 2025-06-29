@@ -97,7 +97,7 @@ const Navigation: React.FC = () => {
           z-index: 1000;
           background: var(--bg-glass-strong);
           border-bottom: 1px solid var(--border-glass);
-          padding: 12px 0; /* 增加padding来改善对齐 */
+          padding: 12px 0; /* Increase padding to improve alignment */
           transition: all var(--transition-normal);
           box-shadow: var(--shadow-medium);
         }
@@ -115,14 +115,14 @@ const Navigation: React.FC = () => {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          height: 100%; /* 确保垂直对齐 */
+          height: 100%; /* Ensure vertical alignment */
         }
 
         .logo-section {
           text-decoration: none;
           cursor: pointer;
           transition: all var(--transition-normal);
-          display: flex; /* 确保flex布局 */
+          display: flex; /* Ensure flex layout */
           align-items: center;
         }
 

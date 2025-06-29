@@ -10,7 +10,6 @@ import { getMultipleAssetPrices, PriceData } from '../utils/priceService';
 import { formatUnits } from 'ethers';
 import { getTokenIconStyle } from '../utils/ui';
 import { useToast } from '../components/Toast';
-import DepositModal from '../components/DepositModal';
 import AddLiquidityModal from '../components/AddLiquidityModal';
 import WithdrawModal from '../components/WithdrawModal';
 import AnalyticsModal from '../components/AnalyticsModal';
@@ -34,11 +33,16 @@ interface PortfolioData {
 }
 
 const Portfolio: React.FC = () => {
-    const { address, isConnected } = useAccount();
-    const chainId = useChainId();
+    const { address, isConnected, chainId } = useAccount();
+    const { showToast } = useToast();
     const router = useRouter();
+
+    // State management
     const [isClient, setIsClient] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [retryCount, setRetryCount] = useState(0);
+    const [assetPrices, setAssetPrices] = useState<{[key: string]: any}>({});
     const [portfolioData, setPortfolioData] = useState<PortfolioData>({
         totalValue: 0,
         totalLiquidity: 0,
@@ -46,21 +50,47 @@ const Portfolio: React.FC = () => {
         positionCount: 0
     });
     const [positions, setPositions] = useState<Position[]>([]);
-    const [assetPrices, setAssetPrices] = useState<Record<string, PriceData>>({});
     const [balances, setBalances] = useState<{[key: string]: string}>({});
-    
-    // Risk monitoring data - based on real user data
-    const [userBorrowedValue, setUserBorrowedValue] = useState(0); // Real borrowed value
     const [hasActivePositions, setHasActivePositions] = useState(false);
+    const [userBorrowedValue, setUserBorrowedValue] = useState(0);
 
     // Modal states
-    const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
-    const [isBridgeModalOpen, setIsBridgeModalOpen] = useState(false);
     const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+    const [isBridgeModalOpen, setIsBridgeModalOpen] = useState(false);
     const [isAddLiquidityModalOpen, setIsAddLiquidityModalOpen] = useState(false);
     const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
-    
-    const { showToast } = useToast();
+
+    // Utility functions for timeout and retry
+    const withTimeout = (promise: Promise<any>, timeoutMs: number = 5000): Promise<any> => {
+        return Promise.race([
+            promise,
+            new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Request timeout')), timeoutMs)
+            )
+        ]);
+    };
+
+    const withRetry = async (
+        fn: () => Promise<any>, 
+        maxRetries: number = 2, 
+        delay: number = 1000
+    ): Promise<any> => {
+        let lastError: Error = new Error('Unknown error');
+        
+        for (let i = 0; i <= maxRetries; i++) {
+            try {
+                return await fn();
+            } catch (error) {
+                lastError = error as Error;
+                if (i === maxRetries) break;
+                
+                // Wait before retry
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+        
+        throw lastError;
+    };
 
     // Prevent hydration errors
     useEffect(() => {
@@ -95,12 +125,14 @@ const Portfolio: React.FC = () => {
     // Get user balance and position data from ALL chains
     useEffect(() => {
         async function fetchPortfolioData() {
-            if (!isClient || !address) {
+            if (!address || !isConnected) {
                 setLoading(false);
                 return;
             }
 
             setLoading(true);
+            setError(null);
+            
             try {
                 console.log("🔥 Starting to load Portfolio data from all chains...");
                 
@@ -110,33 +142,46 @@ const Portfolio: React.FC = () => {
                 const userBalances: {[key: string]: string} = {};
                 let totalValue = 0;
                 let totalLiquidity = 0;
+                let successfulLoads = 0;
+                let failedLoads = 0;
 
                 for (const pool of allPools) {
                     try {
-                        // Get user balance
-                        const balance = await getUserAssetBalance(
-                            pool.address, 
-                            address, 
-                            pool.chainId, 
-                            pool.isNative
+                        console.log(`🔄 Loading data for ${pool.name} on ${pool.chainId === 97 ? 'BSC' : 'Sepolia'}...`);
+                        
+                        // Get user balance with timeout and retry
+                        const balance = await withTimeout(
+                            withRetry(() => getUserAssetBalance(
+                                pool.address, 
+                                address, 
+                                pool.chainId, 
+                                pool.isNative
+                            ), 1, 500), // 1 retry, 500ms delay
+                            3000 // 3 second timeout
                         );
                         const formattedBalance = formatUnits(balance, 18);
                         userBalances[pool.id] = formattedBalance;
 
-                        // Get user shares in the pool
-                        const shares = await getBalance(pool.pool, address, pool.chainId);
+                        // Get user shares in the pool with timeout
+                        const shares = await withTimeout(
+                            withRetry(() => getBalance(pool.pool, address, pool.chainId), 1, 500),
+                            3000
+                        );
                         const formattedShares = formatUnits(shares, 18);
 
-                        // Get user position value in the pool
-                        const userPosition = await getUserPosition(pool, address);
+                        // Get user position value in the pool with timeout
+                        const userPosition = await withTimeout(
+                            withRetry(() => getUserPosition(pool, address), 1, 500),
+                            3000
+                        );
                         const formattedPosition = userPosition ? formatUnits(userPosition, 18) : '0';
 
-                        // Get token price
+                        // Get token price (use cached price data)
                         const priceData = assetPrices[pool.name] || { price: 1 };
                         const balanceValue = parseFloat(formattedBalance) * priceData.price;
                         const positionValue = parseFloat(formattedPosition);
 
-                        console.log(`📊 ${pool.name}:`, {
+                        console.log(`✅ ${pool.name} data loaded:`, {
                             balance: formattedBalance,
                             shares: formattedShares,
                             position: formattedPosition,
@@ -165,8 +210,20 @@ const Portfolio: React.FC = () => {
                             });
                         }
 
+                        successfulLoads++;
+
                     } catch (error) {
-                        console.error(`❌ Failed to get ${pool.name} data:`, error);
+                        failedLoads++;
+                        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+                        console.error(`❌ Failed to get ${pool.name} data:`, errorMsg);
+                        
+                        // Set default values for failed pools
+                        userBalances[pool.id] = '0';
+                        
+                        // If it's a timeout error and BSC chain, show specific message
+                        if (errorMsg.includes('timeout') && pool.chainId === 97) {
+                            console.warn(`⚠️ BSC network timeout for ${pool.name}, using fallback data`);
+                        }
                     }
                 }
 
@@ -186,14 +243,12 @@ const Portfolio: React.FC = () => {
                 setHasActivePositions(hasPositions);
                 
                 // Get user's actual lending data from smart contracts
-                // Check if there are lending records in localStorage
                 try {
                     const borrowingData = localStorage.getItem(`user_borrowings_${address}`);
                     if (borrowingData) {
                         const parsed = JSON.parse(borrowingData);
                         setUserBorrowedValue(parsed.totalBorrowed || 0);
                     } else {
-                        // No lending records, set to 0
                         setUserBorrowedValue(0);
                     }
                 } catch (error) {
@@ -201,16 +256,33 @@ const Portfolio: React.FC = () => {
                     setUserBorrowedValue(0);
                 }
 
-                console.log("✅ Portfolio data loaded successfully:", {
-                    portfolioData: newPortfolioData,
-                    positions: userPositions,
-                    balances: userBalances,
-                    hasActivePositions: hasPositions,
-                    totalCollateralValue: totalValue + totalLiquidity
-                });
+                // Show user feedback about network issues
+                if (failedLoads > 0) {
+                    const message = failedLoads === allPools.length 
+                        ? "Unable to load portfolio data due to network issues. Please try again."
+                        : `Loaded ${successfulLoads}/${allPools.length} assets. Some data may be incomplete due to network issues.`;
+                    
+                    if (failedLoads === allPools.length) {
+                        setError("Network connection issues. Unable to load portfolio data.");
+                        showToast(message, 'error');
+                    } else {
+                        showToast(message, 'warning');
+                    }
+                } else {
+                    console.log("✅ Portfolio data loaded successfully:", {
+                        portfolioData: newPortfolioData,
+                        positions: userPositions,
+                        balances: userBalances,
+                        hasActivePositions: hasPositions,
+                        totalCollateralValue: totalValue + totalLiquidity
+                    });
+                }
 
             } catch (error) {
-                console.error("❌ Failed to load Portfolio data:", error);
+                const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+                console.error("❌ Failed to load Portfolio data:", errorMsg);
+                setError(`Failed to load portfolio: ${errorMsg}`);
+                showToast('Failed to load portfolio data. Please check your connection and try again.', 'error');
             } finally {
                 setLoading(false);
             }
@@ -244,7 +316,7 @@ const Portfolio: React.FC = () => {
     };
 
     const handleDeposit = () => {
-        setIsDepositModalOpen(true);
+        router.push('/pools');
     };
 
     const handleBridge = () => {
@@ -264,15 +336,6 @@ const Portfolio: React.FC = () => {
     };
 
     // Modal success handlers
-    const handleDepositSuccess = () => {
-        // Refresh portfolio data after successful deposit
-        if (Object.keys(assetPrices).length > 0) {
-            // Trigger portfolio data refresh by re-running the effect
-            setLoading(true);
-        }
-        showToast('Portfolio refreshed after successful deposit', 'success');
-    };
-
     const handleBridgeSuccess = () => {
         // Refresh portfolio data after successful bridge
         if (Object.keys(assetPrices).length > 0) {
@@ -295,6 +358,21 @@ const Portfolio: React.FC = () => {
             setLoading(true);
         }
         showToast('Portfolio refreshed after adding liquidity', 'success');
+    };
+
+    // Retry function for when data loading fails
+    const handleRetry = () => {
+        setRetryCount(prev => prev + 1);
+        setError(null);
+        setLoading(true);
+        
+        // Trigger data reload by updating useEffect dependencies
+        if (Object.keys(assetPrices).length > 0) {
+            // Force re-run of the effect
+            setTimeout(() => {
+                window.location.reload();
+            }, 100);
+        }
     };
 
     if (!isClient) {
@@ -344,6 +422,51 @@ const Portfolio: React.FC = () => {
                         <p className="empty-state-description">
                             Fetching your positions and balances from the blockchain
                         </p>
+                        {retryCount > 0 && (
+                            <div style={{ marginTop: 'var(--space-md)', fontSize: '14px', color: 'var(--text-secondary)' }}>
+                                Retry attempt: {retryCount}
+                            </div>
+                        )}
+                    </div>
+                ) : error ? (
+                    /* Error State */
+                    <div className="glass-card portfolio-empty-state">
+                        <div className="empty-state-icon">⚠️</div>
+                        <h3 className="empty-state-title">
+                            Failed to Load Portfolio
+                        </h3>
+                        <p className="empty-state-description">
+                            {error}
+                        </p>
+                        <div style={{ 
+                            display: 'flex', 
+                            gap: 'var(--space-md)', 
+                            marginTop: 'var(--space-lg)',
+                            justifyContent: 'center'
+                        }}>
+                            <button 
+                                className="button button-primary"
+                                onClick={handleRetry}
+                            >
+                                Try Again
+                            </button>
+                            <button 
+                                className="button button-secondary"
+                                onClick={() => {
+                                    setError(null);
+                                    setLoading(false);
+                                }}
+                            >
+                                Continue Anyway
+                            </button>
+                        </div>
+                        <div style={{ 
+                            marginTop: 'var(--space-md)', 
+                            fontSize: '12px', 
+                            color: 'var(--text-secondary)' 
+                        }}>
+                            💡 Network issues are common with testnets. Try refreshing or using a VPN.
+                        </div>
                     </div>
                 ) : (
                     <>
@@ -592,12 +715,6 @@ const Portfolio: React.FC = () => {
             </div>
 
             {/* Modals */}
-            <DepositModal
-                isOpen={isDepositModalOpen}
-                onClose={() => setIsDepositModalOpen(false)}
-                onSuccess={handleDepositSuccess}
-            />
-
             <AddLiquidityModal
                 isOpen={isAddLiquidityModalOpen}
                 onClose={() => setIsAddLiquidityModalOpen(false)}
@@ -624,10 +741,30 @@ const Portfolio: React.FC = () => {
                 <div 
                     className="modal-overlay"
                     onClick={() => setIsBridgeModalOpen(false)}
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0, 0, 0, 0.4)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000
+                    }}
                 >
                     <div 
                         className="glass-card bridge-modal"
                         onClick={(e) => e.stopPropagation()}
+                        style={{
+                            position: 'relative',
+                            maxWidth: '450px',
+                            width: '90%',
+                            textAlign: 'center',
+                            padding: 'var(--space-lg)',
+                            margin: '20px'
+                        }}
                     >
                         <div className="bridge-modal-icon">🌉</div>
                         <h3 className="bridge-modal-title">Cross-Chain Bridge</h3>

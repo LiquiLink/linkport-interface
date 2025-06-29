@@ -132,36 +132,36 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                         <div style={{
                             padding: '16px',
-                            background: 'rgba(59, 130, 246, 0.1)',
+                            background: 'var(--bg-card)',
                             borderRadius: '12px',
-                            border: '1px solid rgba(59, 130, 246, 0.2)'
+                            border: '1px solid var(--border-glass)'
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                                 <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#3b82f6' }}></div>
-                                <span style={{ fontSize: '14px', fontWeight: 500 }}>Wallet Balance</span>
+                                <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>Wallet Balance</span>
                             </div>
-                            <div style={{ fontSize: '20px', fontWeight: 600, color: '#3b82f6' }}>
+                            <div style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)' }}>
                                 ${totalValue.toFixed(2)}
                             </div>
-                            <div style={{ fontSize: '12px', color: 'var(--secondary-text)' }}>
+                            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                                 {walletPercentage.toFixed(1)}% of total
                             </div>
                         </div>
 
                         <div style={{
                             padding: '16px',
-                            background: 'rgba(34, 197, 94, 0.1)',
+                            background: 'var(--bg-card)',
                             borderRadius: '12px',
-                            border: '1px solid rgba(34, 197, 94, 0.2)'
+                            border: '1px solid var(--border-glass)'
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                                 <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#22c55e' }}></div>
-                                <span style={{ fontSize: '14px', fontWeight: 500 }}>Liquidity Staked</span>
+                                <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>Liquidity Staked</span>
                             </div>
-                            <div style={{ fontSize: '20px', fontWeight: 600, color: '#22c55e' }}>
+                            <div style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)' }}>
                                 ${totalLiquidity.toFixed(2)}
                             </div>
-                            <div style={{ fontSize: '12px', color: 'var(--secondary-text)' }}>
+                            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                                 {liquidityPercentage.toFixed(1)}% of total
                             </div>
                         </div>
@@ -175,24 +175,24 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                     </h4>
                     <div style={{
                         padding: '16px',
-                        background: 'rgba(255, 255, 255, 0.8)',
+                        background: 'var(--bg-card)',
                         borderRadius: '12px',
-                        border: '1px solid rgba(0, 0, 0, 0.1)'
+                        border: '1px solid var(--border-glass)'
                     }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
-                                <div style={{ fontSize: '16px', fontWeight: 600 }}>
+                                <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
                                     {getChainName(chainId || 97)}
                                 </div>
-                                <div style={{ fontSize: '14px', color: 'var(--secondary-text)' }}>
+                                <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
                                     {userPositions.length} active positions
                                 </div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
-                                <div style={{ fontSize: '18px', fontWeight: 600 }}>
+                                <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>
                                     ${(totalValue + totalLiquidity).toFixed(2)}
                                 </div>
-                                <div style={{ fontSize: '12px', color: 'var(--secondary-text)' }}>
+                                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                                     Total Value
                                 </div>
                             </div>
@@ -216,42 +216,42 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                         <div style={{
                             padding: '16px',
-                            background: 'rgba(34, 197, 94, 0.1)',
+                            background: 'var(--bg-card)',
                             borderRadius: '12px',
                             textAlign: 'center'
                         }}>
                             <div style={{ fontSize: '24px', fontWeight: 700, color: '#22c55e' }}>
                                 {averageAPY.toFixed(1)}%
                             </div>
-                            <div style={{ fontSize: '14px', color: 'var(--secondary-text)' }}>
+                            <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
                                 Average APY
                             </div>
                         </div>
                         
                         <div style={{
                             padding: '16px',
-                            background: 'rgba(245, 158, 11, 0.1)',
+                            background: 'var(--bg-card)',
                             borderRadius: '12px',
                             textAlign: 'center'
                         }}>
                             <div style={{ fontSize: '24px', fontWeight: 700, color: '#f59e0b' }}>
                                 ${dailyYield.toFixed(2)}
                             </div>
-                            <div style={{ fontSize: '14px', color: 'var(--secondary-text)' }}>
+                            <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
                                 Daily Yield
                             </div>
                         </div>
                         
                         <div style={{
                             padding: '16px',
-                            background: 'rgba(59, 130, 246, 0.1)',
+                            background: 'var(--bg-card)',
                             borderRadius: '12px',
                             textAlign: 'center'
                         }}>
                             <div style={{ fontSize: '24px', fontWeight: 700, color: '#3b82f6' }}>
                                 ${monthlyYield.toFixed(2)}
                             </div>
-                            <div style={{ fontSize: '14px', color: 'var(--secondary-text)' }}>
+                            <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
                                 Monthly Yield
                             </div>
                         </div>
@@ -268,16 +268,16 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                             {userPositions.map((position, index) => (
                                 <div key={index} style={{
                                     padding: '16px',
-                                    background: 'rgba(255, 255, 255, 0.8)',
+                                    background: 'var(--bg-card)',
                                     borderRadius: '12px',
-                                    border: '1px solid rgba(0, 0, 0, 0.1)'
+                                    border: '1px solid var(--border-glass)'
                                 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <div>
-                                            <div style={{ fontSize: '16px', fontWeight: 600 }}>
+                                            <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
                                                 {position.token} Pool
                                             </div>
-                                            <div style={{ fontSize: '14px', color: 'var(--secondary-text)' }}>
+                                            <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
                                                 {position.chain} • {position.shares} LP tokens
                                             </div>
                                         </div>
@@ -285,7 +285,7 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                             <div style={{ fontSize: '16px', fontWeight: 600, color: '#22c55e' }}>
                                                 {position.apy}
                                             </div>
-                                            <div style={{ fontSize: '14px', color: 'var(--secondary-text)' }}>
+                                            <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
                                                 ${position.value.toFixed(2)}
                                             </div>
                                         </div>
@@ -297,7 +297,7 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                         <div style={{
                             textAlign: 'center',
                             padding: '40px',
-                            color: 'var(--secondary-text)'
+                            color: 'var(--text-secondary)'
                         }}>
                             <div style={{ fontSize: '48px', marginBottom: '16px' }}>📈</div>
                             <div>No active positions to analyze</div>
@@ -323,11 +323,11 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                         <div style={{
                             padding: '16px',
-                            background: 'rgba(34, 197, 94, 0.1)',
+                            background: 'var(--bg-card)',
                             borderRadius: '12px',
-                            border: '1px solid rgba(34, 197, 94, 0.2)'
+                            border: '1px solid var(--border-glass)'
                         }}>
-                            <div style={{ fontSize: '14px', color: 'var(--secondary-text)', marginBottom: '4px' }}>
+                            <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
                                 Health Factor
                             </div>
                             <div style={{ fontSize: '24px', fontWeight: 700, color: '#22c55e' }}>
@@ -340,11 +340,11 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                         
                         <div style={{
                             padding: '16px',
-                            background: 'rgba(245, 158, 11, 0.1)',
+                            background: 'var(--bg-card)',
                             borderRadius: '12px',
-                            border: '1px solid rgba(245, 158, 11, 0.2)'
+                            border: '1px solid var(--border-glass)'
                         }}>
-                            <div style={{ fontSize: '14px', color: 'var(--secondary-text)', marginBottom: '4px' }}>
+                            <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
                                 Liquidation Price (ETH)
                             </div>
                             <div style={{ fontSize: '24px', fontWeight: 700, color: '#f59e0b' }}>
@@ -364,13 +364,13 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                     </h4>
                     <div style={{
                         padding: '20px',
-                        background: 'rgba(255, 255, 255, 0.8)',
+                        background: 'var(--bg-card)',
                         borderRadius: '12px',
-                        border: '1px solid rgba(0, 0, 0, 0.1)'
+                        border: '1px solid var(--border-glass)'
                     }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                            <span style={{ fontSize: '14px' }}>Low Risk</span>
-                            <span style={{ fontSize: '14px', fontWeight: 600 }}>75%</span>
+                            <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Low Risk</span>
+                            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>75%</span>
                         </div>
                         <div style={{
                             width: '100%',
@@ -388,8 +388,8 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                         </div>
                         
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                            <span style={{ fontSize: '14px' }}>Medium Risk</span>
-                            <span style={{ fontSize: '14px', fontWeight: 600 }}>20%</span>
+                            <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Medium Risk</span>
+                            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>20%</span>
                         </div>
                         <div style={{
                             width: '100%',
@@ -407,8 +407,8 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                         </div>
                         
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                            <span style={{ fontSize: '14px' }}>High Risk</span>
-                            <span style={{ fontSize: '14px', fontWeight: 600 }}>5%</span>
+                            <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>High Risk</span>
+                            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>5%</span>
                         </div>
                         <div style={{
                             width: '100%',
@@ -433,11 +433,11 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                     </h4>
                     <div style={{
                         padding: '16px',
-                        background: 'rgba(59, 130, 246, 0.1)',
+                        background: 'var(--bg-card)',
                         borderRadius: '12px',
-                        border: '1px solid rgba(59, 130, 246, 0.2)'
+                        border: '1px solid var(--border-glass)'
                     }}>
-                        <ul style={{ margin: 0, paddingLeft: '20px', color: 'var(--secondary-text)' }}>
+                        <ul style={{ margin: 0, paddingLeft: '20px', color: 'var(--text-secondary)' }}>
                             <li>Your health factor is healthy. Consider diversifying across more pools.</li>
                             <li>Monitor ETH price movements as they affect your liquidation threshold.</li>
                             <li>Consider adding more collateral if ETH drops below $2000.</li>
@@ -497,9 +497,9 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                 style={{
                                     padding: '8px 16px',
                                     borderRadius: '8px',
-                                    border: 'none',
-                                    background: timeRange === range.id ? '#3b82f6' : 'rgba(0, 0, 0, 0.05)',
-                                    color: timeRange === range.id ? 'white' : 'var(--text-color)',
+                                    border: '1px solid var(--border-glass)',
+                                    background: timeRange === range.id ? 'var(--accent-gradient)' : 'var(--bg-card)',
+                                    color: timeRange === range.id ? 'white' : 'var(--text-primary)',
                                     fontSize: '14px',
                                     cursor: 'pointer'
                                 }}
@@ -517,9 +517,9 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                             {filteredTransactions.map(tx => (
                                 <div key={tx.id} style={{
                                     padding: '16px',
-                                    background: 'rgba(255, 255, 255, 0.8)',
+                                    background: 'var(--bg-card)',
                                     borderRadius: '12px',
-                                    border: '1px solid rgba(0, 0, 0, 0.1)'
+                                    border: '1px solid var(--border-glass)'
                                 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -527,20 +527,20 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                                 {getTransactionIcon(tx.type)}
                                             </div>
                                             <div>
-                                                <div style={{ fontSize: '16px', fontWeight: 600, textTransform: 'capitalize' }}>
+                                                <div style={{ fontSize: '16px', fontWeight: 600, textTransform: 'capitalize', color: 'var(--text-primary)' }}>
                                                     {tx.type} {tx.asset}
                                                 </div>
-                                                <div style={{ fontSize: '14px', color: 'var(--secondary-text)' }}>
+                                                <div style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
                                                     {tx.chain} • {tx.date.toLocaleDateString()}
                                                 </div>
                                             </div>
                                         </div>
                                         <div style={{ textAlign: 'right' }}>
-                                            <div style={{ fontSize: '16px', fontWeight: 600 }}>
+                                            <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
                                                 {tx.amount} {tx.asset}
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <span style={{ fontSize: '14px', color: 'var(--secondary-text)' }}>
+                                                <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
                                                     ${tx.value.toFixed(2)}
                                                 </span>
                                                 <span style={{
@@ -562,7 +562,7 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                         <div style={{
                             textAlign: 'center',
                             padding: '40px',
-                            color: 'var(--secondary-text)'
+                            color: 'var(--text-secondary)'
                         }}>
                             <div style={{ fontSize: '48px', marginBottom: '16px' }}>📋</div>
                             <div>No transactions found in selected time range</div>
@@ -582,8 +582,9 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                     display: 'flex',
                     gap: '4px',
                     padding: '4px',
-                    background: 'rgba(0, 0, 0, 0.05)',
-                    borderRadius: '12px'
+                    background: 'var(--bg-card)',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border-glass)'
                 }}>
                     {tabs.map(tab => (
                         <button
@@ -594,8 +595,8 @@ const AnalyticsModal: React.FC<AnalyticsModalProps> = ({
                                 padding: '12px 16px',
                                 borderRadius: '8px',
                                 border: 'none',
-                                background: activeTab === tab.id ? 'white' : 'transparent',
-                                color: activeTab === tab.id ? 'var(--text-color)' : 'var(--secondary-text)',
+                                background: activeTab === tab.id ? 'var(--accent-gradient)' : 'transparent',
+                                color: activeTab === tab.id ? 'white' : 'var(--text-secondary)',
                                 fontSize: '14px',
                                 fontWeight: 500,
                                 cursor: 'pointer',

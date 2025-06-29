@@ -372,6 +372,13 @@ const Pools: React.FC = () => {
         setIsWithdrawModalOpen(true);
     };
 
+    const handleMaxWithdraw = () => {
+        if (selectedPool && userPositions[selectedPool.id]) {
+            const maxAmount = parseFloat(userPositions[selectedPool.id]).toString();
+            setWithdrawAmount(maxAmount);
+        }
+    };
+
     const getChainName = (chainId: number) => {
         switch (chainId) {
             case 97: return 'BSC Testnet';
@@ -843,21 +850,39 @@ const Pools: React.FC = () => {
                             }}>
                                 Amount
                             </label>
-                            <input
-                                type="number"
-                                value={withdrawAmount}
-                                onChange={(e) => setWithdrawAmount(e.target.value)}
-                                placeholder="0.0"
-                                style={{
-                                    width: '100%',
-                                    padding: '12px',
-                                    borderRadius: 'var(--radius-md)',
-                                    border: '1px solid var(--border-glass-strong)',
-                                    background: 'var(--bg-secondary)',
-                                    color: 'var(--text-primary)',
-                                    fontSize: '16px'
-                                }}
-                            />
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <input
+                                    type="number"
+                                    value={withdrawAmount}
+                                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                                    placeholder="0.0"
+                                    style={{
+                                        flex: 1,
+                                        padding: '12px',
+                                        borderRadius: 'var(--radius-md)',
+                                        border: '1px solid var(--border-glass-strong)',
+                                        background: 'var(--bg-secondary)',
+                                        color: 'var(--text-primary)',
+                                        fontSize: '16px'
+                                    }}
+                                />
+                                <button
+                                    onClick={handleMaxWithdraw}
+                                    style={{
+                                        padding: '12px 16px',
+                                        borderRadius: 'var(--radius-md)',
+                                        border: 'none',
+                                        background: 'var(--accent-gradient)',
+                                        color: 'white',
+                                        fontSize: '14px',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        whiteSpace: 'nowrap'
+                                    }}
+                                >
+                                    MAX
+                                </button>
+                            </div>
                             <div style={{
                                 fontSize: '12px',
                                 color: 'var(--text-secondary)',
