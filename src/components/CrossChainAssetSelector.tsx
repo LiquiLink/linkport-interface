@@ -264,7 +264,7 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
     };
 
     const getMaxBridgeValue = () => {
-        return sourceAmount * (sourceAsset?.price || 0) * 0.8; // 80% maximum bridge ratio
+        return sourceAmount * (sourceAsset?.price || 0) * 1; // 80% maximum bridge ratio
     };
 
     const CustomTooltip = ({ active, payload }: any) => {
