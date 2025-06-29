@@ -60,7 +60,10 @@ const Dropdown: React.FC<DropdownProps> = ({
                     borderRadius: 'var(--radius-md)',
                     border: '1px solid',
                     boxShadow: isOpen ? '0 0 0 2px rgba(6, 182, 212, 0.2)' : '0 2px 8px rgba(0, 0, 0, 0.1)',
-                    transition: 'all var(--transition-normal)'
+                    transition: 'all var(--transition-normal)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
                 }}
                 onClick={() => !disabled && setIsOpen(!isOpen)}
             >
