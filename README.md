@@ -1,76 +1,79 @@
-# LinkPort - Cross-Chain DeFi Lending Protocol
+# Liquilink - Multi-Chain Portfolio Lending Protocol
 
-LinkPort is an innovative cross-chain lending protocol that enables users to collateralize assets on one blockchain and borrow assets on another blockchain. Built with Chainlink CCIP for cross-chain messaging and Chainlink Price Feeds for real-time asset pricing.
+Liquilink is a revolutionary cross-chain DeFi protocol that enables **portfolio lending** and **cross-chain one-to-many borrowing**. Users can collateralize assets on one blockchain and borrow multiple asset portfolios across different blockchains simultaneously.
 
-## 🌟 Key Features
+## 🚀 Core Innovation
 
-- **Cross-Chain Lending**: Collateralize assets on Ethereum, borrow on BSC (and vice versa)
-- **Real-Time Pricing**: Powered by Chainlink Price Feeds for accurate asset valuation
-- **Risk Management**: Advanced health factor monitoring and liquidation protection
-- **Multi-Asset Support**: Support for ETH, BNB, LINK, USDT across multiple chains
-- **Liquidity Pools**: Earn yield by providing liquidity to lending pools
+### Portfolio Lending
+- **One Collateral → Multiple Assets**: Stake ETH, borrow (USDT + BNB + LINK) portfolio
+- **Risk Diversification**: Natural portfolio diversification through multi-asset borrowing
+- **Capital Efficiency**: Maximize single collateral value across multiple assets
 
-## 🏗️ Architecture Overview
+### Cross-Chain One-to-Many
+- **One Chain → Multiple Chains**: Collateralize on Ethereum, borrow on BSC + Polygon + Arbitrum
+- **Unified Liquidity**: Access liquidity across all supported chains from single collateral
+- **Simplified Operations**: One transaction, multiple chain benefits
 
-LinkPort consists of two main components working together:
+## 🛠️ Technical Architecture
 
-### Frontend (linkport-interface)
-```
-linkport-interface/
-├── src/
-│   ├── components/          # React components
-│   │   ├── WalletConnect.tsx
-│   │   ├── MultiAssetSelector.tsx
-│   │   ├── CrossChainAssetSelector.tsx
-│   │   └── LiquidationMonitor.tsx
-│   ├── pages/              # Next.js pages
-│   │   ├── index.tsx       # Main lending interface
-│   │   ├── pools.tsx       # Liquidity pools
-│   │   ├── portfolio.tsx   # User portfolio
-│   │   └── history.tsx     # Transaction history
-│   ├── utils/              # Utility functions
-│   │   ├── priceService.ts # 🔗 Chainlink Price Feeds
-│   │   ├── pool.ts         # Pool interactions
-│   │   └── balance.ts      # Balance management
-│   ├── config.ts           # Network & asset config
-│   └── abi/               # Contract ABIs
-└── package.json
-```
+### Core Protocol Flow
 
-### Smart Contracts (linkport-core)
-```
-linkport-core/
-├── contracts/
-│   ├── LinkPort.sol        # 🔗 Main protocol (CCIP + Price Feeds)
-│   ├── LiquidityPool.sol   # Liquidity pool management
-│   ├── PoolFactory.sol     # Pool factory
-│   └── WETH.sol           # Wrapped ETH
-├── scripts/               # Deployment scripts
-├── test/                  # Contract tests
-└── helpers/              # Utility functions
+**Lending Process:**
+1. Calculate borrowed token amounts using Chainlink Price Feeds on destination chain
+2. Get collateral token price via Chainlink Price Feeds on source chain  
+3. Calculate collateral value = `collateralAmount * collateralPrice / 10 ** decimals`
+4. Send CCIP message to destination chain with loan request
+5. Get borrow token prices via Chainlink Price Feeds for each token on destination chain
+6. Calculate `totalBorrowedValue = sum(borrowAmounts[i] * borrowTokens[i].price)`
+7. Check if totalBorrowedValue reaches 90% of collateralValue
+
+### CCIP Message Types
+
+**Message Format:**
+```solidity
+(uint256 msgType, address from, address user, address[] tokens, 
+ uint256[] amounts, address collateralToken, uint256[] tokenCollateralAmount, 
+ uint256 collateralValue)
 ```
 
-## ✨ How It Works
+**Message Types:**
+- **Type 1 - Loan Request**: Lock collateral on source chain → Loan assets on destination chain
+- **Type 2 - Repay Request**: Repay borrowed assets → Unlock collateral on source chain
+- **Type 3 - Bridge Request**: Swap collateral via UniswapV2 → Bridge to destination chain
+- **Type 4 - Loan Rejection**: Reject overleveraged loan → Unlock collateral
+- **Type 5 - Liquidation**: Liquidate unhealthy positions → Transfer collateral to liquidator
 
-1. **Connect Wallet**: Connect MetaMask or WalletConnect to access the platform
-2. **Cross-Chain Lending**: 
-   - Select collateral asset and chain (e.g., ETH on Ethereum)
-   - Choose borrowing assets and target chain (e.g., USDT on BSC)
-   - Platform uses Chainlink CCIP to facilitate cross-chain operations
-3. **Real-Time Pricing**: Chainlink Price Feeds ensure accurate asset valuation
-4. **Risk Monitoring**: Continuous health factor monitoring with liquidation protection
-5. **Liquidity Provision**: Earn yield by providing liquidity to lending pools
-6. **Portfolio Management**: Track all positions, loans, and earnings in one dashboard
+### Liquidation Mechanism
 
-## 🚀 Getting Started
+**How Liquidation Works:**
+1. Liquidation request sent via CCIP message (Type 5) to collateral chain
+2. Check if LTV exceeds 95% threshold on collateral chain
+3. Execute `unlockTo()` to transfer collateral to liquidator
 
-For users:
-1. Visit the LinkPort application
-2. Connect your MetaMask wallet
-3. Ensure you have testnet assets (see [Testnet Guide](./TESTNET_GUIDE.md))
-4. Start lending and borrowing across chains!
+**LTV Management:**
+- **Risk Mitigation**: Reduce LTV by adding more collateral before liquidation
+- **CCIP Latency Protection**: Collateral additions take effect before liquidation messages
+- **Repayment Priority**: Loan repayment prevents liquidation execution
 
-For developers: See the [Quick Start](#-quick-start) section below.
+## 🌟 Use Cases
+
+### Multi-Chain DeFi Strategy
+```
+Collateral: 100 ETH (Ethereum)
+Borrow Portfolio:
+├── Ethereum: 30,000 USDT + 500 LINK
+├── BSC: 20,000 USDT + 15 BNB  
+└── Polygon: 25,000 USDC + 1000 MATIC
+```
+
+### Cross-Chain Arbitrage
+```
+Collateral: 50 BNB (BSC)
+Borrow Portfolio:
+├── Ethereum: 20,000 USDT (DeFi yield farming)
+├── Polygon: 15,000 USDC (Lending protocols)
+└── Arbitrum: 10,000 DAI (DEX trading)
+```
 
 ## 🔗 Chainlink Integration
 
@@ -90,73 +93,56 @@ LinkPort leverages two main Chainlink services:
 - Ethereum Sepolia Testnet (Chain ID: 11155111)
 - BSC Testnet (Chain ID: 97)
 
-## 🛠 Technologies Used
+## 🛡️ Risk Parameters
 
-### Frontend
-- **Next.js 13.5.6**: React framework for server-rendered applications
-- **TypeScript**: Type-safe development
-- **Tailwind CSS**: Utility-first CSS framework
-- **Wagmi 2.15.5**: React Hooks for Ethereum
-- **Viem**: Modern Ethereum library
-
-### Smart Contracts
-- **Solidity 0.8.20**: Smart contract programming language
-- **Hardhat**: Ethereum development environment
-- **OpenZeppelin**: Security-audited contract library
-- **Chainlink Contracts**: CCIP and Price Feed integrations
-
-### Web3 Integration
-- **Ethers.js**: Ethereum interactions
-- **MetaMask & WalletConnect**: Wallet connectivity
-- **Multi-chain support**: Ethereum and BSC testnets
-
-## 🛡️ Risk Management
-
-- **Maximum LTV**: 75% (Loan-to-Value ratio)
+- **Maximum LTV**: 75%
 - **Liquidation Threshold**: 80%
-- **Health Factor Monitoring**: Real-time risk assessment
-- **Safety Levels**:
-  - 🟢 Safe: Health Factor ≥ 1.5
-  - 🟡 Warning: 1.2 ≤ Health Factor < 1.5
-  - 🔴 Danger: Health Factor < 1.2
+- **Health Factor Monitoring**: Real-time cross-chain risk assessment
+- **Safety Buffer**: 90% collateral utilization limit for new loans
 
-## 📁 Repository Structure
+## 🚀 Quick Start
 
-This project consists of two main repositories:
+### For Users
+1. Visit [Liquilink App](http://localhost:3000)
+2. Connect MetaMask wallet
+3. Get testnet tokens (see [Testnet Guide](./TESTNET_GUIDE.md))
+4. Start multi-chain portfolio lending!
 
-- **`linkport-interface/`**: Next.js frontend application
-- **`linkport-core/`**: Solidity smart contracts and deployment scripts
+### For Developers
+```bash
+# Clone repositories
+git clone git@github.com:LiquiLink/linkport-interface.git
+git clone git@github.com:LiquiLink/linkport-core.git
 
-**Key Files Using Chainlink:**
-- [`../linkport-core/contracts/LinkPort.sol`](../linkport-core/contracts/LinkPort.sol) - Main protocol contract with CCIP integration
-- [`src/utils/priceService.ts`](./src/utils/priceService.ts) - Price feed service
-- [`../linkport-core/contracts/LiquidityPool.sol`](../linkport-core/contracts/LiquidityPool.sol) - Liquidity pool management
+# Install dependencies
+cd linkport-interface && npm install
 
-## 📋 Quick Start
+# Start development
+npm run dev
+```
 
-1. **Clone the repositories**:
-   ```bash
-   git clone git@github.com:LiquiLink/linkport-interface.git
-   git clone git@github.com:LiquiLink/linkport-core.git
-   ```
+## 📊 Project Structure
 
-2. **Install dependencies**:
-   ```bash
-   cd linkport-interface && npm install
-   cd ../linkport-core && npm install
-   ```
+```
+linkport-interface/
+├── src/
+│   ├── components/     # React UI components
+│   ├── pages/         # Next.js pages (lending, pools, portfolio)
+│   ├── utils/         # Chainlink Price Feeds integration
+│   └── config.ts      # Network & asset configuration
+└── linkport-core/
+    └── contracts/
+        ├── LinkPort.sol      # Main CCIP + Price Feed contract
+        └── LiquidityPool.sol # Pool management
+```
 
-3. **Start development server**:
-   ```bash
-   cd linkport-interface && npm run dev
-   ```
+## 🔧 Technologies
 
-4. **Visit**: `http://localhost:3000`
+- **Frontend**: Next.js, TypeScript, Tailwind CSS, Wagmi
+- **Smart Contracts**: Solidity, Hardhat, OpenZeppelin
+- **Chainlink**: CCIP, Price Feeds, Enterprise Security
+- **Web3**: Ethers.js, MetaMask, WalletConnect
 
-## Contributing
+---
 
-Contributions are welcome! Please open an issue or submit a pull request for any enhancements or bug fixes.
-
-## License
-
-This project is licensed under the MIT License. See the LICENSE file for more details. 
+**Liquilink - One Collateral, Multi-Chain Portfolios** 
