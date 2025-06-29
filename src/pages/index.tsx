@@ -950,31 +950,35 @@ const Home: React.FC = () => {
 
     return (
         <div className="container">
-
             <div className="main-layout">
-                {/* Left Panel - Main Trading Interface */}
+                {/* Left Panel - Enhanced Trading Interface */}
                 <div className="glass-card main-trading-panel">
-                    {/* Tab Navigation */}
+                    {/* Enhanced Tab Navigation */}
                     <div className="tab-navigation">
                         <div 
                             className={`tab ${activeTab === 'borrow' ? 'active' : ''}`}
                             onClick={() => handleTabChange('borrow')}
                         >
-                            Lending
+                            <i className="fas fa-coins" />
+                            <span>Lending</span>
                         </div>
                         <div 
                             className={`tab ${activeTab === 'bridge' ? 'active' : ''}`}
                             onClick={() => handleTabChange('bridge')}
                         >
-                            Bridge
+                            <i className="fas fa-bridge" />
+                            <span>Bridge</span>
                         </div>
                     </div>
 
-                    {/* Borrow Mode */}
+                    {/* Lending Mode */}
                     {activeTab === 'borrow' && (
-                        <div className="trading-mode active">
+                        <div className="trading-mode active animate-fade-in">
                             {/* Step 1: Collateral Source Chain */}
-                            <div className="section-title">Step 1: Select Collateral Source Chain</div>
+                            <div className="section-title">
+                                <i className="fas fa-link" />
+                                Select Collateral Source Chain
+                            </div>
                             <Dropdown
                                 options={chainOptions}
                                 value={sourceChain}
@@ -983,7 +987,10 @@ const Home: React.FC = () => {
                             />
 
                             {/* Collateral Asset Selection */}
-                            <div className="section-title">Collateral Asset</div>
+                            <div className="section-title">
+                                <i className="fas fa-coins" />
+                                Collateral Asset
+                            </div>
                             <Dropdown
                                 options={assetOptions}
                                 value={collateralAsset ? collateralAsset.value : ''}
@@ -991,205 +998,227 @@ const Home: React.FC = () => {
                                 placeholder="Select collateral asset"
                             />
 
-                            {/* User Staking Positions Display - Compact Version */}
+                            {/* Enhanced Staking Positions Display */}
                             {userStakingPositions.length > 0 && (
-                                <div style={{
-                                    background: 'rgba(34, 197, 94, 0.08)',
-                                    borderRadius: '10px',
-                                    padding: '12px',
-                                    marginBottom: '16px',
-                                    border: '1px solid rgba(34, 197, 94, 0.2)'
+                                <div className="glass-card status-success" style={{
+                                    margin: 'var(--space-md) 0',
+                                    position: 'relative',
+                                    overflow: 'hidden'
                                 }}>
-                                    {/* Header without USD display */}
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        height: '2px',
+                                        background: 'var(--accent-gradient)'
+                                    }} />
+                                    
+                                    {/* Header */}
                                     <div style={{
                                         display: 'flex',
                                         alignItems: 'center',
-                                        marginBottom: '8px'
+                                        marginBottom: 'var(--space-sm)',
+                                        gap: 'var(--space-sm)'
                                     }}>
                                         <div style={{
-                                            fontSize: '13px',
-                                            fontWeight: 600,
-                                            color: '#059669',
+                                            width: '32px',
+                                            height: '32px',
+                                            background: 'var(--accent-gradient)',
+                                            borderRadius: '50%',
                                             display: 'flex',
                                             alignItems: 'center',
-                                            gap: '6px'
+                                            justifyContent: 'center',
+                                            color: 'white'
                                         }}>
-                                            💰 Your Staking on {getChainName(sourceChain).split(' ')[0]}
+                                            <i className="fas fa-piggy-bank" />
+                                        </div>
+                                        <div>
+                                            <div style={{
+                                                fontSize: '14px',
+                                                fontWeight: 600,
+                                                color: 'var(--text-primary)'
+                                            }}>
+                                                Your Staking on {getChainName(sourceChain).split(' ')[0]}
+                                            </div>
+                                            <div style={{
+                                                fontSize: '12px',
+                                                color: 'var(--text-secondary)'
+                                            }}>
+                                                Total Value: <span className="text-gradient" style={{ fontWeight: 600 }}>
+                                                    ${totalStakingValue.toFixed(2)}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                     
-                                    {/* Compact staking positions list */}
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                                    {/* Staking positions grid */}
+                                    <div className="multi-asset-grid" style={{ 
+                                        gap: 'var(--space-sm)',
+                                        marginBottom: 'var(--space-md)'
+                                    }}>
                                         {userStakingPositions.map((position, index) => (
-                                            <div key={index} style={{
+                                            <div key={index} className="glass-card" style={{
+                                                padding: 'var(--space-sm)',
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                gap: '4px',
-                                                padding: '4px 8px',
-                                                background: 'rgba(255, 255, 255, 0.7)',
-                                                borderRadius: '6px',
-                                                fontSize: '11px',
-                                                border: '1px solid rgba(34, 197, 94, 0.15)'
+                                                gap: 'var(--space-sm)',
+                                                background: 'var(--bg-glass)',
+                                                borderColor: 'var(--success)'
                                             }}>
-                                                <div style={{
-                                                    ...getTokenIconStyle(position.token),
-                                                    width: '16px',
-                                                    height: '16px',
-                                                    fontSize: '8px'
-                                                }}>
-                                                    {position.token}
+                                                <div className={`token-icon small ${position.token.toLowerCase()}`}>
+                                                    {position.token.slice(0, 3)}
                                                 </div>
-                                                <span style={{ fontWeight: 500 }}>
-                                                    {parseFloat(position.amount).toFixed(1)} {position.token}
-                                                </span>
-                                                <span style={{ color: '#6b7280', fontSize: '10px' }}>
-                                                    ${position.value.toFixed(0)}
-                                                </span>
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{
+                                                        fontSize: '12px',
+                                                        fontWeight: 600,
+                                                        color: 'var(--text-primary)'
+                                                    }}>
+                                                        {parseFloat(position.amount).toFixed(2)} {position.token}
+                                                    </div>
+                                                    <div style={{
+                                                        fontSize: '11px',
+                                                        color: 'var(--text-secondary)'
+                                                    }}>
+                                                        ${position.value.toFixed(0)}
+                                                    </div>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
 
-                                    {/* Compact option to use existing staking as collateral */}
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        paddingTop: '6px',
-                                        borderTop: '1px solid rgba(34, 197, 94, 0.15)'
+                                    {/* Enhanced staking option */}
+                                    <div className="glass-card" style={{
+                                        padding: 'var(--space-md)',
+                                        background: useExistingStaking ? 'rgba(6, 182, 212, 0.1)' : 'var(--bg-glass)',
+                                        borderColor: useExistingStaking ? 'var(--accent-primary)' : 'var(--border-glass)',
+                                        transition: 'all var(--transition-normal)'
                                     }}>
-                                        <input
-                                            type="checkbox"
-                                            id="useExistingStaking"
-                                            checked={useExistingStaking}
-                                            onChange={(e) => setUseExistingStaking(e.target.checked)}
-                                            style={{
-                                                width: '14px',
-                                                height: '14px',
-                                                accentColor: '#059669'
-                                            }}
-                                        />
-                                        <label htmlFor="useExistingStaking" style={{
-                                            fontSize: '12px',
-                                            fontWeight: 500,
-                                            color: '#059669',
+                                        <label style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 'var(--space-sm)',
                                             cursor: 'pointer',
-                                            lineHeight: 1.2
+                                            fontSize: '14px',
+                                            fontWeight: 500,
+                                            color: 'var(--text-primary)'
                                         }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={useExistingStaking}
+                                                onChange={(e) => setUseExistingStaking(e.target.checked)}
+                                                style={{
+                                                    width: '16px',
+                                                    height: '16px',
+                                                    accentColor: 'var(--accent-primary)'
+                                                }}
+                                            />
+                                            <i className="fas fa-shield-alt" style={{ color: 'var(--accent-primary)' }} />
                                             Use as additional collateral
+                                            {useExistingStaking && (
+                                                <span style={{
+                                                    marginLeft: 'auto',
+                                                    color: 'var(--success)',
+                                                    fontWeight: 600,
+                                                    fontSize: '12px'
+                                                }}>
+                                                    <i className="fas fa-check-circle" /> Enabled
+                                                </span>
+                                            )}
                                         </label>
-                                        {useExistingStaking && (
-                                            <span style={{
-                                                fontSize: '11px',
-                                                color: '#047857',
-                                                fontWeight: 600,
-                                                marginLeft: 'auto'
-                                            }}>
-                                                ✓ Enabled
-                                            </span>
-                                        )}
                                     </div>
                                 </div>
                             )}
 
-                            {/* Collateral Amount Input */}
+                            {/* Enhanced Collateral Amount Input */}
                             {collateralAsset && (
-                                <div>
+                                <div className="animate-slide-in">
                                     <div className="section-title">
+                                        <i className="fas fa-calculator" />
                                         {useExistingStaking ? 'Additional Collateral Amount (Optional)' : 'Collateral Amount'}
                                     </div>
                                     <div className="input-card">
-                                        <input
-                                            type="text"
-                                            className="amount-input"
-                                            placeholder={selectedAssets.length > 0 ? "Auto-calculated (editable)" : (useExistingStaking ? "Additional amount" : "Enter amount")}
-                                            value={collateralAmount}
-                                            disabled={false}
-                                            readOnly={false}
-                                            onChange={(e) => {
-                                                const value = e.target.value;
-                                                console.log('📝 Input change:', value);
-                                                if (value === '' || /^[0-9]*\.?[0-9]*$/.test(value)) {
-                                                    const dotCount = (value.match(/\./g) || []).length;
-                                                    if (dotCount <= 1) {
-                                                        // Always allow input, just warn if exceeding balance
-                                                        handleCollateralAmountChange(value);
-                                                        
-                                                        // Show warning only when user inputs a value exceeding balance
-                                                        if (value !== '' && parseFloat(value) > parseFloat(collateralAsset.amount || '0')) {
-                                                            showToast('Warning: Amount exceeds available balance', 'warning');
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 'var(--space-sm)',
+                                            marginBottom: 'var(--space-sm)'
+                                        }}>
+                                            <div className={`token-icon ${collateralAsset?.icon?.toLowerCase() || 'default'}`}>
+                                                {collateralAsset?.icon || 'ETH'}
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <input
+                                                    type="text"
+                                                    className="amount-input"
+                                                    placeholder={selectedAssets.length > 0 ? "Auto-calculated (editable)" : (useExistingStaking ? "Additional amount" : "Enter amount")}
+                                                    value={collateralAmount}
+                                                    onChange={(e) => {
+                                                        const value = e.target.value;
+                                                        if (value === '' || /^[0-9]*\.?[0-9]*$/.test(value)) {
+                                                            const dotCount = (value.match(/\./g) || []).length;
+                                                            if (dotCount <= 1) {
+                                                                handleCollateralAmountChange(value);
+                                                                if (value !== '' && parseFloat(value) > parseFloat(collateralAsset.amount || '0')) {
+                                                                    showToast('Warning: Amount exceeds available balance', 'warning');
+                                                                }
+                                                            }
                                                         }
-                                                    }
-                                                }
-                                            }}
-                                            onKeyDown={(e) => {
-                                                console.log('⌨️ Key pressed:', e.key);
-                                                const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
-                                                const isNumber = /^[0-9]$/.test(e.key);
-                                                const isDot = e.key === '.';
-                                                
-                                                if (!allowedKeys.includes(e.key) && !isNumber && !isDot) {
-                                                    e.preventDefault();
-                                                }
-                                                
-                                                if (isDot && collateralAmount.includes('.')) {
-                                                    e.preventDefault();
-                                                }
-                                            }}
-                                            onFocus={() => {
-                                                console.log('🎯 Input focused');
-                                            }}
-                                            onBlur={() => {
-                                                console.log('🔚 Input blurred');
-                                            }}
-                                        />
-                                        <div className="amount-value">${calculateUSDValue(collateralAmount, collateralAsset?.token || 'ETH')}</div>
-                                        <div style={getTokenIconStyle(collateralAsset?.icon || 'ETH')}>{collateralAsset?.icon || 'ETH'}</div>
-                                        <div className="token-balance">
-                                            <span>Balance: {collateralAsset ? collateralAsset.amount : '0'}</span>
+                                                    }}
+                                                />
+                                            </div>
                                             <button
                                                 onClick={handleMaxCollateral}
-                                                style={{
-                                                    background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-                                                    border: 'none',
-                                                    borderRadius: '6px',
-                                                    color: 'white',
-                                                    padding: '4px 8px',
-                                                    fontSize: '12px',
-                                                    fontWeight: 600,
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.2s ease',
-                                                    boxShadow: '0 2px 4px rgba(59, 130, 246, 0.2)'
-                                                }}
-                                                onMouseEnter={(e) => {
-                                                    (e.target as HTMLElement).style.transform = 'scale(1.05)';
-                                                    (e.target as HTMLElement).style.boxShadow = '0 4px 8px rgba(59, 130, 246, 0.3)';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    (e.target as HTMLElement).style.transform = 'scale(1)';
-                                                    (e.target as HTMLElement).style.boxShadow = '0 2px 4px rgba(59, 130, 246, 0.2)';
-                                                }}
+                                                className="max-button"
                                             >
                                                 MAX
                                             </button>
+                                        </div>
+                                        
+                                        <div className="amount-value">
+                                            ${calculateUSDValue(collateralAmount, collateralAsset?.token || 'ETH')}
+                                        </div>
+                                        
+                                        <div className="token-balance">
+                                            <span>Balance: {collateralAsset ? collateralAsset.amount : '0'}</span>
+                                            <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>
+                                                {collateralAsset?.icon || 'ETH'}
+                                            </span>
                                         </div>
                                     </div>
                                     
                                     {/* Auto-calculation hint */}
                                     {selectedAssets.length > 0 && (
-                                        <div style={{
-                                            fontSize: '12px',
-                                            color: '#059669',
-                                            marginTop: '4px',
-                                            fontStyle: 'italic'
+                                        <div className="glass-card" style={{
+                                            background: 'rgba(6, 182, 212, 0.05)',
+                                            borderColor: 'var(--accent-primary)',
+                                            padding: 'var(--space-sm)',
+                                            marginTop: 'var(--space-sm)'
                                         }}>
-                                            💡 Auto-calculated based on ${selectedAssets.reduce((sum, asset) => sum + asset.value, 0).toFixed(2)} borrowing (you can adjust manually)
+                                            <div style={{
+                                                fontSize: '12px',
+                                                color: 'var(--accent-primary)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 'var(--space-xs)'
+                                            }}>
+                                                <i className="fas fa-lightbulb" />
+                                                Auto-calculated for ${selectedAssets.reduce((sum, asset) => sum + asset.value, 0).toFixed(2)} borrowing
+                                                <span style={{ marginLeft: 'auto', fontSize: '11px' }}>
+                                                    (Editable)
+                                                </span>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
                             )}
 
-                            {/* Step 2: Lending Target Chain */}
-                            <div className="section-title">Step 2: Select Lending Target Chain</div>
+                            {/* Step 2: Enhanced Lending Target Chain */}
+                            <div className="section-title">
+                                <i className="fas fa-exchange-alt" />
+                                Select Lending Target Chain
+                            </div>
                             <Dropdown
                                 options={chainOptions.filter(c => c.value !== sourceChain)}
                                 value={targetChain}
@@ -1197,45 +1226,63 @@ const Home: React.FC = () => {
                                 placeholder="Select lending chain"
                             />
 
-
-
-
-
-
-
-                            {/* Health Factor Warning */}
+                            {/* Enhanced Health Factor Warning */}
                             {calculateHealthFactor() <= 50 && selectedAssets.length > 0 && collateralAmount && (
-                                <div style={{
-                                    background: 'rgba(239, 68, 68, 0.1)',
-                                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                                    borderRadius: '12px',
-                                    padding: '12px',
-                                    marginBottom: '16px'
+                                <div className="glass-card status-danger animate-pulse" style={{
+                                    margin: 'var(--space-md) 0',
+                                    position: 'relative',
+                                    overflow: 'hidden'
                                 }}>
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        height: '2px',
+                                        background: 'var(--danger)'
+                                    }} />
+                                    
                                     <div style={{
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '8px',
-                                        color: '#dc2626'
+                                        gap: 'var(--space-sm)',
+                                        marginBottom: 'var(--space-sm)'
                                     }}>
-                                        <i className="fas fa-exclamation-triangle"></i>
-                                        <span style={{ fontSize: '14px', fontWeight: 500 }}>
-                                            Risk Too High - Health Factor: {calculateHealthFactor().toFixed(0)}%
-                                        </span>
-                                    </div>
-                                    <div style={{ 
-                                        fontSize: '12px', 
-                                        color: '#dc2626',
-                                        marginTop: '4px',
-                                        lineHeight: 1.4
-                                    }}>
-                                        Please reduce lending amount or increase collateral. Health factor must be above 50% to proceed.
+                                        <div style={{
+                                            width: '32px',
+                                            height: '32px',
+                                            background: 'var(--danger)',
+                                            borderRadius: '50%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: 'white'
+                                        }}>
+                                            <i className="fas fa-exclamation-triangle" />
+                                        </div>
+                                        <div>
+                                            <div style={{
+                                                fontSize: '14px',
+                                                fontWeight: 600,
+                                                color: 'var(--danger)'
+                                            }}>
+                                                Risk Too High - Health Factor: {calculateHealthFactor().toFixed(0)}%
+                                            </div>
+                                            <div style={{ 
+                                                fontSize: '12px', 
+                                                color: 'var(--danger)',
+                                                lineHeight: 1.4
+                                            }}>
+                                                Reduce lending amount or increase collateral. Health factor must be above 50%.
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             )}
 
+                            {/* Enhanced Execute Button */}
                             <button 
-                                className="button primary"
+                                className={`button-primary button-full ${(selectedAssets.length === 0 || !collateralAmount || calculateHealthFactor() <= 50) ? 'disabled' : ''}`}
                                 onClick={handleLendingExecute}
                                 disabled={
                                     selectedAssets.length === 0 || 
@@ -1243,10 +1290,14 @@ const Home: React.FC = () => {
                                     calculateHealthFactor() <= 50
                                 }
                                 style={{
-                                    opacity: (selectedAssets.length === 0 || !collateralAmount || calculateHealthFactor() <= 50) ? 0.6 : 1,
-                                    cursor: (selectedAssets.length === 0 || !collateralAmount || calculateHealthFactor() <= 50) ? 'not-allowed' : 'pointer'
+                                    padding: '16px var(--space-lg)',
+                                    fontSize: '16px',
+                                    fontWeight: 700,
+                                    borderRadius: 'var(--radius-lg)',
+                                    marginTop: 'var(--space-lg)'
                                 }}
                             >
+                                <i className="fas fa-rocket" style={{ marginRight: 'var(--space-sm)' }} />
                                 {calculateHealthFactor() <= 50 && selectedAssets.length > 0 && collateralAmount ? 
                                     'Risk Too High - Cannot Proceed' :
                                     sourceChain === targetChain ? 
@@ -1259,9 +1310,12 @@ const Home: React.FC = () => {
 
                     {/* Bridge Mode */}
                     {activeTab === 'bridge' && (
-                        <div className="trading-mode active">
-                            {/* Step 1: Bridge Source Chain */}
-                            <div className="section-title">Step 1: Select Source Chain</div>
+                        <div className="trading-mode active animate-fade-in">
+                            {/* Step 1: Enhanced Bridge Source Chain */}
+                            <div className="section-title">
+                                <i className="fas fa-map-marker-alt" />
+                                Select Source Chain
+                            </div>
                             <Dropdown
                                 options={chainOptions}
                                 value={bridgeSourceChain}
@@ -1270,7 +1324,10 @@ const Home: React.FC = () => {
                             />
 
                             {/* Source Asset Selection */}
-                            <div className="section-title">Source Asset</div>
+                            <div className="section-title">
+                                <i className="fas fa-coins" />
+                                Source Asset
+                            </div>
                             <Dropdown
                                 options={bridgeAssetOptions}
                                 value={bridgeAsset ? bridgeAsset.value : ''}
@@ -1278,79 +1335,67 @@ const Home: React.FC = () => {
                                 placeholder="Select asset to bridge"
                             />
 
-                            {/* Source Amount Input */}
+                            {/* Enhanced Source Amount Input */}
                             {bridgeAsset && (
-                                <div>
-                                    <div className="section-title">Source Amount</div>
+                                <div className="animate-slide-in">
+                                    <div className="section-title">
+                                        <i className="fas fa-calculator" />
+                                        Source Amount
+                                    </div>
                                     <div className="input-card">
-                                        <input
-                                            type="text"
-                                            className="amount-input"
-                                            placeholder="Enter amount"
-                                            value={bridgeAmount}
-                                            onChange={(e) => {
-                                                const value = e.target.value;
-                                                // Strict input validation: only allow numbers and decimal point
-                                                if (value === '' || /^[0-9]*\.?[0-9]*$/.test(value)) {
-                                                                                                          // Additional check: no multiple decimal points allowed
-                                                    const dotCount = (value.match(/\./g) || []).length;
-                                                    if (dotCount <= 1) {
-                                                        setBridgeAmount(value);
-                                                    }
-                                                }
-                                            }}
-                                            onKeyDown={(e) => {
-                                                // Prevent dangerous character input
-                                                const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
-                                                const isNumber = /^[0-9]$/.test(e.key);
-                                                const isDot = e.key === '.';
-                                                
-                                                if (!allowedKeys.includes(e.key) && !isNumber && !isDot) {
-                                                    e.preventDefault();
-                                                }
-                                                
-                                                // Prevent multiple decimal point input
-                                                if (isDot && bridgeAmount.includes('.')) {
-                                                    e.preventDefault();
-                                                }
-                                            }}
-                                        />
-                                        <div className="amount-value">${calculateUSDValue(bridgeAmount, bridgeAsset?.token || 'ETH')}</div>
-                                        <div style={getTokenIconStyle(bridgeAsset?.icon || 'ETH')}>{bridgeAsset?.icon || 'ETH'}</div>
-                                        <div className="token-balance">
-                                            <span>Balance: {bridgeAsset ? bridgeAsset.amount : '0'}</span>
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 'var(--space-sm)',
+                                            marginBottom: 'var(--space-sm)'
+                                        }}>
+                                            <div className={`token-icon ${bridgeAsset?.icon?.toLowerCase() || 'default'}`}>
+                                                {bridgeAsset?.icon || 'ETH'}
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <input
+                                                    type="text"
+                                                    className="amount-input"
+                                                    placeholder="Enter amount"
+                                                    value={bridgeAmount}
+                                                    onChange={(e) => {
+                                                        const value = e.target.value;
+                                                        if (value === '' || /^[0-9]*\.?[0-9]*$/.test(value)) {
+                                                            const dotCount = (value.match(/\./g) || []).length;
+                                                            if (dotCount <= 1) {
+                                                                setBridgeAmount(value);
+                                                            }
+                                                        }
+                                                    }}
+                                                />
+                                            </div>
                                             <button
                                                 onClick={handleMaxBridge}
-                                                style={{
-                                                    background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-                                                    border: 'none',
-                                                    borderRadius: '6px',
-                                                    color: 'white',
-                                                    padding: '4px 8px',
-                                                    fontSize: '12px',
-                                                    fontWeight: 600,
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.2s ease',
-                                                    boxShadow: '0 2px 4px rgba(59, 130, 246, 0.2)'
-                                                }}
-                                                onMouseEnter={(e) => {
-                                                    (e.target as HTMLElement).style.transform = 'scale(1.05)';
-                                                    (e.target as HTMLElement).style.boxShadow = '0 4px 8px rgba(59, 130, 246, 0.3)';
-                                                }}
-                                                onMouseLeave={(e) => {
-                                                    (e.target as HTMLElement).style.transform = 'scale(1)';
-                                                    (e.target as HTMLElement).style.boxShadow = '0 2px 4px rgba(59, 130, 246, 0.2)';
-                                                }}
+                                                className="max-button"
                                             >
                                                 MAX
                                             </button>
+                                        </div>
+                                        
+                                        <div className="amount-value">
+                                            ${calculateUSDValue(bridgeAmount, bridgeAsset?.token || 'ETH')}
+                                        </div>
+                                        
+                                        <div className="token-balance">
+                                            <span>Balance: {bridgeAsset ? bridgeAsset.amount : '0'}</span>
+                                            <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>
+                                                {bridgeAsset?.icon || 'ETH'}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Step 2: Target Chain */}
-                            <div className="section-title">Step 2: Select Target Chain</div>
+                            {/* Step 2: Enhanced Target Chain */}
+                            <div className="section-title">
+                                <i className="fas fa-flag-checkered" />
+                                Select Target Chain
+                            </div>
                             <Dropdown
                                 options={chainOptions.filter(c => c.value !== bridgeSourceChain)}
                                 value={bridgeTargetChain}
@@ -1358,60 +1403,82 @@ const Home: React.FC = () => {
                                 placeholder="Select target chain"
                             />
 
-                            {/* Bridge Info */}
+                            {/* Enhanced Bridge Info */}
                             {bridgeTargetChain && (
-                                <div style={{
-                                    background: 'rgba(255, 255, 255, 0.6)',
-                                    borderRadius: '12px',
-                                    padding: '12px',
-                                    marginBottom: '16px'
+                                <div className="glass-card" style={{
+                                    background: 'rgba(6, 182, 212, 0.1)',
+                                    borderColor: 'var(--accent-primary)',
+                                    margin: 'var(--space-md) 0'
                                 }}>
                                     <div style={{
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '8px',
+                                        gap: 'var(--space-sm)',
                                         fontSize: '14px',
-                                        color: 'var(--secondary-text)'
+                                        color: 'var(--text-primary)'
                                     }}>
-                                        <i className="fas fa-bridge" style={{ color: 'var(--accent-color)' }}></i>
-                                        <span>Bridge Path: {getChainName(bridgeSourceChain)} → {getChainName(bridgeTargetChain)}</span>
+                                        <div style={{
+                                            width: '32px',
+                                            height: '32px',
+                                            background: 'var(--accent-gradient)',
+                                            borderRadius: '50%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: 'white'
+                                        }}>
+                                            <i className="fas fa-route" />
+                                        </div>
+                                        <div>
+                                            <div style={{ fontWeight: 600 }}>Bridge Path</div>
+                                            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                                                {getChainName(bridgeSourceChain)} → {getChainName(bridgeTargetChain)}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Bridge Summary */}
+                            {/* Enhanced Bridge Summary */}
                             {bridgeAmount && bridgeTargetChain && (
-                                <div style={{
-                                    background: 'rgba(255, 255, 255, 0.6)',
-                                    borderRadius: '12px',
-                                    padding: '16px',
-                                    marginBottom: '16px'
+                                <div className="glass-card animate-slide-in" style={{
+                                    margin: 'var(--space-md) 0'
                                 }}>
-                                    <div className="stat-row compact">
-                                        <span>Source Amount</span>
-                                        <span>{bridgeAmount} {bridgeAsset?.label}</span>
+                                    <div className="section-title" style={{ marginBottom: 'var(--space-md)' }}>
+                                        <i className="fas fa-chart-bar" />
+                                        Bridge Summary
                                     </div>
-                                    <div className="stat-row compact">
-                                        <span>Target Assets</span>
-                                        <span>{bridgeTargetAssets.length} types</span>
-                                    </div>
-                                    <div className="stat-row compact">
-                                        <span>Total Bridgeable</span>
-                                        <span>${bridgeTargetAssets.reduce((sum, asset) => sum + asset.value, 0).toFixed(2)}</span>
-                                    </div>
-                                    <div className="stat-row compact">
-                                        <span>Bridge Fee</span>
-                                        <span>~$2.50</span>
-                                    </div>
-                                    <div className="stat-row compact">
-                                        <span>Est. Time</span>
-                                        <span>~7 minutes</span>
+                                    
+                                    <div style={{ display: 'grid', gap: 'var(--space-sm)' }}>
+                                        <div className="stat-row">
+                                            <span className="stat-label">Source Amount</span>
+                                            <span className="stat-value">{bridgeAmount} {bridgeAsset?.label}</span>
+                                        </div>
+                                        <div className="stat-row">
+                                            <span className="stat-label">Target Assets</span>
+                                            <span className="stat-value">{bridgeTargetAssets.length} types</span>
+                                        </div>
+                                        <div className="stat-row">
+                                            <span className="stat-label">Total Bridgeable</span>
+                                            <span className="stat-value text-gradient">
+                                                ${bridgeTargetAssets.reduce((sum, asset) => sum + asset.value, 0).toFixed(2)}
+                                            </span>
+                                        </div>
+                                        <div className="stat-row">
+                                            <span className="stat-label">Bridge Fee</span>
+                                            <span className="stat-value">~$2.50</span>
+                                        </div>
+                                        <div className="stat-row">
+                                            <span className="stat-label">Est. Time</span>
+                                            <span className="stat-value">~7 minutes</span>
+                                        </div>
                                     </div>
                                 </div>
                             )}
 
+                            {/* Enhanced Bridge Execute Button */}
                             <button 
-                                className="button primary"
+                                className={`button-primary button-full ${(bridgeTargetAssets.length === 0 || !bridgeAmount || !bridgeTargetChain || !bridgeAsset) ? 'disabled' : ''}`}
                                 onClick={handleBridgeExecute}
                                 disabled={
                                     bridgeTargetAssets.length === 0 || 
@@ -1420,21 +1487,28 @@ const Home: React.FC = () => {
                                     !bridgeAsset
                                 }
                                 style={{
-                                    opacity: (bridgeTargetAssets.length === 0 || !bridgeAmount || !bridgeTargetChain || !bridgeAsset) ? 0.6 : 1,
-                                    cursor: (bridgeTargetAssets.length === 0 || !bridgeAmount || !bridgeTargetChain || !bridgeAsset) ? 'not-allowed' : 'pointer'
+                                    padding: '16px var(--space-lg)',
+                                    fontSize: '16px',
+                                    fontWeight: 700,
+                                    borderRadius: 'var(--radius-lg)',
+                                    marginTop: 'var(--space-lg)'
                                 }}
                             >
+                                <i className="fas fa-exchange-alt" style={{ marginRight: 'var(--space-sm)' }} />
                                 Execute Cross-Chain Bridge ({bridgeTargetAssets.length} assets)
                             </button>
                         </div>
                     )}
                 </div>
 
-                {/* Center Panel - Multi Asset Selector or Bridge Info */}
+                {/* Center Panel - Enhanced Multi Asset Selector */}
                 <div className="center-panel">
                     {activeTab === 'borrow' && (
-                        <div className="glass-card">
-                            <div className="section-title large">Step 3: Select Lending Assets</div>
+                        <div className="glass-card glass-card-glow animate-slide-in">
+                            <div className="section-title large">
+                                <i className="fas fa-hand-holding-usd" />
+                                Select Lending Assets
+                            </div>
                             <MultiAssetSelector 
                                 selectedChain={targetChain}
                                 onAssetsChange={handleAssetsChange}
@@ -1443,8 +1517,11 @@ const Home: React.FC = () => {
                     )}
                     
                     {activeTab === 'bridge' && (
-                        <div className="glass-card">
-                            <div className="section-title large">Step 3: Select Target Assets</div>
+                        <div className="glass-card glass-card-glow animate-slide-in">
+                            <div className="section-title large">
+                                <i className="fas fa-target" />
+                                Select Target Assets
+                            </div>
                             <CrossChainAssetSelector
                                 sourceChain={parseInt(bridgeSourceChain)}
                                 targetChain={parseInt(bridgeTargetChain)}
@@ -1456,106 +1533,110 @@ const Home: React.FC = () => {
                     )}
                 </div>
 
-                {/* Right Panel - Collateral & Lending Summary */}
-                <div className="info-panel glass-card info-card">
-                    <div className="">
+                {/* Right Panel - Enhanced Summary Dashboard */}
+                <div className="info-panel">
+                    <div className="glass-card glass-card-strong">
+                        {/* Enhanced Header */}
                         <div style={{
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
-                            marginBottom: '16px',
-                            paddingBottom: '12px',
-                            borderBottom: '1px solid var(--border-color)'
+                            marginBottom: 'var(--space-lg)',
+                            paddingBottom: 'var(--space-md)',
+                            borderBottom: '1px solid var(--border-glass)'
                         }}>
-                            <h3 style={{
-                                margin: 0,
-                                fontSize: '16px',
-                                fontWeight: 600,
-                                color: 'var(--text-color)'
-                            }}>💼 Collateral & Lending Summary</h3>
                             <div style={{
-                                width: '24px',
-                                height: '24px',
-                                borderRadius: '50%',
-                                background: 'var(--accent-color)',
-                                color: 'white',
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '12px'
+                                gap: 'var(--space-sm)'
                             }}>
-                                <i className="fas fa-chart-line"></i>
+                                <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    background: 'var(--accent-gradient)',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'white'
+                                }}>
+                                    <i className="fas fa-chart-line" />
+                                </div>
+                                <div>
+                                    <h3 style={{
+                                        margin: 0,
+                                        fontSize: '18px',
+                                        fontWeight: 700,
+                                        color: 'var(--text-primary)'
+                                    }}>
+                                        Portfolio Summary
+                                    </h3>
+                                    <div style={{
+                                        fontSize: '12px',
+                                        color: 'var(--text-secondary)'
+                                    }}>
+                                        Collateral & Lending Overview
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Health Factor - Prominent Display */}
-                        <div style={{
-                            background: calculateHealthFactor() > 75 ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05))' : 
-                                       calculateHealthFactor() > 50 ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(251, 191, 36, 0.05))' : 
-                                       'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05))',
-                            borderRadius: '16px',
-                            padding: '20px',
-                            marginBottom: '20px',
-                            border: `2px solid ${calculateHealthFactor() > 75 ? 'rgba(34, 197, 94, 0.2)' : 
-                                               calculateHealthFactor() > 50 ? 'rgba(251, 191, 36, 0.2)' : 
-                                               'rgba(239, 68, 68, 0.2)'}`,
-                            position: 'relative'
+                        {/* Enhanced Health Factor Display */}
+                        <div className="health-indicator" style={{
+                            background: calculateHealthFactor() > 75 ? 
+                                'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05))' : 
+                                calculateHealthFactor() > 50 ? 
+                                'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05))' : 
+                                'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05))',
+                            borderColor: calculateHealthFactor() > 75 ? 'var(--success)' : 
+                                        calculateHealthFactor() > 50 ? 'var(--warning)' : 'var(--danger)',
+                            position: 'relative',
+                            overflow: 'hidden'
                         }}>
+                            <div style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                height: '3px',
+                                background: calculateHealthFactor() > 75 ? 
+                                    'linear-gradient(90deg, var(--success), #10b981)' : 
+                                    calculateHealthFactor() > 50 ? 
+                                    'linear-gradient(90deg, var(--warning), #f59e0b)' : 
+                                    'linear-gradient(90deg, var(--danger), #ef4444)'
+                            }} />
+                            
+                            <div className="health-label">
+                                <i className="fas fa-heart-pulse" />
+                                Health Factor
+                            </div>
+                            
                             <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
-                                marginBottom: '12px'
+                                marginBottom: 'var(--space-sm)'
                             }}>
-                                <div style={{
-                                    fontSize: '16px',
-                                    fontWeight: 700,
-                                    color: 'var(--text-color)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px'
-                                }}>
-                                    <i className="fas fa-heart-pulse" style={{
-                                        color: calculateHealthFactor() > 75 ? '#22c55e' : 
-                                               calculateHealthFactor() > 50 ? '#f59e0b' : 
-                                               '#ef4444'
-                                    }}></i>
-                                    Health Factor
+                                <div className="health-bar">
+                                    <div 
+                                        className="health-fill"
+                                        style={{
+                                            width: `${Math.min(100, calculateHealthFactor())}%`
+                                        }}
+                                    />
                                 </div>
-                                <div style={{
-                                    fontSize: '24px',
-                                    fontWeight: 800,
-                                    color: calculateHealthFactor() > 75 ? '#22c55e' : 
-                                           calculateHealthFactor() > 50 ? '#f59e0b' : 
-                                           '#ef4444'
-                                }}>
+                                <div className={`health-value ${calculateHealthFactor() > 75 ? 'health-good' : 
+                                              calculateHealthFactor() > 50 ? 'health-warning' : 'health-danger'}`}>
                                     {calculateHealthFactor().toFixed(0)}%
                                 </div>
                             </div>
                             
-                            {/* Health Factor Progress Bar */}
-                            <div style={{
-                                width: '100%',
-                                height: '8px',
-                                background: 'rgba(0, 0, 0, 0.1)',
-                                borderRadius: '4px',
-                                overflow: 'hidden',
-                                marginBottom: '8px'
-                            }}>
-                                <div style={{
-                                    height: '100%',
-                                    width: `${Math.min(100, calculateHealthFactor())}%`,
-                                    background: calculateHealthFactor() > 75 ? 'linear-gradient(90deg, #22c55e, #16a34a)' : 
-                                               calculateHealthFactor() > 50 ? 'linear-gradient(90deg, #f59e0b, #d97706)' : 
-                                               'linear-gradient(90deg, #ef4444, #dc2626)',
-                                    transition: 'width 0.3s ease'
-                                }}></div>
-                            </div>
-                            
                             <div style={{
                                 fontSize: '12px',
-                                color: 'var(--secondary-text)',
-                                textAlign: 'center'
+                                textAlign: 'center',
+                                color: calculateHealthFactor() > 75 ? 'var(--success)' : 
+                                       calculateHealthFactor() > 50 ? 'var(--warning)' : 'var(--danger)',
+                                fontWeight: 600
                             }}>
                                 {calculateHealthFactor() > 75 ? '✅ Healthy - Low Risk' : 
                                  calculateHealthFactor() > 50 ? '⚠️ Moderate Risk' : 
@@ -1563,98 +1644,79 @@ const Home: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Total Collateral */}
-                        <div style={{
-                            background: 'rgba(255, 255, 255, 0.6)',
-                            borderRadius: '12px',
-                            padding: '16px',
-                            marginBottom: '16px'
-                        }}>
-                            <div className="stat-row compact" style={{ 
-                                background: 'rgba(59, 130, 246, 0.08)',
-                                padding: '8px 12px',
-                                borderRadius: '8px',
-                                marginBottom: '8px'
-                            }}>
-                                <span style={{ fontWeight: 600 }}>Total Collateral Value</span>
-                                <span style={{ fontWeight: 600, color: '#3b82f6' }}>
+                        {/* Enhanced Total Collateral */}
+                        <div className="glass-card" style={{ marginBottom: 'var(--space-lg)' }}>
+                            <div className="stat-row highlight">
+                                <span className="stat-label">
+                                    <i className="fas fa-shield-alt" style={{ marginRight: 'var(--space-xs)' }} />
+                                    Total Collateral Value
+                                </span>
+                                <span className="stat-value" style={{ fontSize: '18px', fontWeight: 700 }}>
                                     ${calculateTotalCollateralValue().toFixed(2)}
                                 </span>
                             </div>
                             
                             {/* Collateral breakdown */}
                             {useExistingStaking && totalStakingValue > 0 && (
-                                <div style={{ marginLeft: '8px', marginBottom: '8px' }}>
-                                    <div className="stat-row compact" style={{ fontSize: '13px', color: '#6b7280' }}>
-                                        <span>• From staking positions</span>
-                                        <span>${totalStakingValue.toFixed(2)}</span>
-                                    </div>
+                                <div className="stat-row" style={{ fontSize: '13px', marginTop: 'var(--space-sm)' }}>
+                                    <span className="stat-label">• From staking positions</span>
+                                    <span className="stat-value">${totalStakingValue.toFixed(2)}</span>
                                 </div>
                             )}
                             
                             {collateralAmount && (
-                                <div style={{ marginLeft: '8px', marginBottom: '8px' }}>
-                                    <div className="stat-row compact" style={{ fontSize: '13px', color: '#6b7280' }}>
-                                        <span>• From new collateral</span>
-                                        <span>${calculateUSDValue(collateralAmount, collateralAsset?.token || 'ETH')}</span>
-                                    </div>
+                                <div className="stat-row" style={{ fontSize: '13px', marginTop: 'var(--space-sm)' }}>
+                                    <span className="stat-label">• From new collateral</span>
+                                    <span className="stat-value">
+                                        ${calculateUSDValue(collateralAmount, collateralAsset?.token || 'ETH')}
+                                    </span>
                                 </div>
                             )}
                         </div>
 
-                        {/* Borrowing Capacity */}
-                        <div style={{
-                            background: 'rgba(255, 255, 255, 0.6)',
-                            borderRadius: '12px',
-                            padding: '16px',
-                            marginBottom: '16px'
-                        }}>
-                            <h4 style={{ fontSize: '14px', marginBottom: '12px', color: 'var(--text-color)' }}>
+                        {/* Enhanced Borrowing Information */}
+                        <div className="glass-card" style={{ marginBottom: 'var(--space-lg)' }}>
+                            <h4 className="section-title" style={{ fontSize: '16px' }}>
+                                <i className="fas fa-chart-pie" />
                                 Borrowing Information
                             </h4>
-                            <div style={{ display: 'grid', gap: '8px' }}>
-                                {/* Max borrowing capacity */}
-                                <div className="stat-row compact" style={{ 
-                                    background: 'rgba(34, 197, 94, 0.08)',
-                                    padding: '8px 12px',
-                                    borderRadius: '8px',
-                                    marginBottom: '8px'
-                                }}>
-                                    <span>Max Borrowing Capacity (75% LTV)</span>
-                                    <span style={{ fontWeight: 600, color: '#22c55e' }}>
+                            
+                            <div style={{ display: 'grid', gap: 'var(--space-sm)' }}>
+                                <div className="stat-row highlight" style={{ marginBottom: 'var(--space-sm)' }}>
+                                    <span className="stat-label">Max Borrowing Capacity (75% LTV)</span>
+                                    <span className="stat-value text-gradient" style={{ fontWeight: 700 }}>
                                         ${calculateMaxBorrow(collateralAmount)}
                                     </span>
                                 </div>
                                 
-                                {/* Current borrowing */}
-                                <div className="stat-row compact">
-                                    <span>Selected Assets to Borrow</span>
-                                    <span>{selectedAssets.length} types</span>
+                                <div className="stat-row">
+                                    <span className="stat-label">Selected Assets to Borrow</span>
+                                    <span className="stat-value">{selectedAssets.length} types</span>
                                 </div>
-                                <div className="stat-row compact">
-                                    <span>Total Borrowing Amount</span>
-                                    <span>${selectedAssets.reduce((sum, asset) => sum + asset.value, 0).toFixed(2)}</span>
+                                <div className="stat-row">
+                                    <span className="stat-label">Total Borrowing Amount</span>
+                                    <span className="stat-value">
+                                        ${selectedAssets.reduce((sum, asset) => sum + asset.value, 0).toFixed(2)}
+                                    </span>
                                 </div>
-                                <div className="stat-row compact">
-                                    <span>Est. Interest Rate</span>
-                                    <span>2.5%</span>
+                                <div className="stat-row">
+                                    <span className="stat-label">Est. Interest Rate</span>
+                                    <span className="stat-value">2.5%</span>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Asset Prices & Protocol Info */}
-                        <div style={{
-                            background: 'rgba(255, 255, 255, 0.6)',
-                            borderRadius: '12px',
-                            padding: '16px'
-                        }}>
-                            <h4 style={{ fontSize: '14px', marginBottom: '12px', color: 'var(--text-color)' }}>
+                        {/* Enhanced Market Information */}
+                        <div className="glass-card">
+                            <h4 className="section-title" style={{ fontSize: '16px' }}>
+                                <i className="fas fa-globe" />
                                 Market Information
                             </h4>
-                            <div style={{ display: 'grid', gap: '8px' }}>
-                                <div className="stat-row compact">
-                                    <span>Current Prices</span>
-                                    <div style={{ fontSize: '11px', color: 'var(--secondary-text)', textAlign: 'right' }}>
+                            
+                            <div style={{ display: 'grid', gap: 'var(--space-sm)' }}>
+                                <div className="stat-row">
+                                    <span className="stat-label">Current Prices</span>
+                                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'right' }}>
                                         {assetPrices.ETH && (
                                             <div>ETH: {formatPrice(assetPrices.ETH.price)}</div>
                                         )}
@@ -1666,28 +1728,40 @@ const Home: React.FC = () => {
                                         )}
                                     </div>
                                 </div>
-                                <div className="stat-row compact">
-                                    <span>Price Updates</span>
-                                    <span style={{ fontSize: '12px', color: 'var(--secondary-text)' }}>
-                                        {Object.keys(assetPrices).length > 0 ? 'Live Chainlink' : 'Loading...'}
+                                <div className="stat-row">
+                                    <span className="stat-label">Price Updates</span>
+                                    <span className="stat-value" style={{ 
+                                        fontSize: '12px',
+                                        color: Object.keys(assetPrices).length > 0 ? 'var(--success)' : 'var(--warning)'
+                                    }}>
+                                        {Object.keys(assetPrices).length > 0 ? 
+                                            <>
+                                                <i className="fas fa-satellite-dish" /> Live Chainlink
+                                            </> : 
+                                            <>
+                                                <i className="fas fa-spinner animate-spin" /> Loading...
+                                            </>
+                                        }
                                     </span>
                                 </div>
-                                <div className="stat-row compact">
-                                    <span>Cross-chain Path</span>
-                                    <span style={{ fontSize: '12px', color: 'var(--secondary-text)' }}>
+                                <div className="stat-row">
+                                    <span className="stat-label">Cross-chain Path</span>
+                                    <span className="stat-value" style={{ fontSize: '12px' }}>
                                         {sourceChain && targetChain ? 
-                                            `${getChainName(sourceChain)} → ${getChainName(targetChain)}` :
+                                            <>
+                                                <i className="fas fa-route" /> {getChainName(sourceChain)} → {getChainName(targetChain)}
+                                            </> :
                                             'Select chains'
                                         }
                                     </span>
                                 </div>
-                                <div className="stat-row compact">
-                                    <span>Protocol Fee</span>
-                                    <span>0.1%</span>
+                                <div className="stat-row">
+                                    <span className="stat-label">Protocol Fee</span>
+                                    <span className="stat-value">0.1%</span>
                                 </div>
-                                <div className="stat-row compact">
-                                    <span>Est. Bridge Time</span>
-                                    <span>~7 minutes</span>
+                                <div className="stat-row">
+                                    <span className="stat-label">Est. Bridge Time</span>
+                                    <span className="stat-value">~7 minutes</span>
                                 </div>
                             </div>
                         </div>
@@ -1695,17 +1769,8 @@ const Home: React.FC = () => {
                 </div>
             </div>
 
-
-
             {/* Toast Container for notifications */}
             <ToastContainer />
-
-            <style jsx>{`
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-            `}</style>
         </div>
     );
 };
