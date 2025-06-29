@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAccount, useChainId } from 'wagmi';
 import { formatUnits } from 'viem';
+import { sepolia, bscTestnet } from 'wagmi/chains';
 import { useToast } from './Toast';
 import { getUserAssetBalance } from '../utils/balance';
+import useTransactions  from '../hooks/useTransactions';
+import { TransactionFilter } from '../utils/transactionStorage';
+import { poolList } from '../config'
+import { getLoan } from '../utils/pool';
 
 interface RepayModalProps {
   isOpen: boolean;
@@ -36,11 +41,49 @@ const RepayModal: React.FC<RepayModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [userBalance, setUserBalance] = useState('0');
 
+  const {
+    applyFilter,
+    filteredTransactions,
+  } = useTransactions();
+
   // Load user's borrowed assets
   useEffect(() => {
     const loadBorrowedAssets = async () => {
+          const sourceAssetsPromises = poolList.filter(pool => pool.chainId === bscTestnet.id).map(async (pool) => {
+            let loan = null;
+            if (address) {
+                try {
+                    loan = await getLoan(
+                        pool.address, 
+                        '0xa28C606a33AF8175F3bBf71d74796aDa360f4C49',
+                        address,
+                        sepolia.id
+                    );
+                    console.log(`User ${pool.name} loan:`, loan);
+                } catch (error) {
+                    console.log("Failed to get user asset balance:", error);
+                }
+              return {
+                symbol: pool.name,
+                amount: loan.amount,
+                value: asset.value,
+                chainId: asset.chainId,
+                address: asset.address,
+                interestAccrued: calculateInterest(asset.amount, asset.timestamp),
+                healthFactor: calculateHealthFactor(asset.value)
+              };
+            }
+            
+        });
+        
+        const resolvedAssets = await Promise.all(sourceAssetsPromises);
+      /*
       if (!address || !isOpen) return;
 
+      const filter: TransactionFilter = {
+        status: 'borrow',
+      };
+      applyFilter(filter);
       try {
         // Get borrowed assets from localStorage
         const borrowedData = localStorage.getItem(`user_borrowings_${address}`);
@@ -67,10 +110,13 @@ const RepayModal: React.FC<RepayModalProps> = ({
         console.error('Failed to load borrowed assets:', error);
         showToast('Failed to load borrowed assets', 'error');
       }
+       */
     };
 
     loadBorrowedAssets();
   }, [address, isOpen]);
+
+  console.log("filtered :", filteredTransactions);
 
   // Load user balance for selected asset
   useEffect(() => {

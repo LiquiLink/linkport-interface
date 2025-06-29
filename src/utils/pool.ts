@@ -10,6 +10,24 @@ import { getAssetPriceFromPort } from './priceService';
 import { sep } from 'path';
 
 
+export async function getLoan(pool: any, asset: string, user: string, source: number) : Promise<any> {
+    try {
+        const loan = await readContract(config, {
+            address: pool.pool,
+            abi: LiquidityPoolABI,
+            functionName: 'getLoan',
+            args: [user, source, asset],
+            chainId: pool.chainId,
+        });
+
+        return loan;
+    } catch (error) {
+        console.error(`Error getting loan for asset ${asset} in pool ${pool.name}:`, error);
+        return null;
+    }
+}
+
+
 export async function getPoolTvl(pool: any) : Promise<BigNumberish> {
     try {
         const balance = await getBalance(pool.address, pool.pool, pool.chainId);
