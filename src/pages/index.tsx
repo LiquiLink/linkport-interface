@@ -984,7 +984,7 @@ const Home: React.FC = () => {
                             />
 
                             {/* Collateral Asset Selection */}
-                            <div className="section-title">
+                            <div className="section-title" style={{ marginTop: 'var(--space-lg)' }}>
                                 Collateral Asset
                             </div>
                             <Dropdown
@@ -1130,7 +1130,7 @@ const Home: React.FC = () => {
                             {/* Enhanced Collateral Amount Input */}
                             {collateralAsset && (
                                 <div className="animate-slide-in">
-                                    <div className="section-title">
+                                    <div className="section-title" style={{ marginTop: 'var(--space-lg)' }}>
                                         {useExistingStaking ? 'Additional Collateral Amount (Optional)' : 'Collateral Amount'}
                                     </div>
                                     <div className="input-card">
@@ -1210,7 +1210,7 @@ const Home: React.FC = () => {
                             )}
 
                             {/* Step 2: Lending Target Chain */}
-                            <div className="section-title">
+                            <div className="section-title" style={{ marginTop: 'var(--space-lg)' }}>
                                 Select Lending Target Chain
                             </div>
                             <Dropdown
@@ -1312,7 +1312,7 @@ const Home: React.FC = () => {
                             />
 
                             {/* Source Asset Selection */}
-                            <div className="section-title">
+                            <div className="section-title" style={{ marginTop: 'var(--space-lg)' }}>
                                 Source Asset
                             </div>
                             <Dropdown
@@ -1325,7 +1325,7 @@ const Home: React.FC = () => {
                             {/* Enhanced Source Amount Input */}
                             {bridgeAsset && (
                                 <div className="animate-slide-in">
-                                    <div className="section-title">
+                                    <div className="section-title" style={{ marginTop: 'var(--space-lg)' }}>
                                         Source Amount
                                     </div>
                                     <div className="input-card">
@@ -1378,7 +1378,7 @@ const Home: React.FC = () => {
                             )}
 
                             {/* Step 2: Target Chain */}
-                            <div className="section-title">
+                            <div className="section-title" style={{ marginTop: 'var(--space-lg)' }}>
                                 Select Target Chain
                             </div>
                             <Dropdown
