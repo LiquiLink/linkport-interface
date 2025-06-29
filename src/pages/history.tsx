@@ -212,13 +212,13 @@ const History: React.FC = () => {
                                 marginBottom: '8px', 
                                 fontSize: '28px',
                                 fontWeight: 600,
-                                color: 'var(--text-color)'
+                                color: 'var(--text-primary)'
                             }}>
                                 Transaction History
                             </h2>
                             {isConnected && address && (
                                 <p style={{
-                                    color: 'var(--secondary-text)',
+                                    color: 'var(--text-secondary)',
                                     fontSize: '14px',
                                     margin: 0
                                 }}>
@@ -239,9 +239,9 @@ const History: React.FC = () => {
                                     padding: '8px 12px',
                                     fontSize: '12px',
                                     borderRadius: '8px',
-                                    border: '1px solid var(--border-color)',
-                                    background: isLoading ? '#f3f4f6' : 'white',
-                                    color: isLoading ? '#9ca3af' : 'var(--accent-color)',
+                                    border: '1px solid var(--border-glass-strong)',
+                                    background: isLoading ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
+                                    color: isLoading ? 'var(--text-muted)' : 'var(--accent-primary)',
                                     cursor: isLoading ? 'not-allowed' : 'pointer'
                                 }}
                             >
@@ -255,9 +255,9 @@ const History: React.FC = () => {
                                     padding: '8px 12px',
                                     fontSize: '12px',
                                     borderRadius: '8px',
-                                    border: '1px solid var(--border-color)',
-                                    background: 'white',
-                                    color: 'var(--text-color)',
+                                    border: '1px solid var(--border-glass-strong)',
+                                    background: 'var(--bg-secondary)',
+                                    color: 'var(--text-primary)',
                                     cursor: 'pointer'
                                 }}
                             >
@@ -271,9 +271,9 @@ const History: React.FC = () => {
                                     padding: '8px 12px',
                                     fontSize: '12px',
                                     borderRadius: '8px',
-                                    border: '1px solid var(--border-color)',
-                                    background: 'white',
-                                    color: 'var(--text-color)',
+                                    border: '1px solid var(--border-glass-strong)',
+                                    background: 'var(--bg-secondary)',
+                                    color: 'var(--text-primary)',
                                     cursor: 'pointer'
                                 }}
                             >
@@ -310,20 +310,20 @@ const History: React.FC = () => {
                             <div style={{
                                 fontSize: '48px',
                                 marginBottom: '20px',
-                                color: 'var(--secondary-text)'
+                                color: 'var(--text-muted)'
                             }}>
                                 🔗
                             </div>
                             <h3 style={{
                                 fontSize: '24px',
                                 fontWeight: 600,
-                                color: 'var(--text-color)',
+                                color: 'var(--text-primary)',
                                 marginBottom: '12px'
                             }}>
                                 Connect Your Wallet
                             </h3>
                             <p style={{
-                                color: 'var(--secondary-text)',
+                                color: 'var(--text-secondary)',
                                 fontSize: '16px',
                                 lineHeight: 1.5
                             }}>
@@ -339,20 +339,20 @@ const History: React.FC = () => {
                             <div style={{
                                 fontSize: '48px',
                                 marginBottom: '20px',
-                                color: 'var(--secondary-text)'
+                                color: 'var(--text-muted)'
                             }}>
                                 ⏳
                             </div>
                             <h3 style={{
                                 fontSize: '24px',
                                 fontWeight: 600,
-                                color: 'var(--text-color)',
+                                color: 'var(--text-primary)',
                                 marginBottom: '12px'
                             }}>
                                 Loading Transaction History...
                             </h3>
                             <p style={{
-                                color: 'var(--secondary-text)',
+                                color: 'var(--text-secondary)',
                                 fontSize: '16px'
                             }}>
                                 Syncing transactions from blockchain and updating pending statuses...
@@ -363,7 +363,7 @@ const History: React.FC = () => {
                         <div style={{
                             textAlign: 'center',
                             padding: '60px 40px',
-                            background: 'rgba(239, 68, 68, 0.1)',
+                            background: 'var(--danger-bg)',
                             backdropFilter: 'blur(10px)',
                             borderRadius: '16px',
                             border: '1px solid rgba(239, 68, 68, 0.3)'
@@ -378,13 +378,13 @@ const History: React.FC = () => {
                             <h3 style={{
                                 fontSize: '24px',
                                 fontWeight: 600,
-                                color: 'var(--text-color)',
+                                color: 'var(--text-primary)',
                                 marginBottom: '12px'
                             }}>
                                 Error Loading History
                             </h3>
                             <p style={{
-                                color: 'var(--secondary-text)',
+                                color: 'var(--text-secondary)',
                                 fontSize: '16px'
                             }}>
                                 {error}
@@ -404,7 +404,7 @@ const History: React.FC = () => {
                                         display: 'block',
                                         marginBottom: '8px',
                                         fontSize: '14px',
-                                        color: 'var(--secondary-text)',
+                                        color: 'var(--text-secondary)',
                                         fontWeight: 500
                                     }}>
                                         Transaction Type
@@ -416,10 +416,10 @@ const History: React.FC = () => {
                                             width: '100%',
                                             padding: '12px 16px',
                                             borderRadius: '12px',
-                                            border: '1px solid var(--border-color)',
-                                            background: 'white',
+                                            border: '1px solid var(--border-glass-strong)',
+                                            background: 'var(--bg-secondary)',
                                             fontSize: '14px',
-                                            color: 'var(--text-color)',
+                                            color: 'var(--text-primary)',
                                             outline: 'none'
                                         }}
                                                                          >
@@ -440,7 +440,7 @@ const History: React.FC = () => {
                                         display: 'block',
                                         marginBottom: '8px',
                                         fontSize: '14px',
-                                        color: 'var(--secondary-text)',
+                                        color: 'var(--text-secondary)',
                                         fontWeight: 500
                                     }}>
                                         Time Period
@@ -452,10 +452,10 @@ const History: React.FC = () => {
                                             width: '100%',
                                             padding: '12px 16px',
                                             borderRadius: '12px',
-                                            border: '1px solid var(--border-color)',
-                                            background: 'white',
+                                            border: '1px solid var(--border-glass-strong)',
+                                            background: 'var(--bg-secondary)',
                                             fontSize: '14px',
-                                            color: 'var(--text-color)',
+                                            color: 'var(--text-primary)',
                                             outline: 'none'
                                         }}
                                     >
@@ -471,7 +471,7 @@ const History: React.FC = () => {
                                         display: 'block',
                                         marginBottom: '8px',
                                         fontSize: '14px',
-                                        color: 'var(--secondary-text)',
+                                        color: 'var(--text-secondary)',
                                         fontWeight: 500
                                     }}>
                                         Status
@@ -483,10 +483,10 @@ const History: React.FC = () => {
                                             width: '100%',
                                             padding: '12px 16px',
                                             borderRadius: '12px',
-                                            border: '1px solid var(--border-color)',
-                                            background: 'white',
+                                            border: '1px solid var(--border-glass-strong)',
+                                            background: 'var(--bg-secondary)',
                                             fontSize: '14px',
-                                            color: 'var(--text-color)',
+                                            color: 'var(--text-primary)',
                                             outline: 'none'
                                         }}
                                     >
@@ -508,7 +508,7 @@ const History: React.FC = () => {
                                     <div style={{
                                         padding: '48px 24px',
                                         textAlign: 'center',
-                                        color: 'var(--secondary-text)'
+                                        color: 'var(--text-secondary)'
                                     }}>
                                         <i className="fas fa-history" style={{ fontSize: '32px', marginBottom: '16px' }}></i>
                                         <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>
@@ -527,7 +527,7 @@ const History: React.FC = () => {
                                             display: 'flex',
                                             alignItems: 'center',
                                             padding: '20px 24px',
-                                            borderBottom: index < filteredTransactions.length - 1 ? '1px solid var(--border-color)' : 'none',
+                                            borderBottom: index < filteredTransactions.length - 1 ? '1px solid var(--border-glass)' : 'none',
                                             transition: 'background 0.2s ease'
                                         }}>
                                             {/* Transaction Icon */}
@@ -555,14 +555,14 @@ const History: React.FC = () => {
                                                 <div style={{
                                                     fontSize: '16px',
                                                     fontWeight: 600,
-                                                    color: 'var(--text-color)',
+                                                    color: 'var(--text-primary)',
                                                     marginBottom: '4px'
                                                 }}>
                                                     {transaction.action}
                                                 </div>
                                                 <div style={{
                                                     fontSize: '14px',
-                                                    color: 'var(--secondary-text)',
+                                                    color: 'var(--text-secondary)',
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     gap: '8px'
@@ -579,7 +579,7 @@ const History: React.FC = () => {
                                                             <span>•</span>
                                                             <span 
                                                                 style={{ 
-                                                                    color: 'var(--accent-color)', 
+                                                                    color: 'var(--accent-primary)', 
                                                                     cursor: 'pointer' 
                                                                 }}
                                                                 onClick={() => {
@@ -610,7 +610,7 @@ const History: React.FC = () => {
                                              </div>
                                                 <div style={{
                                                     fontSize: '14px',
-                                                    color: 'var(--secondary-text)'
+                                                    color: 'var(--text-secondary)'
                                                 }}>
                                                     {transaction.value}
                                                 </div>
@@ -638,7 +638,7 @@ const History: React.FC = () => {
                                                     padding: '8px',
                                                     border: 'none',
                                                     background: 'transparent',
-                                                    color: 'var(--secondary-text)',
+                                                    color: 'var(--text-secondary)',
                                                     cursor: 'pointer',
                                                     borderRadius: '6px',
                                                     transition: 'all 0.2s ease'
@@ -794,7 +794,7 @@ const History: React.FC = () => {
                             left: 0,
                             right: 0,
                             bottom: 0,
-                            background: 'rgba(255, 255, 255, 0.25)',
+                            background: 'rgba(15, 23, 42, 0.8)',
                             backdropFilter: showExportModal ? 'blur(8px)' : 'blur(0px)',
                             WebkitBackdropFilter: showExportModal ? 'blur(8px)' : 'blur(0px)',
                             display: 'flex',
@@ -813,8 +813,8 @@ const History: React.FC = () => {
                                 width: '90%',
                                 margin: '20px',
                                 boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)',
-                                border: '1.5px solid var(--border-color)',
-                                background: 'rgba(255,255,255,0.7)',
+                                border: '1.5px solid var(--border-glass-strong)',
+                                background: 'var(--bg-glass-strong)',
                                 borderRadius: '20px',
                                 position: 'relative',
                                 transform: showExportModal ? 'scale(1)' : 'scale(0.96) translateY(20px)',
@@ -827,12 +827,12 @@ const History: React.FC = () => {
                                 marginBottom: '16px',
                                 fontSize: '20px',
                                 fontWeight: 600,
-                                color: 'var(--text-color)'
+                                color: 'var(--text-primary)'
                             }}>
                                 Export Transaction History
                             </h3>
                             <p style={{
-                                color: 'var(--secondary-text)',
+                                color: 'var(--text-secondary)',
                                 marginBottom: '24px',
                                 fontSize: '14px',
                                 lineHeight: 1.5
@@ -849,9 +849,9 @@ const History: React.FC = () => {
                                     style={{
                                         padding: '12px 24px',
                                         borderRadius: '8px',
-                                        border: '1px solid var(--border-color)',
-                                        background: 'rgba(255,255,255,0.85)',
-                                        color: 'var(--text-color)',
+                                        border: '1px solid var(--border-glass-strong)',
+                                        background: 'var(--bg-secondary)',
+                                        color: 'var(--text-primary)',
                                         cursor: 'pointer',
                                         fontWeight: 500
                                     }}
@@ -863,7 +863,7 @@ const History: React.FC = () => {
                                     className="button primary"
                                     style={{
                                         padding: '12px 24px',
-                                        background: 'var(--accent-color)',
+                                        background: 'var(--accent-gradient)',
                                         color: 'white',
                                         border: 'none',
                                         borderRadius: '8px',
@@ -887,7 +887,7 @@ const History: React.FC = () => {
                             left: 0,
                             right: 0,
                             bottom: 0,
-                            background: 'rgba(255, 255, 255, 0.25)',
+                            background: 'rgba(15, 23, 42, 0.8)',
                             backdropFilter: showImportModal ? 'blur(8px)' : 'blur(0px)',
                             WebkitBackdropFilter: showImportModal ? 'blur(8px)' : 'blur(0px)',
                             display: 'flex',
@@ -909,8 +909,8 @@ const History: React.FC = () => {
                                 width: '90%',
                                 margin: '20px',
                                 boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)',
-                                border: '1.5px solid var(--border-color)',
-                                background: 'rgba(255,255,255,0.7)',
+                                border: '1.5px solid var(--border-glass-strong)',
+                                background: 'var(--bg-glass-strong)',
                                 borderRadius: '20px',
                                 position: 'relative',
                                 transform: showImportModal ? 'scale(1)' : 'scale(0.96) translateY(20px)',
@@ -923,12 +923,12 @@ const History: React.FC = () => {
                                 marginBottom: '16px',
                                 fontSize: '20px',
                                 fontWeight: 600,
-                                color: 'var(--text-color)'
+                                color: 'var(--text-primary)'
                             }}>
                                 Import Transaction History
                             </h3>
                             <p style={{
-                                color: 'var(--secondary-text)',
+                                color: 'var(--text-secondary)',
                                 marginBottom: '16px',
                                 fontSize: '14px',
                                 lineHeight: 1.5
@@ -944,10 +944,10 @@ const History: React.FC = () => {
                                     height: '120px',
                                     padding: '12px',
                                     borderRadius: '8px',
-                                    border: '1px solid var(--border-color)',
-                                    background: 'rgba(255,255,255,0.85)',
+                                    border: '1px solid var(--border-glass-strong)',
+                                    background: 'var(--bg-secondary)',
                                     fontSize: '14px',
-                                    color: 'var(--text-color)',
+                                    color: 'var(--text-primary)',
                                     resize: 'vertical',
                                     marginBottom: '16px'
                                 }}
@@ -965,9 +965,9 @@ const History: React.FC = () => {
                                     style={{
                                         padding: '12px 24px',
                                         borderRadius: '8px',
-                                        border: '1px solid var(--border-color)',
-                                        background: 'rgba(255,255,255,0.85)',
-                                        color: 'var(--text-color)',
+                                        border: '1px solid var(--border-glass-strong)',
+                                        background: 'var(--bg-secondary)',
+                                        color: 'var(--text-primary)',
                                         cursor: 'pointer',
                                         fontWeight: 500
                                     }}
@@ -980,7 +980,7 @@ const History: React.FC = () => {
                                     className="button primary"
                                     style={{
                                         padding: '12px 24px',
-                                        background: 'var(--accent-color)',
+                                        background: 'var(--accent-gradient)',
                                         color: 'white',
                                         border: 'none',
                                         borderRadius: '8px',
