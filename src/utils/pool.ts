@@ -6,6 +6,7 @@ import { BigNumberish } from 'ethers';
 import { sepolia, bscTestnet } from 'wagmi/chains';
 import { getBalance, getTotalSupply } from './balance';
 import ERC20ABI from '../abi/ERC20.json';
+import { getAssetPriceFromPort } from './priceService';
 import { sep } from 'path';
 
 
@@ -41,6 +42,7 @@ export async function getPoolTvl(pool: any) : Promise<BigNumberish> {
 export async function getUserPosition(pool: any, user: any) : Promise<BigNumberish> {
     try {
         const shares = await getBalance(pool.pool, user, pool.chainId);
+
         
         // If user has no shares, return 0 early
         if (!shares || shares === BigInt(0)) {
@@ -68,7 +70,7 @@ export async function getUserPosition(pool: any, user: any) : Promise<BigNumberi
 }
 
 
-export async function loan(chainId: any, targetChainId: any, collateralToken: string, collateralAmount: BigNumberish, loanToken: string[], loanAmount: BigNumberish[]) : Promise<void> {
+export async function loan(chainId: any, targetChainId: any, collateralToken: string, loanToken: string[], loanAmount: BigNumberish[], collateralAmount: BigNumberish[]) : Promise<void> {
     console.log("loan", chainId, collateralToken, collateralAmount, loanToken, loanAmount);
 
     const linkPort = chainId == sepolia.id ? linkPorts[sepolia.id] : linkPorts[bscTestnet.id];
@@ -79,7 +81,7 @@ export async function loan(chainId: any, targetChainId: any, collateralToken: st
             address: linkPort as `0x${string}`,
             abi: linkPortABI,
             functionName: 'loan',
-            args: [destChainSelector, collateralToken, collateralAmount, loanToken, loanAmount],
+            args: [destChainSelector, collateralToken, loanToken, loanAmount, collateralAmount],
             chainId: chainId == sepolia.id ? sepolia.id : bscTestnet.id,
         });
         

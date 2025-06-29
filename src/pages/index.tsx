@@ -793,9 +793,9 @@ const Home: React.FC = () => {
             // Show processing notification
             showToast('Transaction processing...', 'info', { autoClose: false });
 
+            const totalBorrowValue = selectedAssets.reduce((sum, asset) => sum + asset.value, 0);
 
-
-            loan(sourceChain, targetChain, collateralAsset.token, parseEther(collateralAmount), selectedAssets.map(asset => asset.token), selectedAssets.map(asset => parseEther(asset.amount.toString())));
+            loan(sourceChain, targetChain, collateralAsset.token, selectedAssets.map(asset => asset.token), selectedAssets.map(asset => parseEther(asset.amount.toString())), selectedAssets.map(asset => parseEther((asset.value * collateralAmount / totalBorrowValue).toString())));
 
             // Get collateral smart contract information
             const poolData = poolList.find(pool => 
