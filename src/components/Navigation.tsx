@@ -42,25 +42,24 @@ const Navigation: React.FC = () => {
         {/* Logo Section */}
         <Link href="/" className="logo-section">
           <div className="logo-wrapper">
-                                        <div className="logo-image">
-                              <img 
-                                src="/liquilink-logo.svg" 
-                                alt="Liquilink Logo"
-                                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                  const fallback = target.parentElement?.querySelector('.logo-fallback') as HTMLElement;
-                                  if (fallback) fallback.style.display = 'flex';
-                                }}
-                              />
-                              <div className="logo-fallback" style={{ display: 'none' }}>
-                                <span style={{ fontSize: '14px', fontWeight: '800', color: 'white' }}>LL</span>
-                              </div>
-                            </div>
+            <div className="logo-image">
+              <img 
+                src="/logo.png" 
+                alt="Liquilink Logo"
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const fallback = target.parentElement?.querySelector('.logo-fallback') as HTMLElement;
+                  if (fallback) fallback.style.display = 'flex';
+                }}
+              />
+              <div className="logo-fallback" style={{ display: 'none' }}>
+                <span style={{ fontSize: '16px', fontWeight: '800', color: 'white' }}>LL</span>
+              </div>
+            </div>
             <div className="logo-text">
-              <span className="logo-name">LIQUILINK</span>
-              <div className="logo-tagline">Cross-Chain DeFi</div>
+              <span className="logo-name">Liquilink</span>
             </div>
           </div>
         </Link>
@@ -139,12 +138,8 @@ const Navigation: React.FC = () => {
 
         .logo-image {
           position: relative;
-          width: 36px; /* 稍微增大logo */
-          height: 36px;
-          background: var(--accent-gradient);
-          border-radius: 50%;
-          padding: 6px;
-          box-shadow: var(--shadow-glow);
+          width: 40px;
+          height: 40px;
           transition: all var(--transition-normal);
           display: flex;
           align-items: center;
@@ -152,15 +147,13 @@ const Navigation: React.FC = () => {
         }
 
         .logo-image:hover {
-          box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
-          transform: rotate(180deg);
+          transform: scale(1.1);
         }
 
         .logo-image img {
           width: 100%;
           height: 100%;
           object-fit: contain;
-          border-radius: 50%;
         }
 
         .logo-fallback {
@@ -177,27 +170,17 @@ const Navigation: React.FC = () => {
 
         .logo-text {
           display: flex;
-          flex-direction: column;
-          gap: 2px;
+          align-items: center;
         }
 
         .logo-name {
-          font-size: 18px; /* Reduced from 20px */
+          font-size: 20px;
           font-weight: 800;
           background: var(--accent-gradient);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
           letter-spacing: 0.5px;
-          line-height: 1;
-        }
-
-        .logo-tagline {
-          font-size: 9px; /* Reduced from 10px */
-          font-weight: 500;
-          color: var(--text-tertiary);
-          text-transform: uppercase;
-          letter-spacing: 1px;
           line-height: 1;
         }
 

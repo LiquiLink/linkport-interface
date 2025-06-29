@@ -98,13 +98,40 @@ const CrossChainAssetSelector: React.FC<CrossChainAssetSelectorProps> = ({
                 console.log("Processing pool:", pool.name, "on chain", pool.chainId);
                 const price = await getAssetPriceFromPort(pool.address, pool.chainId);
                 console.log("Asset price for", pool.tokens[0], "on chain", pool.chainId, ":", price);
+                
+                // Add fallback price logic when smart contract price fails
+                let finalPrice = price?.price || 0;
+                if (finalPrice === 0) {
+                    const symbol = pool.tokens[0].toUpperCase();
+                    switch (symbol) {
+                        case 'USDT':
+                        case 'USDC':
+                        case 'DAI':
+                            finalPrice = 1; // Stablecoins
+                            break;
+                        case 'ETH':
+                        case 'WETH':
+                            finalPrice = 2500; // ETH fallback (from smart contract script)
+                            break;
+                        case 'BNB':
+                            finalPrice = 660; // BNB fallback (from smart contract script)
+                            break;
+                        case 'LINK':
+                            finalPrice = 15; // LINK fallback (from smart contract script)
+                            break;
+                        default:
+                            finalPrice = 1; // Default for unknown assets
+                    }
+                    console.warn(`Using fallback price for ${symbol}: $${finalPrice} (original price was 0)`);
+                }
+                
                 return getBalance(pool.address, pool.pool, pool.chainId).then(async balance => {
                     return {
                         id: pool.id,
                         symbol: pool.tokens[0],
                         name: pool.name,
                         icon: pool.tokens[0].toUpperCase(),
-                        price: price?.price || 0,
+                        price: finalPrice,
                         balance: parseFloat(formatUnits(balance, 18)), // Assuming 18 decimals for simplicity
                         isNative: pool.isNative,
                         token: pool.address,

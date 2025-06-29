@@ -36,7 +36,7 @@ const MultiAssetSelector: React.FC<MultiAssetSelectorProps> = ({
 
       const poolPromises = poolList.filter(pool => pool.chainId === chainId).map(async pool => {
         const price = await getAssetPriceFromPort(pool.address, pool.chainId);
-        console.log("Asset price for", pool.tokens[0], "on chain", pool.chainId, ":", price);
+        console.log("🔍 Asset price for", pool.tokens[0], "on chain", pool.chainId, ":", price);
         
         // Set reasonable fallback prices for different assets
         let fallbackPrice = 0;
@@ -49,17 +49,26 @@ const MultiAssetSelector: React.FC<MultiAssetSelectorProps> = ({
             break;
           case 'ETH':
           case 'WETH':
-            fallbackPrice = 2400; // ETH
+            fallbackPrice = 2500; // ETH (matching smart contract value)
             break;
           case 'BNB':
-            fallbackPrice = 660; // BNB
+            fallbackPrice = 660; // BNB (matching smart contract value)
             break;
           case 'LINK':
-            fallbackPrice = 15; // LINK
+            fallbackPrice = 15; // LINK (matching smart contract value)
             break;
           default:
             fallbackPrice = 1; // Default for unknown assets
         }
+        
+        // Fix: Use fallback price when contract price is 0 or undefined
+        let finalPrice = price?.price;
+        if (!finalPrice || finalPrice === 0) {
+          finalPrice = fallbackPrice;
+          console.warn(`⚠️ Using fallback price for ${symbol}: $${fallbackPrice} (contract price was ${price?.price})`);
+        }
+        
+        console.log(`💰 Final price for ${symbol}: $${finalPrice}`);
         
         return getBalance(pool.address, pool.pool, pool.chainId).then(async balance => {
           return {
@@ -67,7 +76,7 @@ const MultiAssetSelector: React.FC<MultiAssetSelectorProps> = ({
             symbol: pool.tokens[0],
             name: pool.name,
             icon: pool.tokens[0].toUpperCase(),
-            price: price?.price || fallbackPrice,
+            price: finalPrice,
             balance: parseFloat(formatUnits(balance, 18)), // Assuming 18 decimals for simplicity
             isNative: pool.isNative,
             token: pool.address,
@@ -143,13 +152,24 @@ const MultiAssetSelector: React.FC<MultiAssetSelectorProps> = ({
 
   const updateAssetAmount = (assetId: string, amount: number) => {
     const asset = availableAssets.find(a => a.id === assetId);
-    if (!asset) return;
+    
+    console.log('🔍 DEBUG - Looking for asset:', { 
+      assetId, 
+      allAvailableAssets: availableAssets.map(a => ({ id: a.id, symbol: a.symbol, price: a.price })),
+      foundAsset: asset 
+    });
+    
+    if (!asset) {
+      console.error('❌ Asset not found in availableAssets!', { assetId });
+      return;
+    }
 
     console.log('🧮 updateAssetAmount called:', { 
       assetId, 
       amount, 
       assetPrice: asset.price,
-      assetSymbol: asset.symbol 
+      assetSymbol: asset.symbol,
+      assetData: asset
     });
 
     const updatedAssets = selectedAssets.map(sa => {
@@ -159,7 +179,8 @@ const MultiAssetSelector: React.FC<MultiAssetSelectorProps> = ({
           symbol: asset.symbol,
           amount,
           price: asset.price,
-          calculatedValue: value
+          calculatedValue: value,
+          isNaN: isNaN(value)
         });
         return { ...sa, amount, value };
       }

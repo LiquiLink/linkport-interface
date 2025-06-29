@@ -32,7 +32,7 @@ const Toast: React.FC<ToastProps> = ({
     const getToastStyles = () => {
         const baseStyles = {
             position: 'fixed' as const,
-            top: '20px',
+            top: '80px',
             right: '20px',
             maxWidth: '400px',
             padding: '16px 20px',
@@ -42,7 +42,7 @@ const Toast: React.FC<ToastProps> = ({
             WebkitBackdropFilter: 'blur(20px)',
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(6, 182, 212, 0.1)',
             border: '1px solid var(--border-glass-strong)',
-            zIndex: 99999,
+            zIndex: 100000,
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
@@ -175,7 +175,7 @@ export const useToast = () => {
     const ToastContainer = () => (
         <div>
             {toasts.map((toast, index) => (
-                <div key={toast.id} style={{ top: `${20 + index * 80}px` }}>
+                <div key={toast.id} style={{ top: `${80 + index * 80}px` }}>
                     <Toast
                         message={toast.message}
                         type={toast.type}

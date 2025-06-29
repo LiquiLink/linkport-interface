@@ -1503,7 +1503,17 @@ const Home: React.FC = () => {
                             <CrossChainAssetSelector
                                 sourceChain={parseInt(bridgeSourceChain)}
                                 targetChain={parseInt(bridgeTargetChain)}
-                                sourceAsset={bridgeAsset || { id: 'eth', symbol: 'ETH', name: 'Ethereum', price: assetPrices.ETH?.price || 3000, balance: '0', icon: 'ETH' }}
+                                sourceAsset={{
+                                    ...bridgeAsset,
+                                    price: bridgeAsset?.token ? 
+                                        (assetPrices[bridgeAsset.token]?.price || 
+                                         calculateUSDValue('1', bridgeAsset.token) ||
+                                         (bridgeAsset.label === 'ETH' ? assetPrices.ETH?.price || 2500 :
+                                          bridgeAsset.label === 'USDT' ? 1 :
+                                          bridgeAsset.label === 'LINK' ? assetPrices.LINK?.price || 15 :
+                                          bridgeAsset.label === 'BNB' ? assetPrices.BNB?.price || 660 : 1)) :
+                                        assetPrices.ETH?.price || 2500
+                                }}
                                 sourceAmount={parseFloat(bridgeAmount) || 0}
                                 onTargetAssetsChange={handleBridgeTargetAssetsChange}
                             />
@@ -1514,7 +1524,7 @@ const Home: React.FC = () => {
                 {/* Right Panel - Summary Dashboard */}
                 <div className="info-panel">
                     <div className="glass-card">
-                        {/* Header */}
+                        {/* Dynamic Header based on activeTab */}
                         <div style={{
                             marginBottom: 'var(--space-md)',
                             paddingBottom: 'var(--space-sm)',
@@ -1526,201 +1536,317 @@ const Home: React.FC = () => {
                                 fontWeight: 700,
                                 color: 'var(--text-primary)'
                             }}>
-                                Portfolio Summary
+                                {activeTab === 'bridge' ? 'Bridge Summary' : 'Portfolio Summary'}
                             </h3>
                             <div style={{
                                 fontSize: '12px',
                                 color: 'var(--text-secondary)',
                                 marginTop: '4px'
                             }}>
-                                Collateral & Lending Overview
+                                {activeTab === 'bridge' ? 'Cross-Chain Bridge Overview' : 'Collateral & Lending Overview'}
                             </div>
                         </div>
 
-                        {/* Enhanced Health Factor Display */}
-                        <div className="health-indicator" style={{
-                            background: calculateHealthFactor() > 75 ? 
-                                'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05))' : 
-                                calculateHealthFactor() > 50 ? 
-                                'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05))' : 
-                                'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05))',
-                            borderColor: calculateHealthFactor() > 75 ? 'var(--success)' : 
-                                        calculateHealthFactor() > 50 ? 'var(--warning)' : 'var(--danger)',
-                            position: 'relative',
-                            overflow: 'hidden'
-                        }}>
-                            <div style={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                height: '3px',
-                                background: calculateHealthFactor() > 75 ? 
-                                    'linear-gradient(90deg, var(--success), #10b981)' : 
-                                    calculateHealthFactor() > 50 ? 
-                                    'linear-gradient(90deg, var(--warning), #f59e0b)' : 
-                                    'linear-gradient(90deg, var(--danger), #ef4444)'
-                            }} />
-                            
-                            <div className="health-label">
-                                <i className="fas fa-heart-pulse" />
-                                Health Factor
-                            </div>
-                            
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                marginBottom: 'var(--space-sm)'
-                            }}>
-                                <div className="health-bar">
-                                    <div 
-                                        className="health-fill"
-                                        style={{
-                                            width: `${Math.min(100, calculateHealthFactor())}%`
-                                        }}
-                                    />
+                        {/* Bridge Mode Summary */}
+                        {activeTab === 'bridge' && (
+                            <>
+                                {/* Bridge Statistics */}
+                                <div className="glass-card" style={{ marginBottom: 'var(--space-lg)' }}>
+                                    <div className="stat-row highlight">
+                                        <span className="stat-label">
+                                            <i className="fas fa-bridge" style={{ marginRight: 'var(--space-xs)' }} />
+                                            Total Bridge Value
+                                        </span>
+                                        <span className="stat-value" style={{ fontSize: '18px', fontWeight: 700 }}>
+                                            ${bridgeTargetAssets.reduce((sum, asset) => sum + asset.value, 0).toFixed(2)}
+                                        </span>
+                                    </div>
+                                    
+                                    {/* Bridge breakdown */}
+                                    {bridgeAmount && bridgeAsset && (
+                                        <div className="stat-row" style={{ fontSize: '13px', marginTop: 'var(--space-sm)' }}>
+                                            <span className="stat-label">• Source amount</span>
+                                            <span className="stat-value">{bridgeAmount} {bridgeAsset?.label}</span>
+                                        </div>
+                                    )}
+                                    
+                                    {bridgeTargetAssets.length > 0 && (
+                                        <div className="stat-row" style={{ fontSize: '13px', marginTop: 'var(--space-sm)' }}>
+                                            <span className="stat-label">• Target assets</span>
+                                            <span className="stat-value">{bridgeTargetAssets.length} types</span>
+                                        </div>
+                                    )}
                                 </div>
-                                <div className={`health-value ${calculateHealthFactor() > 75 ? 'health-good' : 
-                                              calculateHealthFactor() > 50 ? 'health-warning' : 'health-danger'}`}>
-                                    {calculateHealthFactor().toFixed(0)}%
-                                </div>
-                            </div>
-                            
-                            <div style={{
-                                fontSize: '12px',
-                                textAlign: 'center',
-                                color: calculateHealthFactor() > 75 ? 'var(--success)' : 
-                                       calculateHealthFactor() > 50 ? 'var(--warning)' : 'var(--danger)',
-                                fontWeight: 600
-                            }}>
-                                {calculateHealthFactor() > 75 ? '✅ Healthy - Low Risk' : 
-                                 calculateHealthFactor() > 50 ? '⚠️ Moderate Risk' : 
-                                 '🚨 High Risk - Increase Collateral'}
-                            </div>
-                        </div>
 
-                        {/* Enhanced Total Collateral */}
-                        <div className="glass-card" style={{ marginBottom: 'var(--space-lg)' }}>
-                            <div className="stat-row highlight">
-                                <span className="stat-label">
-                                    <i className="fas fa-shield-alt" style={{ marginRight: 'var(--space-xs)' }} />
-                                    Total Collateral Value
-                                </span>
-                                <span className="stat-value" style={{ fontSize: '18px', fontWeight: 700 }}>
-                                    ${calculateTotalCollateralValue().toFixed(2)}
-                                </span>
-                            </div>
-                            
-                            {/* Collateral breakdown */}
-                            {useExistingStaking && totalStakingValue > 0 && (
-                                <div className="stat-row" style={{ fontSize: '13px', marginTop: 'var(--space-sm)' }}>
-                                    <span className="stat-label">• From staking positions</span>
-                                    <span className="stat-value">${totalStakingValue.toFixed(2)}</span>
-                                </div>
-                            )}
-                            
-                            {collateralAmount && (
-                                <div className="stat-row" style={{ fontSize: '13px', marginTop: 'var(--space-sm)' }}>
-                                    <span className="stat-label">• From new collateral</span>
-                                    <span className="stat-value">
-                                        ${calculateUSDValue(collateralAmount, collateralAsset?.token || 'ETH')}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Enhanced Borrowing Information */}
-                        <div className="glass-card" style={{ marginBottom: 'var(--space-lg)' }}>
-                            <h4 className="section-title" style={{ fontSize: '16px' }}>
-                                <i className="fas fa-chart-pie" />
-                                Borrowing Information
-                            </h4>
-                            
-                            <div style={{ display: 'grid', gap: 'var(--space-sm)' }}>
-                                <div className="stat-row highlight" style={{ marginBottom: 'var(--space-sm)' }}>
-                                    <span className="stat-label">Max Borrowing Capacity (75% LTV)</span>
-                                    <span className="stat-value text-gradient" style={{ fontWeight: 700 }}>
-                                        ${calculateMaxBorrow(collateralAmount)}
-                                    </span>
-                                </div>
-                                
-                                <div className="stat-row">
-                                    <span className="stat-label">Selected Assets to Borrow</span>
-                                    <span className="stat-value">{selectedAssets.length} types</span>
-                                </div>
-                                <div className="stat-row">
-                                    <span className="stat-label">Total Borrowing Amount</span>
-                                    <span className="stat-value">
-                                        ${selectedAssets.reduce((sum, asset) => sum + asset.value, 0).toFixed(2)}
-                                    </span>
-                                </div>
-                                <div className="stat-row">
-                                    <span className="stat-label">Est. Interest Rate</span>
-                                    <span className="stat-value">2.5%</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Enhanced Market Information */}
-                        <div className="glass-card">
-                            <h4 className="section-title" style={{ fontSize: '16px' }}>
-                                <i className="fas fa-globe" />
-                                Market Information
-                            </h4>
-                            
-                            <div style={{ display: 'grid', gap: 'var(--space-sm)' }}>
-                                <div className="stat-row">
-                                    <span className="stat-label">Current Prices</span>
-                                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'right' }}>
-                                        {assetPrices.ETH && (
-                                            <div>ETH: {formatPrice(assetPrices.ETH.price)}</div>
-                                        )}
-                                        {assetPrices.LINK && (
-                                            <div>LINK: {formatPrice(assetPrices.LINK.price)}</div>
-                                        )}
-                                        {assetPrices.BNB && (
-                                            <div>BNB: {formatPrice(assetPrices.BNB.price)}</div>
-                                        )}
+                                {/* Bridge Information */}
+                                <div className="glass-card" style={{ marginBottom: 'var(--space-lg)' }}>
+                                    <h4 className="section-title" style={{ fontSize: '16px' }}>
+                                        <i className="fas fa-exchange-alt" />
+                                        Bridge Information
+                                    </h4>
+                                    
+                                    <div style={{ display: 'grid', gap: 'var(--space-sm)' }}>
+                                        <div className="stat-row">
+                                            <span className="stat-label">Source Chain</span>
+                                            <span className="stat-value">{getChainName(bridgeSourceChain)}</span>
+                                        </div>
+                                        <div className="stat-row">
+                                            <span className="stat-label">Target Chain</span>
+                                            <span className="stat-value">{bridgeTargetChain ? getChainName(bridgeTargetChain) : 'Not selected'}</span>
+                                        </div>
+                                        <div className="stat-row">
+                                            <span className="stat-label">Bridge Fee</span>
+                                            <span className="stat-value">~$2.50</span>
+                                        </div>
+                                        <div className="stat-row">
+                                            <span className="stat-label">Est. Bridge Time</span>
+                                            <span className="stat-value">~7 minutes</span>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="stat-row">
-                                    <span className="stat-label">Price Updates</span>
-                                    <span className="stat-value" style={{ 
-                                        fontSize: '12px',
-                                        color: Object.keys(assetPrices).length > 0 ? 'var(--success)' : 'var(--warning)'
+
+                                {/* Bridge Market Information */}
+                                <div className="glass-card">
+                                    <h4 className="section-title" style={{ fontSize: '16px' }}>
+                                        <i className="fas fa-globe" />
+                                        Market Information
+                                    </h4>
+                                    
+                                    <div style={{ display: 'grid', gap: 'var(--space-sm)' }}>
+                                        <div className="stat-row">
+                                            <span className="stat-label">Current Prices</span>
+                                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'right' }}>
+                                                {assetPrices.ETH && (
+                                                    <div>ETH: {formatPrice(assetPrices.ETH.price)}</div>
+                                                )}
+                                                {assetPrices.LINK && (
+                                                    <div>LINK: {formatPrice(assetPrices.LINK.price)}</div>
+                                                )}
+                                                {assetPrices.BNB && (
+                                                    <div>BNB: {formatPrice(assetPrices.BNB.price)}</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="stat-row">
+                                            <span className="stat-label">Price Updates</span>
+                                            <span className="stat-value" style={{ 
+                                                fontSize: '12px',
+                                                color: Object.keys(assetPrices).length > 0 ? 'var(--success)' : 'var(--warning)'
+                                            }}>
+                                                {Object.keys(assetPrices).length > 0 ? 
+                                                    <>
+                                                        <i className="fas fa-satellite-dish" /> Live Chainlink
+                                                    </> : 
+                                                    <>
+                                                        <i className="fas fa-spinner animate-spin" /> Loading...
+                                                    </>
+                                                }
+                                            </span>
+                                        </div>
+                                        <div className="stat-row">
+                                            <span className="stat-label">Protocol Fee</span>
+                                            <span className="stat-value">0.1%</span>
+                                        </div>
+                                        <div className="stat-row">
+                                            <span className="stat-label">Network Status</span>
+                                            <span className="stat-value" style={{ fontSize: '12px', color: 'var(--success)' }}>
+                                                <i className="fas fa-check-circle" /> Operational
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
+                        {/* Lending Mode Summary */}
+                        {activeTab === 'borrow' && (
+                            <>
+                                {/* Enhanced Health Factor Display */}
+                                <div className="health-indicator" style={{
+                                    background: calculateHealthFactor() > 75 ? 
+                                        'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05))' : 
+                                        calculateHealthFactor() > 50 ? 
+                                        'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05))' : 
+                                        'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05))',
+                                    borderColor: calculateHealthFactor() > 75 ? 'var(--success)' : 
+                                                calculateHealthFactor() > 50 ? 'var(--warning)' : 'var(--danger)',
+                                    position: 'relative',
+                                    overflow: 'hidden'
+                                }}>
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        height: '3px',
+                                        background: calculateHealthFactor() > 75 ? 
+                                            'linear-gradient(90deg, var(--success), #10b981)' : 
+                                            calculateHealthFactor() > 50 ? 
+                                            'linear-gradient(90deg, var(--warning), #f59e0b)' : 
+                                            'linear-gradient(90deg, var(--danger), #ef4444)'
+                                    }} />
+                                    
+                                    <div className="health-label">
+                                        <i className="fas fa-heart-pulse" />
+                                        Health Factor
+                                    </div>
+                                    
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        marginBottom: 'var(--space-sm)'
                                     }}>
-                                        {Object.keys(assetPrices).length > 0 ? 
-                                            <>
-                                                <i className="fas fa-satellite-dish" /> Live Chainlink
-                                            </> : 
-                                            <>
-                                                <i className="fas fa-spinner animate-spin" /> Loading...
-                                            </>
-                                        }
-                                    </span>
+                                        <div className="health-bar">
+                                            <div 
+                                                className="health-fill"
+                                                style={{
+                                                    width: `${Math.min(100, calculateHealthFactor())}%`
+                                                }}
+                                            />
+                                        </div>
+                                        <div className={`health-value ${calculateHealthFactor() > 75 ? 'health-good' : 
+                                                      calculateHealthFactor() > 50 ? 'health-warning' : 'health-danger'}`}>
+                                            {calculateHealthFactor().toFixed(0)}%
+                                        </div>
+                                    </div>
+                                    
+                                    <div style={{
+                                        fontSize: '12px',
+                                        textAlign: 'center',
+                                        color: calculateHealthFactor() > 75 ? 'var(--success)' : 
+                                               calculateHealthFactor() > 50 ? 'var(--warning)' : 'var(--danger)',
+                                        fontWeight: 600
+                                    }}>
+                                        {calculateHealthFactor() > 75 ? '✅ Healthy - Low Risk' : 
+                                         calculateHealthFactor() > 50 ? '⚠️ Moderate Risk' : 
+                                         '🚨 High Risk - Increase Collateral'}
+                                    </div>
                                 </div>
-                                <div className="stat-row">
-                                    <span className="stat-label">Cross-chain Path</span>
-                                    <span className="stat-value" style={{ fontSize: '12px' }}>
-                                        {sourceChain && targetChain ? 
-                                            <>
-                                                <i className="fas fa-route" /> {getChainName(sourceChain)} → {getChainName(targetChain)}
-                                            </> :
-                                            'Select chains'
-                                        }
-                                    </span>
+
+                                {/* Enhanced Total Collateral */}
+                                <div className="glass-card" style={{ marginBottom: 'var(--space-lg)' }}>
+                                    <div className="stat-row highlight">
+                                        <span className="stat-label">
+                                            <i className="fas fa-shield-alt" style={{ marginRight: 'var(--space-xs)' }} />
+                                            Total Collateral Value
+                                        </span>
+                                        <span className="stat-value" style={{ fontSize: '18px', fontWeight: 700 }}>
+                                            ${calculateTotalCollateralValue().toFixed(2)}
+                                        </span>
+                                    </div>
+                                    
+                                    {/* Collateral breakdown */}
+                                    {useExistingStaking && totalStakingValue > 0 && (
+                                        <div className="stat-row" style={{ fontSize: '13px', marginTop: 'var(--space-sm)' }}>
+                                            <span className="stat-label">• From staking positions</span>
+                                            <span className="stat-value">${totalStakingValue.toFixed(2)}</span>
+                                        </div>
+                                    )}
+                                    
+                                    {collateralAmount && (
+                                        <div className="stat-row" style={{ fontSize: '13px', marginTop: 'var(--space-sm)' }}>
+                                            <span className="stat-label">• From new collateral</span>
+                                            <span className="stat-value">
+                                                ${calculateUSDValue(collateralAmount, collateralAsset?.token || 'ETH')}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="stat-row">
-                                    <span className="stat-label">Protocol Fee</span>
-                                    <span className="stat-value">0.1%</span>
+
+                                {/* Enhanced Borrowing Information */}
+                                <div className="glass-card" style={{ marginBottom: 'var(--space-lg)' }}>
+                                    <h4 className="section-title" style={{ fontSize: '16px' }}>
+                                        <i className="fas fa-chart-pie" />
+                                        Borrowing Information
+                                    </h4>
+                                    
+                                    <div style={{ display: 'grid', gap: 'var(--space-sm)' }}>
+                                        <div className="stat-row highlight" style={{ marginBottom: 'var(--space-sm)' }}>
+                                            <span className="stat-label">Max Borrowing Capacity (75% LTV)</span>
+                                            <span className="stat-value text-gradient" style={{ fontWeight: 700 }}>
+                                                ${calculateMaxBorrow(collateralAmount)}
+                                            </span>
+                                        </div>
+                                        
+                                        <div className="stat-row">
+                                            <span className="stat-label">Selected Assets to Borrow</span>
+                                            <span className="stat-value">{selectedAssets.length} types</span>
+                                        </div>
+                                        <div className="stat-row">
+                                            <span className="stat-label">Total Borrowing Amount</span>
+                                            <span className="stat-value">
+                                                ${selectedAssets.reduce((sum, asset) => sum + asset.value, 0).toFixed(2)}
+                                            </span>
+                                        </div>
+                                        <div className="stat-row">
+                                            <span className="stat-label">Est. Interest Rate</span>
+                                            <span className="stat-value">2.5%</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="stat-row">
-                                    <span className="stat-label">Est. Bridge Time</span>
-                                    <span className="stat-value">~7 minutes</span>
+
+                                {/* Enhanced Market Information */}
+                                <div className="glass-card">
+                                    <h4 className="section-title" style={{ fontSize: '16px' }}>
+                                        <i className="fas fa-globe" />
+                                        Market Information
+                                    </h4>
+                                    
+                                    <div style={{ display: 'grid', gap: 'var(--space-sm)' }}>
+                                        <div className="stat-row">
+                                            <span className="stat-label">Current Prices</span>
+                                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'right' }}>
+                                                {assetPrices.ETH && (
+                                                    <div>ETH: {formatPrice(assetPrices.ETH.price)}</div>
+                                                )}
+                                                {assetPrices.LINK && (
+                                                    <div>LINK: {formatPrice(assetPrices.LINK.price)}</div>
+                                                )}
+                                                {assetPrices.BNB && (
+                                                    <div>BNB: {formatPrice(assetPrices.BNB.price)}</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="stat-row">
+                                            <span className="stat-label">Price Updates</span>
+                                            <span className="stat-value" style={{ 
+                                                fontSize: '12px',
+                                                color: Object.keys(assetPrices).length > 0 ? 'var(--success)' : 'var(--warning)'
+                                            }}>
+                                                {Object.keys(assetPrices).length > 0 ? 
+                                                    <>
+                                                        <i className="fas fa-satellite-dish" /> Live Chainlink
+                                                    </> : 
+                                                    <>
+                                                        <i className="fas fa-spinner animate-spin" /> Loading...
+                                                    </>
+                                                }
+                                            </span>
+                                        </div>
+                                        <div className="stat-row">
+                                            <span className="stat-label">Cross-chain Path</span>
+                                            <span className="stat-value" style={{ fontSize: '12px' }}>
+                                                {sourceChain && targetChain ? 
+                                                    <>
+                                                        <i className="fas fa-route" /> {getChainName(sourceChain)} → {getChainName(targetChain)}
+                                                    </> :
+                                                    'Select chains'
+                                                }
+                                            </span>
+                                        </div>
+                                        <div className="stat-row">
+                                            <span className="stat-label">Protocol Fee</span>
+                                            <span className="stat-value">0.1%</span>
+                                        </div>
+                                        <div className="stat-row">
+                                            <span className="stat-label">Est. Bridge Time</span>
+                                            <span className="stat-value">~7 minutes</span>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
