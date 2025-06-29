@@ -2,7 +2,7 @@
 
 LinkPort is an innovative cross-chain lending protocol that enables users to collateralize assets on one blockchain and borrow assets on another blockchain. Built with Chainlink CCIP for cross-chain messaging and Chainlink Price Feeds for real-time asset pricing.
 
-[Play With It](https://linkport-interface-fk33bjgch-errances-projects-446d9494.vercel.app/)
+[Play With It](https://deft-sopapillas-941369.netlify.app/)
 
 ## 🌟 Key Features
 
