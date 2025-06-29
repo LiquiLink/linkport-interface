@@ -185,8 +185,8 @@ const Portfolio: React.FC = () => {
                 const hasPositions = userPositions.length > 0 || totalValue > 0;
                 setHasActivePositions(hasPositions);
                 
-                        // Get user's actual lending data from smart contracts
-        // Check if there are lending records in localStorage
+                // Get user's actual lending data from smart contracts
+                // Check if there are lending records in localStorage
                 try {
                     const borrowingData = localStorage.getItem(`user_borrowings_${address}`);
                     if (borrowingData) {
@@ -305,22 +305,11 @@ const Portfolio: React.FC = () => {
         <Layout>
             <div className="container">
                 {/* Portfolio Header */}
-                <div style={{ 
-                    marginBottom: '24px', 
-                    textAlign: 'center'
-                }}>
-                    <h2 style={{ 
-                        fontSize: '28px',
-                        fontWeight: 600,
-                        color: 'var(--text-color)',
-                        marginBottom: '8px'
-                    }}>
+                <div className="portfolio-header">
+                    <h2 className="portfolio-title">
                         Portfolio Overview
                     </h2>
-                    <p style={{ 
-                        color: 'var(--secondary-text)',
-                        fontSize: '16px'
-                    }}>
+                    <p className="portfolio-subtitle">
                         {isConnected 
                             ? `Manage your positions on ${getChainName(chainId || 97)}`
                             : 'Connect your wallet to view your portfolio'
@@ -330,41 +319,16 @@ const Portfolio: React.FC = () => {
 
                 {!isConnected ? (
                     /* Wallet Not Connected State */
-                    <div className="glass-card" style={{ 
-                        textAlign: 'center', 
-                        padding: '60px 40px',
-                        maxWidth: '500px',
-                        margin: '0 auto'
-                    }}>
-                        <div style={{
-                            fontSize: '48px',
-                            marginBottom: '20px',
-                            color: 'var(--secondary-text)'
-                        }}>
-                            👛
-                        </div>
-                        <h3 style={{
-                            fontSize: '24px',
-                            fontWeight: 600,
-                            color: 'var(--text-color)',
-                            marginBottom: '12px'
-                        }}>
+                    <div className="glass-card portfolio-empty-state">
+                        <div className="empty-state-icon">👛</div>
+                        <h3 className="empty-state-title">
                             Wallet Not Connected
                         </h3>
-                        <p style={{
-                            color: 'var(--secondary-text)',
-                            fontSize: '16px',
-                            lineHeight: 1.5,
-                            marginBottom: '24px'
-                        }}>
+                        <p className="empty-state-description">
                             Connect your wallet to view your portfolio, manage positions, and track your liquidity across multiple networks.
                         </p>
                         <button 
-                            className="button primary" 
-                            style={{
-                                padding: '12px 24px',
-                                fontSize: '16px'
-                            }}
+                            className="button button-primary"
                             onClick={handleConnectWallet}
                         >
                             Connect Wallet
@@ -372,31 +336,12 @@ const Portfolio: React.FC = () => {
                     </div>
                 ) : loading ? (
                     /* Loading State */
-                    <div className="glass-card" style={{ 
-                        textAlign: 'center', 
-                        padding: '60px 40px',
-                        maxWidth: '500px',
-                        margin: '0 auto'
-                    }}>
-                        <div style={{
-                            fontSize: '48px',
-                            marginBottom: '20px',
-                            color: 'var(--secondary-text)'
-                        }}>
-                            ⏳
-                        </div>
-                        <h3 style={{
-                            fontSize: '24px',
-                            fontWeight: 600,
-                            color: 'var(--text-color)',
-                            marginBottom: '12px'
-                        }}>
+                    <div className="glass-card portfolio-empty-state">
+                        <div className="empty-state-icon">⏳</div>
+                        <h3 className="empty-state-title">
                             Loading Portfolio...
                         </h3>
-                        <p style={{
-                            color: 'var(--secondary-text)',
-                            fontSize: '16px'
-                        }}>
+                        <p className="empty-state-description">
                             Fetching your positions and balances from the blockchain
                         </p>
                     </div>
@@ -404,74 +349,38 @@ const Portfolio: React.FC = () => {
                     <>
                         {/* Summary Cards */}
                         <div className="portfolio-summary">
-                            <div className="glass-card" style={{ textAlign: 'center', padding: '16px' }}>
-                                <div style={{
-                                    fontSize: '13px',
-                                    color: 'var(--secondary-text)',
-                                    marginBottom: '6px',
-                                    fontWeight: 500
-                                }}>
+                            <div className="glass-card summary-card">
+                                <div className="summary-label">
                                     Wallet Balance
                                 </div>
-                                <div style={{
-                                    fontSize: '24px',
-                                    fontWeight: 700,
-                                    color: 'var(--text-color)'
-                                }}>
+                                <div className="summary-value">
                                     {formatCurrency(portfolioData.totalValue)}
                                 </div>
                             </div>
                             
-                            <div className="glass-card" style={{ textAlign: 'center', padding: '16px' }}>
-                                <div style={{
-                                    fontSize: '13px',
-                                    color: 'var(--secondary-text)',
-                                    marginBottom: '6px',
-                                    fontWeight: 500
-                                }}>
+                            <div className="glass-card summary-card">
+                                <div className="summary-label">
                                     Liquidity Provided
                                 </div>
-                                <div style={{
-                                    fontSize: '24px',
-                                    fontWeight: 700,
-                                    color: '#3b82f6'
-                                }}>
+                                <div className="summary-value summary-value-blue">
                                     {formatCurrency(portfolioData.totalLiquidity)}
                                 </div>
                             </div>
                             
-                            <div className="glass-card" style={{ textAlign: 'center', padding: '16px' }}>
-                                <div style={{
-                                    fontSize: '13px',
-                                    color: 'var(--secondary-text)',
-                                    marginBottom: '6px',
-                                    fontWeight: 500
-                                }}>
+                            <div className="glass-card summary-card">
+                                <div className="summary-label">
                                     Active Positions
                                 </div>
-                                <div style={{
-                                    fontSize: '24px',
-                                    fontWeight: 700,
-                                    color: '#22c55e'
-                                }}>
+                                <div className="summary-value summary-value-green">
                                     {portfolioData.positionCount}
                                 </div>
                             </div>
                             
-                            <div className="glass-card" style={{ textAlign: 'center', padding: '16px' }}>
-                                <div style={{
-                                    fontSize: '13px',
-                                    color: 'var(--secondary-text)',
-                                    marginBottom: '6px',
-                                    fontWeight: 500
-                                }}>
+                            <div className="glass-card summary-card">
+                                <div className="summary-label">
                                     Total Net Worth
                                 </div>
-                                <div style={{
-                                    fontSize: '24px',
-                                    fontWeight: 700,
-                                    color: portfolioData.netWorth >= 0 ? '#22c55e' : '#ef4444'
-                                }}>
+                                <div className={`summary-value ${portfolioData.netWorth >= 0 ? 'summary-value-green' : 'summary-value-red'}`}>
                                     {formatCurrency(portfolioData.netWorth)}
                                 </div>
                             </div>
@@ -485,86 +394,37 @@ const Portfolio: React.FC = () => {
                             />
                         )}
 
-                        {/* Main Content - New Layout: Liquidity First */}
+                        {/* Main Content - Responsive Layout */}
                         <div className="portfolio-main">
                             {/* Left Column - Primary: Multi-Chain Liquidity Positions */}
-                            <div>
+                            <div className="portfolio-main-left">
                                 {/* Multi-Chain Liquidity Positions */}
                                 <div className="portfolio-section">
-                                    <div style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        marginBottom: '20px',
-                                        paddingBottom: '12px',
-                                        borderBottom: '1px solid var(--border-color)'
-                                    }}>
-                                        <h3 style={{
-                                            margin: 0,
-                                            fontSize: '20px',
-                                            fontWeight: 700,
-                                            color: 'var(--text-color)'
-                                        }}>Multi-Chain Liquidity Positions</h3>
-                                        <div style={{
-                                            width: '32px',
-                                            height: '32px',
-                                            borderRadius: '50%',
-                                            background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-                                            color: 'white',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            fontSize: '14px'
-                                        }}>
+                                    <div className="section-header">
+                                        <h3 className="section-title">Multi-Chain Liquidity Positions</h3>
+                                        <div className="section-icon">
                                             🏊‍♂️
                                         </div>
                                     </div>
 
                                     {positions.length === 0 ? (
-                                        <div style={{
-                                            textAlign: 'center',
-                                            padding: '60px 20px',
-                                            background: 'rgba(255, 255, 255, 0.7)',
-                                            borderRadius: '16px',
-                                            border: '2px dashed rgba(156, 163, 175, 0.5)'
-                                        }}>
-                                            <div style={{
-                                                fontSize: '48px',
-                                                marginBottom: '16px',
-                                                color: 'var(--secondary-text)'
-                                            }}>
-                                                🌊
-                                            </div>
-                                            <h4 style={{
-                                                fontSize: '18px',
-                                                fontWeight: 600,
-                                                color: 'var(--text-color)',
-                                                marginBottom: '12px'
-                                            }}>
+                                        <div className="glass-card empty-positions">
+                                            <div className="empty-positions-icon">🌊</div>
+                                            <h4 className="empty-positions-title">
                                                 No Active Liquidity Positions
                                             </h4>
-                                            <p style={{
-                                                color: 'var(--secondary-text)',
-                                                fontSize: '16px',
-                                                marginBottom: '24px',
-                                                maxWidth: '400px',
-                                                margin: '0 auto 24px'
-                                            }}>
+                                            <p className="empty-positions-description">
                                                 Start providing liquidity across multiple chains to earn fees and rewards from our DeFi protocol
                                             </p>
                                             <button 
-                                                className="button primary"
+                                                className="button button-primary"
                                                 onClick={handleBrowsePools}
-                                                style={{
-                                                    padding: '12px 24px',
-                                                    fontSize: '16px'
-                                                }}
                                             >
                                                 Explore Pools
                                             </button>
                                         </div>
                                     ) : (
-                                        <div style={{ display: 'grid', gap: '16px' }}>
+                                        <div className="positions-grid">
                                             {/* Group liquidity positions by chain */}
                                             {[97, 11155111].map(chainIdToShow => {
                                                 const chainPositions = positions.filter(pos => 
@@ -574,140 +434,51 @@ const Portfolio: React.FC = () => {
                                                 if (chainPositions.length === 0) return null;
                                                 
                                                 return (
-                                                    <div key={chainIdToShow} style={{
-                                                        border: `2px solid ${chainIdToShow === chainId ? 'rgba(59, 130, 246, 0.4)' : 'rgba(156, 163, 175, 0.3)'}`,
-                                                        borderRadius: '16px',
-                                                        padding: '20px',
-                                                        background: chainIdToShow === chainId ? 
-                                                            'linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.03))' : 
-                                                            'rgba(255, 255, 255, 0.6)'
-                                                    }}>
-                                                        <div style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'space-between',
-                                                            marginBottom: '16px'
-                                                        }}>
-                                                            <h4 style={{
-                                                                margin: 0,
-                                                                fontSize: '18px',
-                                                                fontWeight: 600,
-                                                                color: 'var(--text-color)',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                gap: '10px'
-                                                            }}>
-                                                                <span style={{
-                                                                    fontSize: '20px'
-                                                                }}>
+                                                    <div key={chainIdToShow} className={`chain-group ${chainIdToShow === chainId ? 'chain-group-active' : ''}`}>
+                                                        <div className="chain-header">
+                                                            <h4 className="chain-title">
+                                                                <span className="chain-icon">
                                                                     {chainIdToShow === 97 ? '🟡' : '🔵'}
                                                                 </span>
                                                                 {getChainName(chainIdToShow)}
                                                             </h4>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                            <div className="chain-badges">
                                                                 {chainIdToShow === chainId && (
-                                                                    <span style={{
-                                                                        padding: '6px 10px',
-                                                                        background: 'rgba(34, 197, 94, 0.15)',
-                                                                        color: '#22c55e',
-                                                                        fontSize: '12px',
-                                                                        fontWeight: 600,
-                                                                        borderRadius: '8px'
-                                                                    }}>
+                                                                    <span className="badge badge-success">
                                                                         Connected
                                                                     </span>
                                                                 )}
-                                                                <span style={{
-                                                                    padding: '6px 10px',
-                                                                    background: 'rgba(59, 130, 246, 0.15)',
-                                                                    color: '#3b82f6',
-                                                                    fontSize: '12px',
-                                                                    fontWeight: 600,
-                                                                    borderRadius: '8px'
-                                                                }}>
+                                                                <span className="badge badge-primary">
                                                                     {chainPositions.length} Position{chainPositions.length > 1 ? 's' : ''}
                                                                 </span>
                                                             </div>
                                                         </div>
                                                         
-                                                        <div style={{ display: 'grid', gap: '12px' }}>
+                                                        <div className="positions-list">
                                                             {chainPositions.map((position, index) => (
-                                                                <div key={`${chainIdToShow}-${index}`} style={{
-                                                                    display: 'flex',
-                                                                    justifyContent: 'space-between',
-                                                                    alignItems: 'center',
-                                                                    padding: '16px',
-                                                                    background: 'rgba(255, 255, 255, 0.8)',
-                                                                    borderRadius: '12px',
-                                                                    border: '1px solid rgba(59, 130, 246, 0.2)',
-                                                                    transition: 'all 0.2s ease',
-                                                                    cursor: 'pointer'
-                                                                }}>
-                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                                                                        <div style={{
-                                                                            width: '44px',
-                                                                            height: '44px',
-                                                                            borderRadius: '12px',
-                                                                            background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-                                                                            color: 'white',
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            justifyContent: 'center',
-                                                                            fontSize: '16px',
-                                                                            fontWeight: 600
-                                                                        }}>
+                                                                <div key={`${chainIdToShow}-${index}`} className="position-card">
+                                                                    <div className="position-info">
+                                                                        <div className="position-icon">
                                                                             {position.token.slice(0, 2)}
                                                                         </div>
-                                                                        <div>
-                                                                            <div style={{
-                                                                                fontSize: '16px',
-                                                                                fontWeight: 600,
-                                                                                color: 'var(--text-color)',
-                                                                                marginBottom: '4px'
-                                                                            }}>
+                                                                        <div className="position-details">
+                                                                            <div className="position-name">
                                                                                 {position.token} Liquidity Pool
                                                                             </div>
-                                                                            <div style={{
-                                                                                fontSize: '13px',
-                                                                                color: 'var(--secondary-text)',
-                                                                                display: 'flex',
-                                                                                alignItems: 'center',
-                                                                                gap: '8px'
-                                                                            }}>
+                                                                            <div className="position-meta">
                                                                                 <span>APY: {position.apy}</span>
-                                                                                <span style={{
-                                                                                    width: '4px',
-                                                                                    height: '4px',
-                                                                                    borderRadius: '50%',
-                                                                                    background: 'var(--secondary-text)'
-                                                                                }}></span>
-                                                                                <span style={{
-                                                                                    padding: '2px 6px',
-                                                                                    background: 'rgba(34, 197, 94, 0.1)',
-                                                                                    color: '#22c55e',
-                                                                                    borderRadius: '4px',
-                                                                                    fontSize: '11px',
-                                                                                    fontWeight: 500
-                                                                                }}>
+                                                                                <span className="meta-separator"></span>
+                                                                                <span className="status-badge status-active">
                                                                                     Active
                                                                                 </span>
                                                                             </div>
                                                                         </div>
                                                                     </div>
-                                                                    <div style={{ textAlign: 'right' }}>
-                                                                        <div style={{
-                                                                            fontSize: '16px',
-                                                                            fontWeight: 600,
-                                                                            color: 'var(--text-color)',
-                                                                            marginBottom: '4px'
-                                                                        }}>
+                                                                    <div className="position-values">
+                                                                        <div className="position-shares">
                                                                             {parseFloat(position.shares).toFixed(4)} LP
                                                                         </div>
-                                                                        <div style={{
-                                                                            fontSize: '14px',
-                                                                            color: '#22c55e',
-                                                                            fontWeight: 500
-                                                                        }}>
+                                                                        <div className="position-value">
                                                                             {formatCurrency(position.value)}
                                                                         </div>
                                                                     </div>
@@ -723,19 +494,14 @@ const Portfolio: React.FC = () => {
                             </div>
 
                             {/* Right Column - Secondary: Simplified Overview */}
-                            <div>
+                            <div className="portfolio-main-right">
                                 {/* Simplified Wallet Balances Summary */}
                                 <div className="portfolio-section">
-                                    <h3 style={{
-                                        marginBottom: '16px',
-                                        fontSize: '16px',
-                                        fontWeight: 600,
-                                        color: 'var(--text-color)'
-                                    }}>
+                                    <h3 className="section-title">
                                         Wallet Balance Summary
                                     </h3>
                                     
-                                    <div style={{ display: 'grid', gap: '12px' }}>
+                                    <div className="balance-summary">
                                         {[97, 11155111].map(chainIdToShow => {
                                             const chainPools = poolList.filter(pool => pool.chainId === chainIdToShow);
                                             const chainTotalValue = chainPools.reduce((total, pool) => {
@@ -747,57 +513,27 @@ const Portfolio: React.FC = () => {
                                             const hasBalance = chainTotalValue > 0;
                                             
                                             return (
-                                                <div key={chainIdToShow} style={{
-                                                    padding: '16px',
-                                                    background: hasBalance ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.7)',
-                                                    borderRadius: '12px',
-                                                    border: `1px solid ${hasBalance ? 'rgba(34, 197, 94, 0.3)' : 'rgba(156, 163, 175, 0.2)'}`
-                                                }}>
-                                                    <div style={{
-                                                        display: 'flex',
-                                                        justifyContent: 'space-between',
-                                                        alignItems: 'center'
-                                                    }}>
-                                                        <div style={{
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: '8px'
-                                                        }}>
-                                                            <span style={{ fontSize: '16px' }}>
+                                                <div key={chainIdToShow} className={`balance-card ${hasBalance ? 'balance-card-active' : ''}`}>
+                                                    <div className="balance-content">
+                                                        <div className="balance-info">
+                                                            <span className="chain-icon">
                                                                 {chainIdToShow === 97 ? '🟡' : '🔵'}
                                                             </span>
                                                             <div>
-                                                                <div style={{
-                                                                    fontSize: '14px',
-                                                                    fontWeight: 600,
-                                                                    color: 'var(--text-color)'
-                                                                }}>
+                                                                <div className="balance-chain">
                                                                     {getChainName(chainIdToShow)}
                                                                 </div>
-                                                                <div style={{
-                                                                    fontSize: '12px',
-                                                                    color: 'var(--secondary-text)'
-                                                                }}>
+                                                                <div className="balance-assets">
                                                                     {chainPools.length} assets
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <div style={{
-                                                            textAlign: 'right'
-                                                        }}>
-                                                            <div style={{
-                                                                fontSize: '16px',
-                                                                fontWeight: 600,
-                                                                color: hasBalance ? '#22c55e' : 'var(--secondary-text)'
-                                                            }}>
+                                                        <div className="balance-values">
+                                                            <div className={`balance-amount ${hasBalance ? 'balance-amount-active' : ''}`}>
                                                                 {formatCurrency(chainTotalValue)}
                                                             </div>
                                                             {chainIdToShow === chainId && (
-                                                                <div style={{
-                                                                    fontSize: '11px',
-                                                                    color: '#22c55e',
-                                                                    fontWeight: 500
-                                                                }}>
+                                                                <div className="balance-current">
                                                                     Current
                                                                 </div>
                                                             )}
@@ -808,31 +544,18 @@ const Portfolio: React.FC = () => {
                                         })}
                                     </div>
 
-                                    <div style={{
-                                        marginTop: '12px',
-                                        padding: '12px',
-                                        background: 'rgba(59, 130, 246, 0.1)',
-                                        borderRadius: '8px',
-                                        fontSize: '12px',
-                                        color: 'var(--secondary-text)',
-                                        textAlign: 'center'
-                                    }}>
+                                    <div className="info-note">
                                         💡 These are testnet tokens. Get them from faucets to test the protocol.
                                     </div>
                                 </div>
 
                                 {/* Quick Actions */}
-                                <div className="portfolio-section" style={{ marginTop: '20px' }}>
-                                    <h3 style={{
-                                        marginBottom: '16px',
-                                        fontSize: '16px',
-                                        fontWeight: 600,
-                                        color: 'var(--text-color)'
-                                    }}>
+                                <div className="portfolio-section">
+                                    <h3 className="section-title">
                                         Quick Actions
                                     </h3>
                                     
-                                    <div style={{ display: 'grid', gap: '10px' }}>
+                                    <div className="quick-actions">
                                         <button 
                                             className="button button-primary button-full"
                                             onClick={handleDeposit}
@@ -862,8 +585,6 @@ const Portfolio: React.FC = () => {
                                         </button>
                                     </div>
                                 </div>
-
-
                             </div>
                         </div>
                     </>
@@ -901,51 +622,25 @@ const Portfolio: React.FC = () => {
             {/* Bridge Modal - Quick Bridge to main interface */}
             {isBridgeModalOpen && (
                 <div 
-                    style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 1000,
-                        padding: '20px'
-                    }}
+                    className="modal-overlay"
                     onClick={() => setIsBridgeModalOpen(false)}
                 >
                     <div 
-                        style={{
-                            background: 'white',
-                            borderRadius: '20px',
-                            padding: '24px',
-                            maxWidth: '450px',
-                            textAlign: 'center'
-                        }}
+                        className="glass-card bridge-modal"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div style={{ fontSize: '48px', marginBottom: '16px' }}>🌉</div>
-                        <h3 style={{ marginBottom: '12px', color: 'var(--text-color)' }}>Cross-Chain Bridge</h3>
-                        <p style={{ marginBottom: '20px', color: 'var(--secondary-text)', lineHeight: 1.5 }}>
+                        <div className="bridge-modal-icon">🌉</div>
+                        <h3 className="bridge-modal-title">Cross-Chain Bridge</h3>
+                        <p className="bridge-modal-description">
                             Transfer your assets between Ethereum Sepolia and BSC Testnet using our secure cross-chain bridge.
                         </p>
-                        <div style={{
-                            background: 'rgba(59, 130, 246, 0.1)',
-                            padding: '12px',
-                            borderRadius: '8px',
-                            marginBottom: '20px',
-                            fontSize: '14px',
-                            color: 'var(--secondary-text)'
-                        }}>
+                        <div className="bridge-modal-info">
                             💡 Bridge transactions typically take 5-10 minutes to complete
                         </div>
-                        <div style={{ display: 'flex', gap: '12px' }}>
+                        <div className="bridge-modal-actions">
                             <button 
                                 onClick={() => setIsBridgeModalOpen(false)}
-                                className="button secondary"
-                                style={{ flex: 1 }}
+                                className="button button-secondary"
                             >
                                 Cancel
                             </button>
@@ -954,8 +649,7 @@ const Portfolio: React.FC = () => {
                                     setIsBridgeModalOpen(false);
                                     router.push('/?tab=bridge');
                                 }}
-                                className="button primary"
-                                style={{ flex: 1 }}
+                                className="button button-primary"
                             >
                                 Open Bridge
                             </button>
@@ -963,6 +657,512 @@ const Portfolio: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* Portfolio Styles */}
+            <style jsx>{`
+                .portfolio-header {
+                    margin-bottom: var(--space-lg);
+                    text-align: center;
+                }
+
+                .portfolio-title {
+                    font-size: 28px;
+                    font-weight: 700;
+                    color: var(--text-primary);
+                    margin-bottom: var(--space-sm);
+                }
+
+                .portfolio-subtitle {
+                    color: var(--text-secondary);
+                    font-size: 16px;
+                }
+
+                .portfolio-empty-state {
+                    text-align: center;
+                    padding: var(--space-2xl) var(--space-xl);
+                    max-width: 500px;
+                    margin: 0 auto;
+                }
+
+                .empty-state-icon {
+                    font-size: 48px;
+                    margin-bottom: var(--space-lg);
+                    color: var(--text-secondary);
+                }
+
+                .empty-state-title {
+                    font-size: 24px;
+                    font-weight: 600;
+                    color: var(--text-primary);
+                    margin-bottom: var(--space-md);
+                }
+
+                .empty-state-description {
+                    color: var(--text-secondary);
+                    font-size: 16px;
+                    line-height: 1.5;
+                    margin-bottom: var(--space-lg);
+                }
+
+                .portfolio-summary {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: var(--space-md);
+                    margin-bottom: var(--space-lg);
+                }
+
+                .summary-card {
+                    text-align: center;
+                    padding: var(--space-md);
+                }
+
+                .summary-label {
+                    font-size: 13px;
+                    color: var(--text-secondary);
+                    margin-bottom: var(--space-xs);
+                    font-weight: 500;
+                }
+
+                .summary-value {
+                    font-size: 24px;
+                    font-weight: 700;
+                    color: var(--text-primary);
+                }
+
+                .summary-value-blue {
+                    color: var(--accent-secondary);
+                }
+
+                .summary-value-green {
+                    color: var(--success);
+                }
+
+                .summary-value-red {
+                    color: var(--danger);
+                }
+
+                .portfolio-main {
+                    display: grid;
+                    grid-template-columns: 1fr 320px;
+                    gap: var(--space-lg);
+                }
+
+                .portfolio-section {
+                    margin-bottom: var(--space-lg);
+                }
+
+                .section-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: var(--space-lg);
+                    padding-bottom: var(--space-md);
+                    border-bottom: 1px solid var(--border-glass);
+                }
+
+                .section-title {
+                    margin: 0;
+                    font-size: 20px;
+                    font-weight: 700;
+                    color: var(--text-primary);
+                }
+
+                .section-icon {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    background: var(--accent-gradient);
+                    color: white;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 14px;
+                }
+
+                .empty-positions {
+                    text-align: center;
+                    padding: var(--space-2xl) var(--space-lg);
+                    border: 2px dashed var(--border-glass);
+                }
+
+                .empty-positions-icon {
+                    font-size: 48px;
+                    margin-bottom: var(--space-md);
+                    color: var(--text-secondary);
+                }
+
+                .empty-positions-title {
+                    font-size: 18px;
+                    font-weight: 600;
+                    color: var(--text-primary);
+                    margin-bottom: var(--space-md);
+                }
+
+                .empty-positions-description {
+                    color: var(--text-secondary);
+                    font-size: 16px;
+                    margin-bottom: var(--space-lg);
+                    max-width: 400px;
+                    margin: 0 auto var(--space-lg);
+                }
+
+                .positions-grid {
+                    display: grid;
+                    gap: var(--space-md);
+                }
+
+                .chain-group {
+                    border: 2px solid var(--border-glass);
+                    border-radius: var(--radius-lg);
+                    padding: var(--space-lg);
+                    background: var(--bg-card);
+                    transition: all var(--transition-normal);
+                }
+
+                .chain-group-active {
+                    border-color: var(--accent-primary);
+                    background: linear-gradient(135deg, rgba(6, 182, 212, 0.08), rgba(6, 182, 212, 0.03));
+                }
+
+                .chain-header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    margin-bottom: var(--space-md);
+                }
+
+                .chain-title {
+                    margin: 0;
+                    font-size: 18px;
+                    font-weight: 600;
+                    color: var(--text-primary);
+                    display: flex;
+                    align-items: center;
+                    gap: var(--space-sm);
+                }
+
+                .chain-icon {
+                    font-size: 20px;
+                }
+
+                .chain-badges {
+                    display: flex;
+                    align-items: center;
+                    gap: var(--space-sm);
+                }
+
+                .badge {
+                    padding: 6px var(--space-sm);
+                    font-size: 12px;
+                    font-weight: 600;
+                    border-radius: var(--radius-md);
+                }
+
+                .badge-success {
+                    background: var(--success-bg);
+                    color: var(--success);
+                }
+
+                .badge-primary {
+                    background: rgba(59, 130, 246, 0.15);
+                    color: var(--accent-secondary);
+                }
+
+                .positions-list {
+                    display: grid;
+                    gap: var(--space-md);
+                }
+
+                .position-card {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: var(--space-md);
+                    background: var(--bg-card-hover);
+                    border-radius: var(--radius-md);
+                    border: 1px solid var(--border-glass);
+                    transition: all var(--transition-normal);
+                    cursor: pointer;
+                }
+
+                .position-card:hover {
+                    transform: translateY(-2px);
+                    border-color: var(--accent-primary);
+                    box-shadow: 0 4px 16px rgba(6, 182, 212, 0.2);
+                }
+
+                .position-info {
+                    display: flex;
+                    align-items: center;
+                    gap: var(--space-md);
+                }
+
+                .position-icon {
+                    width: 44px;
+                    height: 44px;
+                    border-radius: var(--radius-md);
+                    background: var(--accent-gradient);
+                    color: white;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 16px;
+                    font-weight: 600;
+                }
+
+                .position-name {
+                    font-size: 16px;
+                    font-weight: 600;
+                    color: var(--text-primary);
+                    margin-bottom: var(--space-xs);
+                }
+
+                .position-meta {
+                    font-size: 13px;
+                    color: var(--text-secondary);
+                    display: flex;
+                    align-items: center;
+                    gap: var(--space-sm);
+                }
+
+                .meta-separator {
+                    width: 4px;
+                    height: 4px;
+                    border-radius: 50%;
+                    background: var(--text-secondary);
+                }
+
+                .status-badge {
+                    padding: 2px 6px;
+                    border-radius: var(--radius-sm);
+                    font-size: 11px;
+                    font-weight: 500;
+                }
+
+                .status-active {
+                    background: var(--success-bg);
+                    color: var(--success);
+                }
+
+                .position-values {
+                    text-align: right;
+                }
+
+                .position-shares {
+                    font-size: 16px;
+                    font-weight: 600;
+                    color: var(--text-primary);
+                    margin-bottom: var(--space-xs);
+                }
+
+                .position-value {
+                    font-size: 14px;
+                    color: var(--success);
+                    font-weight: 500;
+                }
+
+                .balance-summary {
+                    display: grid;
+                    gap: var(--space-md);
+                }
+
+                .balance-card {
+                    padding: var(--space-md);
+                    background: var(--bg-card);
+                    border-radius: var(--radius-md);
+                    border: 1px solid var(--border-glass);
+                    transition: all var(--transition-normal);
+                }
+
+                .balance-card-active {
+                    background: var(--success-bg);
+                    border-color: var(--success);
+                }
+
+                .balance-content {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+
+                .balance-info {
+                    display: flex;
+                    align-items: center;
+                    gap: var(--space-sm);
+                }
+
+                .balance-chain {
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: var(--text-primary);
+                }
+
+                .balance-assets {
+                    font-size: 12px;
+                    color: var(--text-secondary);
+                }
+
+                .balance-amount {
+                    font-size: 16px;
+                    font-weight: 600;
+                    color: var(--text-secondary);
+                }
+
+                .balance-amount-active {
+                    color: var(--success);
+                }
+
+                .balance-current {
+                    font-size: 11px;
+                    color: var(--success);
+                    font-weight: 500;
+                }
+
+                .info-note {
+                    margin-top: var(--space-md);
+                    padding: var(--space-md);
+                    background: rgba(59, 130, 246, 0.1);
+                    border-radius: var(--radius-md);
+                    font-size: 12px;
+                    color: var(--text-secondary);
+                    text-align: center;
+                }
+
+                .quick-actions {
+                    display: grid;
+                    gap: var(--space-sm);
+                }
+
+                .bridge-modal {
+                    max-width: 450px;
+                    text-align: center;
+                    padding: var(--space-lg);
+                }
+
+                .bridge-modal-icon {
+                    font-size: 48px;
+                    margin-bottom: var(--space-md);
+                }
+
+                .bridge-modal-title {
+                    margin-bottom: var(--space-md);
+                    color: var(--text-primary);
+                    font-size: 20px;
+                    font-weight: 600;
+                }
+
+                .bridge-modal-description {
+                    margin-bottom: var(--space-lg);
+                    color: var(--text-secondary);
+                    line-height: 1.5;
+                }
+
+                .bridge-modal-info {
+                    background: rgba(59, 130, 246, 0.1);
+                    padding: var(--space-md);
+                    border-radius: var(--radius-md);
+                    margin-bottom: var(--space-lg);
+                    font-size: 14px;
+                    color: var(--text-secondary);
+                }
+
+                .bridge-modal-actions {
+                    display: flex;
+                    gap: var(--space-md);
+                }
+
+                /* Responsive Design */
+                @media (max-width: 1024px) {
+                    .portfolio-main {
+                        grid-template-columns: 1fr;
+                        gap: var(--space-md);
+                    }
+                }
+
+                @media (max-width: 768px) {
+                    .portfolio-summary {
+                        grid-template-columns: repeat(2, 1fr);
+                        gap: var(--space-sm);
+                    }
+
+                    .summary-card {
+                        padding: var(--space-sm);
+                    }
+
+                    .summary-value {
+                        font-size: 20px;
+                    }
+
+                    .portfolio-title {
+                        font-size: 24px;
+                    }
+
+                    .section-title {
+                        font-size: 18px;
+                    }
+
+                    .chain-group {
+                        padding: var(--space-md);
+                    }
+
+                    .position-card {
+                        padding: var(--space-sm);
+                    }
+
+                    .position-info {
+                        gap: var(--space-sm);
+                    }
+
+                    .position-icon {
+                        width: 36px;
+                        height: 36px;
+                        font-size: 14px;
+                    }
+
+                    .bridge-modal-actions {
+                        flex-direction: column;
+                    }
+                }
+
+                @media (max-width: 480px) {
+                    .portfolio-summary {
+                        grid-template-columns: 1fr;
+                    }
+
+                    .portfolio-empty-state {
+                        padding: var(--space-lg) var(--space-md);
+                    }
+
+                    .empty-state-icon {
+                        font-size: 40px;
+                    }
+
+                    .empty-state-title {
+                        font-size: 20px;
+                    }
+
+                    .chain-header {
+                        flex-direction: column;
+                        align-items: flex-start;
+                        gap: var(--space-sm);
+                    }
+
+                    .chain-badges {
+                        align-self: flex-end;
+                    }
+
+                    .position-card {
+                        flex-direction: column;
+                        align-items: flex-start;
+                        gap: var(--space-sm);
+                    }
+
+                    .position-values {
+                        text-align: left;
+                        width: 100%;
+                    }
+                }
+            `}</style>
         </Layout>
     );
 };
