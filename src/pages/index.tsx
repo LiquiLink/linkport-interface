@@ -849,6 +849,41 @@ const Home: React.FC = () => {
             const linkPort = chainId == sepolia.id ? linkPorts[sepolia.id] : linkPorts[bscTestnet.id];
             const destChainSelector = Number(targetChain) == sepolia.id ? chainSelector[sepolia.id] : chainSelector[bscTestnet.id];
 
+            const executeLending = async () => {
+                await writeContractLoan({
+                    address: linkPort as `0x${string}`,
+                    abi: linkPortABI,
+                    functionName: 'loan',
+                    args: [destChainSelector, collateralAsset.token, selectedAssets.map(asset => asset.token), selectedAssets.map(asset => parseEther(asset.amount.toString())), selectedAssets.map(asset => parseEther((asset.value * Number(collateralAmount) / totalBorrowValue).toString()))],
+                    chainId: chainId == sepolia.id ? sepolia.id : bscTestnet.id,
+                    chain: chainId == sepolia.id ? sepolia : bscTestnet,
+                    account: address,
+                }, 
+                {
+                    onSuccess: async (txHash) => {
+                        console.log('✅ Borrow successful:', txHash)
+                        try {
+                            await createBorrowTransaction(
+                                collateralAsset.label,
+                                collateralAmount,
+                                totalBorrowValue.toString(),
+                                getChainName(sourceChain),
+                                getChainName(targetChain),
+                                txHash,
+                            );
+                            console.log('📝 Transaction record created');
+                        } catch (error) {
+                            console.error('❌ Failed to create transaction record:', error);
+                        }
+                        showToast('Approval confirmed! Now depositing...', 'success');
+                    },
+                    onError: (error) => {
+                        console.error('❌ Approval failed:', error);
+                        showToast('Approval failed: ' + error.message, 'error');
+                    }
+                })
+            }
+
             await writeContractApprove({
                 address: collateralAsset.token as `0x${string}`,
                 abi: ERC20ABI,
@@ -862,45 +897,13 @@ const Home: React.FC = () => {
                 onSuccess: (txHash) => {
                     console.log('✅ Approval successful:', txHash);
                     showToast('Approval confirmed! Now borrowing...', 'success');
+                    executeLending();
                 },
                 onError: (error) => {
                     console.error('❌ Approval failed:', error);
                     showToast('Approval failed: ' + error.message, 'error');
                 }
             });
-
-            await writeContractLoan({
-                address: linkPort as `0x${string}`,
-                abi: linkPortABI,
-                functionName: 'loan',
-                args: [destChainSelector, collateralAsset.token, selectedAssets.map(asset => asset.token), selectedAssets.map(asset => parseEther(asset.amount.toString())), selectedAssets.map(asset => parseEther((asset.value * Number(collateralAmount) / totalBorrowValue).toString()))],
-                chainId: chainId == sepolia.id ? sepolia.id : bscTestnet.id,
-                chain: chainId == sepolia.id ? sepolia : bscTestnet,
-                account: address,
-            }, 
-            {
-                onSuccess: async (txHash) => {
-                    console.log('✅ Borrow successful:', txHash)
-                    try {
-                        await createBorrowTransaction(
-                            collateralAsset.label,
-                            collateralAmount,
-                            totalBorrowValue.toString(),
-                            getChainName(sourceChain),
-                            getChainName(targetChain),
-                            txHash,
-                        );
-                        console.log('📝 Transaction record created');
-                    } catch (error) {
-                        console.error('❌ Failed to create transaction record:', error);
-                    }
-                    showToast('Approval confirmed! Now depositing...', 'success');
-                },
-                onError: (error) => {
-                    console.error('❌ Approval failed:', error);
-                    showToast('Approval failed: ' + error.message, 'error');
-                }
-            })
 
             // Get collateral smart contract information
             const poolData = poolList.find(pool => 
