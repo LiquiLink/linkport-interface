@@ -53,8 +53,14 @@ const Dropdown: React.FC<DropdownProps> = ({
                 style={{
                     cursor: disabled ? 'not-allowed' : 'pointer',
                     opacity: disabled ? 0.6 : 1,
-                    backgroundColor: isOpen ? 'rgba(59, 130, 246, 0.05)' : 'white',
-                    borderColor: isOpen ? 'rgba(59, 130, 246, 0.3)' : 'var(--border-color)'
+                    background: isOpen ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%)' : 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.8) 100%)',
+                    borderColor: isOpen ? 'var(--accent-primary)' : 'var(--border-glass-strong)',
+                    color: 'var(--text-primary)',
+                    padding: '12px 16px',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid',
+                    boxShadow: isOpen ? '0 0 0 2px rgba(6, 182, 212, 0.2)' : '0 2px 8px rgba(0, 0, 0, 0.1)',
+                    transition: 'all var(--transition-normal)'
                 }}
                 onClick={() => !disabled && setIsOpen(!isOpen)}
             >
@@ -62,12 +68,12 @@ const Dropdown: React.FC<DropdownProps> = ({
                     {selectedOption?.icon && (
                         <div style={getTokenIconStyle(selectedOption.icon)}>{selectedOption.icon}</div>
                     )}
-                    <div style={{ fontSize: '16px', fontWeight: 500 }}>
+                    <div style={{ fontSize: '16px', fontWeight: 500, color: 'var(--text-primary)' }}>
                         {selectedOption ? selectedOption.label : placeholder}
                     </div>
                 </div>
                 <div style={{ 
-                    color: 'var(--secondary-text)',
+                    color: 'var(--text-secondary)',
                     transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                     transition: 'transform 0.2s ease'
                 }}>
@@ -82,11 +88,11 @@ const Dropdown: React.FC<DropdownProps> = ({
                     left: 0,
                     right: 0,
                     marginTop: '4px',
-                    background: 'rgba(255, 255, 255, 0.95)',
+                    background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%)',
                     backdropFilter: 'blur(20px)',
-                    borderRadius: '12px',
-                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-md)',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+                    border: '1px solid var(--border-glass-strong)',
                     zIndex: 1000,
                     maxHeight: '300px',
                     overflowY: 'auto'
@@ -100,14 +106,15 @@ const Dropdown: React.FC<DropdownProps> = ({
                                 gap: '12px',
                                 padding: '12px 16px',
                                 cursor: 'pointer',
-                                backgroundColor: option.value === value ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
-                                borderBottom: '1px solid rgba(0, 0, 0, 0.05)',
-                                transition: 'background-color 0.2s ease'
+                                backgroundColor: option.value === value ? 'rgba(6, 182, 212, 0.2)' : 'transparent',
+                                borderBottom: '1px solid var(--border-glass)',
+                                transition: 'background-color 0.2s ease',
+                                color: 'var(--text-primary)'
                             }}
                             onClick={() => handleOptionClick(option.value)}
                             onMouseEnter={(e) => {
                                 if (option.value !== value) {
-                                    (e.target as HTMLElement).style.backgroundColor = 'rgba(0, 0, 0, 0.02)';
+                                    (e.target as HTMLElement).style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
                                 }
                             }}
                             onMouseLeave={(e) => {
@@ -120,17 +127,17 @@ const Dropdown: React.FC<DropdownProps> = ({
                                 <div style={getTokenIconStyle(option.icon)}>{option.icon}</div>
                             )}
                             <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: '15px', fontWeight: 500, color: 'var(--text-color)' }}>
+                                <div style={{ fontSize: '15px', fontWeight: 500, color: 'var(--text-primary)' }}>
                                     {option.label}
                                 </div>
                                 {option.description && (
-                                    <div style={{ fontSize: '12px', color: 'var(--secondary-text)' }}>
+                                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                                         {option.description}
                                     </div>
                                 )}
                             </div>
                             {option.value === value && (
-                                <div style={{ color: 'var(--accent-color)' }}>
+                                <div style={{ color: 'var(--accent-primary)' }}>
                                     <i className="fas fa-check"></i>
                                 </div>
                             )}

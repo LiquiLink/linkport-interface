@@ -10,23 +10,19 @@ const Navigation: React.FC = () => {
   const navigationItems = [
     { 
       href: '/', 
-      label: 'DeFi Hub',
-      icon: 'fas fa-home'
+      label: 'DeFi Hub'
     },
     { 
       href: '/pools', 
-      label: 'Liquidity Pools',
-      icon: 'fas fa-water'
+      label: 'Liquidity Pools'
     },
     { 
       href: '/portfolio', 
-      label: 'Portfolio',
-      icon: 'fas fa-chart-pie'
+      label: 'Portfolio'
     },
     { 
       href: '/history', 
-      label: 'History',
-      icon: 'fas fa-history'
+      label: 'History'
     },
   ];
 
@@ -46,12 +42,22 @@ const Navigation: React.FC = () => {
         {/* Logo Section */}
         <Link href="/" className="logo-section">
           <div className="logo-wrapper">
-            <div className="logo-image">
-              <img 
-                src="/logo.png" 
-                alt="Liquilink Logo" 
-              />
-            </div>
+                                        <div className="logo-image">
+                              <img 
+                                src="/liquilink-logo.svg" 
+                                alt="Liquilink Logo"
+                                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  const fallback = target.parentElement?.querySelector('.logo-fallback') as HTMLElement;
+                                  if (fallback) fallback.style.display = 'flex';
+                                }}
+                              />
+                              <div className="logo-fallback" style={{ display: 'none' }}>
+                                <span style={{ fontSize: '14px', fontWeight: '800', color: 'white' }}>LL</span>
+                              </div>
+                            </div>
             <div className="logo-text">
               <span className="logo-name">LIQUILINK</span>
               <div className="logo-tagline">Cross-Chain DeFi</div>
@@ -69,7 +75,6 @@ const Navigation: React.FC = () => {
                 href={item.href}
                 className={`navigation-item ${isActive ? 'active' : ''}`}
               >
-                <i className={item.icon} />
                 <span>{item.label}</span>
                 {isActive && <div className="active-indicator" />}
               </Link>
@@ -83,7 +88,7 @@ const Navigation: React.FC = () => {
         </div>
       </div>
 
-      {/* Styles */}
+      {/* Optimized Styles */}
       <style jsx>{`
         .navigation {
           position: fixed;
@@ -91,34 +96,35 @@ const Navigation: React.FC = () => {
           left: 0;
           right: 0;
           z-index: 1000;
-          background: var(--bg-glass);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
+          background: var(--bg-glass-strong);
           border-bottom: 1px solid var(--border-glass);
-          padding: 16px 0;
+          padding: 12px 0; /* 增加padding来改善对齐 */
           transition: all var(--transition-normal);
-          box-shadow: var(--shadow-glass);
+          box-shadow: var(--shadow-medium);
         }
 
         .navigation.scrolled {
           background: var(--bg-glass-strong);
           border-bottom-color: var(--border-glass-strong);
-          box-shadow: var(--shadow-glass-hover);
+          box-shadow: var(--shadow-large);
         }
 
         .navigation-container {
-          max-width: 1600px;
+          max-width: 1400px;
           margin: 0 auto;
           padding: 0 var(--space-lg);
           display: flex;
           justify-content: space-between;
           align-items: center;
+          height: 100%; /* 确保垂直对齐 */
         }
 
         .logo-section {
           text-decoration: none;
           cursor: pointer;
           transition: all var(--transition-normal);
+          display: flex; /* 确保flex布局 */
+          align-items: center;
         }
 
         .logo-section:hover {
@@ -133,25 +139,40 @@ const Navigation: React.FC = () => {
 
         .logo-image {
           position: relative;
-          width: 40px;
-          height: 40px;
+          width: 36px; /* 稍微增大logo */
+          height: 36px;
           background: var(--accent-gradient);
           border-radius: 50%;
-          padding: 8px;
-          box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+          padding: 6px;
+          box-shadow: var(--shadow-glow);
           transition: all var(--transition-normal);
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .logo-image:hover {
-          box-shadow: 0 0 30px rgba(6, 182, 212, 0.5);
-          transform: rotate(360deg);
+          box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+          transform: rotate(180deg);
         }
 
         .logo-image img {
           width: 100%;
           height: 100%;
           object-fit: contain;
-          filter: brightness(0) invert(1);
+          border-radius: 50%;
+        }
+
+        .logo-fallback {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+          font-weight: 800;
+          color: white;
+          letter-spacing: 1px;
         }
 
         .logo-text {
@@ -161,7 +182,7 @@ const Navigation: React.FC = () => {
         }
 
         .logo-name {
-          font-size: 20px;
+          font-size: 18px; /* Reduced from 20px */
           font-weight: 800;
           background: var(--accent-gradient);
           -webkit-background-clip: text;
@@ -172,7 +193,7 @@ const Navigation: React.FC = () => {
         }
 
         .logo-tagline {
-          font-size: 10px;
+          font-size: 9px; /* Reduced from 10px */
           font-weight: 500;
           color: var(--text-tertiary);
           text-transform: uppercase;
@@ -183,7 +204,7 @@ const Navigation: React.FC = () => {
         .navigation-items {
           display: flex;
           align-items: center;
-          gap: var(--space-sm);
+          gap: var(--space-2xl); /* Much larger gap for better spacing */
         }
 
         .navigation-item {
@@ -193,44 +214,29 @@ const Navigation: React.FC = () => {
           color: var(--text-secondary);
           text-decoration: none;
           font-weight: 500;
-          padding: 12px 16px;
+          padding: 10px var(--space-md); /* More generous padding */
           border-radius: var(--radius-md);
           background: transparent;
           border: 1px solid transparent;
           transition: all var(--transition-normal);
           font-size: 14px;
           position: relative;
-          overflow: hidden;
           white-space: nowrap;
-        }
-
-        .navigation-item::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: -100%;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
-          transition: left 0.6s ease;
-        }
-
-        .navigation-item:hover::before {
-          left: 100%;
+          min-width: fit-content; /* Ensure proper width */
         }
 
         .navigation-item:hover {
           color: var(--text-primary);
-          background: var(--bg-glass);
+          background: var(--bg-surface);
           border-color: var(--border-glass);
           transform: translateY(-1px);
         }
 
         .navigation-item.active {
           color: var(--text-primary);
-          background: rgba(6, 182, 212, 0.1);
+          background: rgba(6, 182, 212, 0.15);
           border-color: var(--accent-primary);
-          box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
+          box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
         }
 
         .navigation-item.active::after {
@@ -243,7 +249,7 @@ const Navigation: React.FC = () => {
           height: 2px;
           background: var(--accent-gradient);
           border-radius: 1px;
-          animation: activeSlideIn 0.3s ease;
+          animation: activeSlideIn 0.2s ease; /* Faster animation */
         }
 
         @keyframes activeSlideIn {
@@ -261,26 +267,27 @@ const Navigation: React.FC = () => {
           font-size: 12px;
           width: 16px;
           text-align: center;
+          color: inherit; /* Inherit color from parent */
         }
 
         .wallet-section {
-          margin-left: var(--space-lg);
+          margin-left: var(--space-xl); /* Increased space before wallet */
           display: flex;
           align-items: center;
         }
 
-        /* Mobile Responsive */
+        /* Mobile Responsive - Better spacing */
         @media (max-width: 1024px) {
           .navigation-container {
             padding: 0 var(--space-md);
           }
 
           .navigation-items {
-            gap: var(--space-xs);
+            gap: var(--space-md); /* Maintain spacing on medium screens */
           }
 
           .navigation-item {
-            padding: 10px 12px;
+            padding: 8px var(--space-sm);
             font-size: 13px;
           }
 
@@ -289,13 +296,13 @@ const Navigation: React.FC = () => {
           }
 
           .wallet-section {
-            margin-left: var(--space-md);
+            margin-left: var(--space-lg);
           }
         }
 
         @media (max-width: 768px) {
           .navigation {
-            padding: 12px 0;
+            padding: 10px 0; /* Reduced for mobile */
           }
 
           .navigation-container {
@@ -303,15 +310,15 @@ const Navigation: React.FC = () => {
           }
 
           .navigation-items {
-            gap: var(--space-xs);
+            gap: var(--space-sm); /* Tighter on mobile */
           }
 
           .navigation-item span {
-            display: none;
+            display: none; /* Hide labels on mobile */
           }
 
           .navigation-item {
-            padding: 10px;
+            padding: 8px;
             min-width: 40px;
             justify-content: center;
           }
@@ -321,7 +328,7 @@ const Navigation: React.FC = () => {
           }
 
           .wallet-section {
-            margin-left: var(--space-sm);
+            margin-left: var(--space-md);
           }
         }
 
@@ -337,54 +344,44 @@ const Navigation: React.FC = () => {
           }
 
           .navigation-items {
-            gap: 4px;
+            gap: 6px; /* Very tight on small mobile */
           }
 
           .navigation-item {
-            padding: 8px;
+            padding: 6px;
             min-width: 36px;
           }
 
           .navigation-item i {
             font-size: 12px;
           }
+
+          .wallet-section {
+            margin-left: var(--space-sm);
+          }
         }
 
-        /* Enhanced animations */
-        .navigation-item {
-          position: relative;
-        }
-
+        /* Remove complex animations for performance */
         .navigation-item:active {
           transform: translateY(0);
           transition: transform 0.1s ease;
         }
 
-        .logo-image::before {
-          content: '';
-          position: absolute;
-          top: -2px;
-          left: -2px;
-          right: -2px;
-          bottom: -2px;
-          background: conic-gradient(from 0deg, var(--accent-primary), var(--accent-secondary), var(--accent-primary));
-          border-radius: 50%;
-          z-index: -1;
-          opacity: 0;
-          transition: opacity var(--transition-normal);
+        /* Simplified logo animation */
+        .logo-image {
+          position: relative;
         }
 
-        .logo-image:hover::before {
-          opacity: 1;
-          animation: rotate 3s linear infinite;
+        .logo-image:hover {
+          animation: logoSpin 0.5s ease;
         }
 
-        @keyframes rotate {
+        @keyframes logoSpin {
           from {
             transform: rotate(0deg);
           }
           to {
-            transform: rotate(360deg);
+            transform: rotate(180deg);
           }
         }
       `}</style>

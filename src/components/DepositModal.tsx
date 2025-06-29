@@ -712,3 +712,4 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose, onSuccess 
 };
 
 export default DepositModal; 
+ 

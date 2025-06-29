@@ -303,13 +303,9 @@ const History: React.FC = () => {
 
                     {!isConnected ? (
                         /* Wallet Not Connected State */
-                        <div style={{
+                        <div className="glass-card" style={{
                             textAlign: 'center',
-                            padding: '60px 40px',
-                            background: 'rgba(255, 255, 255, 0.6)',
-                            backdropFilter: 'blur(10px)',
-                            borderRadius: '16px',
-                            border: '1px solid var(--border-color)'
+                            padding: '60px 40px'
                         }}>
                             <div style={{
                                 fontSize: '48px',
@@ -336,13 +332,9 @@ const History: React.FC = () => {
                         </div>
                     ) : isLoading ? (
                         /* Loading State */
-                        <div style={{
+                        <div className="glass-card" style={{
                             textAlign: 'center',
-                            padding: '60px 40px',
-                            background: 'rgba(255, 255, 255, 0.6)',
-                            backdropFilter: 'blur(10px)',
-                            borderRadius: '16px',
-                            border: '1px solid var(--border-color)'
+                            padding: '60px 40px'
                         }}>
                             <div style={{
                                 fontSize: '48px',
@@ -507,13 +499,10 @@ const History: React.FC = () => {
                             </div>
 
                             {/* Transaction List */}
-                            <div style={{
-                                background: 'rgba(255, 255, 255, 0.6)',
-                                backdropFilter: 'blur(10px)',
-                                borderRadius: '16px',
-                                border: '1px solid var(--border-color)',
+                            <div className="glass-card" style={{
                                 overflow: 'hidden',
-                                marginBottom: '24px'
+                                marginBottom: '24px',
+                                padding: 0
                             }}>
                                 {filteredTransactions.length === 0 ? (
                                     <div style={{
@@ -668,37 +657,29 @@ const History: React.FC = () => {
                                 gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
                                 gap: '16px'
                             }}>
-                                <div style={{
-                                    background: 'rgba(255, 255, 255, 0.6)',
-                                    backdropFilter: 'blur(10px)',
-                                    borderRadius: '12px',
+                                <div className="glass-card" style={{
                                     padding: '16px',
-                                    textAlign: 'center',
-                                    border: '1px solid var(--border-color)'
+                                    textAlign: 'center'
                                 }}>
                                     <div style={{
                                         fontSize: '20px',
                                         fontWeight: 700,
-                                        color: 'var(--text-color)',
+                                        color: 'var(--text-primary)',
                                         marginBottom: '4px'
                                     }}>
                                         {stats.totalTransactions}
                                     </div>
                                     <div style={{
                                         fontSize: '12px',
-                                        color: 'var(--secondary-text)'
+                                        color: 'var(--text-secondary)'
                                     }}>
                                         Total Transactions
                                     </div>
                                 </div>
 
-                                <div style={{
-                                    background: 'rgba(255, 255, 255, 0.6)',
-                                    backdropFilter: 'blur(10px)',
-                                    borderRadius: '12px',
+                                <div className="glass-card" style={{
                                     padding: '16px',
-                                    textAlign: 'center',
-                                    border: '1px solid var(--border-color)'
+                                    textAlign: 'center'
                                 }}>
                                     <div style={{
                                         fontSize: '20px',
@@ -710,19 +691,15 @@ const History: React.FC = () => {
                                     </div>
                                     <div style={{
                                         fontSize: '12px',
-                                        color: 'var(--secondary-text)'
+                                        color: 'var(--text-secondary)'
                                     }}>
                                         Completed
                                     </div>
                                 </div>
 
-                                <div style={{
-                                    background: 'rgba(255, 255, 255, 0.6)',
-                                    backdropFilter: 'blur(10px)',
-                                    borderRadius: '12px',
+                                <div className="glass-card" style={{
                                     padding: '16px',
-                                    textAlign: 'center',
-                                    border: '1px solid var(--border-color)'
+                                    textAlign: 'center'
                                 }}>
                                     <div style={{
                                         fontSize: '20px',
@@ -734,56 +711,48 @@ const History: React.FC = () => {
                                     </div>
                                     <div style={{
                                         fontSize: '12px',
-                                        color: 'var(--secondary-text)'
+                                        color: 'var(--text-secondary)'
                                     }}>
                                         Pending
                                     </div>
                                 </div>
 
-                                <div style={{
-                                    background: 'rgba(255, 255, 255, 0.6)',
-                                    backdropFilter: 'blur(10px)',
-                                    borderRadius: '12px',
+                                <div className="glass-card" style={{
                                     padding: '16px',
-                                    textAlign: 'center',
-                                    border: '1px solid var(--border-color)'
+                                    textAlign: 'center'
                                 }}>
                                     <div style={{
                                         fontSize: '20px',
                                         fontWeight: 700,
-                                        color: 'var(--text-color)',
+                                        color: 'var(--text-primary)',
                                         marginBottom: '4px'
                                     }}>
                                         ${stats.totalVolume.toLocaleString()}
                                     </div>
                                     <div style={{
                                         fontSize: '12px',
-                                        color: 'var(--secondary-text)'
+                                        color: 'var(--text-secondary)'
                                     }}>
                                         Total Volume
                                     </div>
                                 </div>
 
                                 {stats.mostUsedToken !== 'N/A' && (
-                                    <div style={{
-                                        background: 'rgba(255, 255, 255, 0.6)',
-                                        backdropFilter: 'blur(10px)',
-                                        borderRadius: '12px',
+                                    <div className="glass-card" style={{
                                         padding: '16px',
-                                        textAlign: 'center',
-                                        border: '1px solid var(--border-color)'
+                                        textAlign: 'center'
                                     }}>
                                         <div style={{
                                             fontSize: '20px',
                                             fontWeight: 700,
-                                            color: 'var(--text-color)',
+                                            color: 'var(--text-primary)',
                                             marginBottom: '4px'
                                         }}>
                                             {stats.mostUsedToken}
                                         </div>
                                         <div style={{
                                             fontSize: '12px',
-                                            color: 'var(--secondary-text)'
+                                            color: 'var(--text-secondary)'
                                         }}>
                                             Most Used Token
                                         </div>
@@ -791,25 +760,21 @@ const History: React.FC = () => {
                                 )}
 
                                 {stats.mostUsedChain !== 'N/A' && (
-                                    <div style={{
-                                        background: 'rgba(255, 255, 255, 0.6)',
-                                        backdropFilter: 'blur(10px)',
-                                        borderRadius: '12px',
+                                    <div className="glass-card" style={{
                                         padding: '16px',
-                                        textAlign: 'center',
-                                        border: '1px solid var(--border-color)'
+                                        textAlign: 'center'
                                     }}>
                                         <div style={{
                                             fontSize: '16px',
                                             fontWeight: 700,
-                                            color: 'var(--text-color)',
+                                            color: 'var(--text-primary)',
                                             marginBottom: '4px'
                                         }}>
                                             {stats.mostUsedChain}
                                         </div>
                                         <div style={{
                                             fontSize: '12px',
-                                            color: 'var(--secondary-text)'
+                                            color: 'var(--text-secondary)'
                                         }}>
                                             Most Used Chain
                                         </div>

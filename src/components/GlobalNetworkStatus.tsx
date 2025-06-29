@@ -374,3 +374,4 @@ const GlobalNetworkStatus: React.FC = () => {
 };
 
 export default GlobalNetworkStatus; 
+ 

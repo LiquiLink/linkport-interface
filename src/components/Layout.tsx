@@ -98,39 +98,38 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 {children}
             </main>
 
-            {/* Enhanced Network Status Button - Floating */}
+            {/* Optimized Network Status Button - Compact */}
             <button
                 onClick={() => setIsNetworkInfoOpen(!isNetworkInfoOpen)}
                 className="network-status-button"
-                style={{
-                    position: 'fixed',
-                    top: '90px',
-                    right: 'var(--space-lg)',
+                                    style={{
+                        position: 'fixed',
+                        top: '65px',
+                        right: 'var(--space-lg)',
                     zIndex: 1001,
-                    background: 'var(--bg-glass)',
-                    backdropFilter: 'blur(20px)',
+                    background: 'var(--bg-surface)',
                     border: '1px solid var(--border-glass)',
-                    borderRadius: 'var(--radius-xl)',
-                    padding: '12px 16px',
-                    fontSize: '14px',
+                    borderRadius: 'var(--radius-lg)',
+                    padding: '8px 12px',
+                    fontSize: '13px',
                     fontWeight: 600,
                     cursor: 'pointer',
                     transition: 'all var(--transition-normal)',
-                    boxShadow: 'var(--shadow-glass)',
+                    boxShadow: 'var(--shadow-simple)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 'var(--space-sm)',
                     color: 'var(--text-primary)',
-                    minWidth: '140px'
+                    minWidth: '120px'
                 }}
                 onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
-                    e.currentTarget.style.boxShadow = 'var(--shadow-glass-hover), var(--shadow-glow)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = 'var(--shadow-medium)';
                     e.currentTarget.style.borderColor = 'var(--border-glass-strong)';
                 }}
                 onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                    e.currentTarget.style.boxShadow = 'var(--shadow-glass)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'var(--shadow-simple)';
                     e.currentTarget.style.borderColor = 'var(--border-glass)';
                 }}
             >
@@ -150,7 +149,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </span>
             </button>
 
-            {/* Enhanced Network Information Modal */}
+            {/* Optimized Network Information Modal */}
             {isNetworkInfoOpen && (
                 <div
                     className="modal-overlay animate-fade-in"
@@ -160,12 +159,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        background: 'rgba(0, 0, 0, 0.5)',
-                        backdropFilter: 'blur(8px)',
+                        background: 'rgba(0, 0, 0, 0.4)',
                         display: 'flex',
                         alignItems: 'flex-start',
                         justifyContent: 'flex-end',
-                        padding: '140px var(--space-lg) var(--space-lg) var(--space-lg)',
+                        padding: '100px var(--space-lg) var(--space-lg) var(--space-lg)',
                         zIndex: 1000
                     }}
                     onClick={() => setIsNetworkInfoOpen(false)}
@@ -174,15 +172,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         className="glass-card animate-scale-in"
                         style={{
                             background: 'var(--bg-glass-strong)',
-                            backdropFilter: 'blur(20px)',
-                            borderRadius: 'var(--radius-xl)',
+                            borderRadius: 'var(--radius-lg)',
                             border: '1px solid var(--border-glass)',
-                            padding: 'var(--space-xl)',
-                            minWidth: '400px',
-                            maxWidth: '450px',
-                            maxHeight: '80vh',
+                            padding: 'var(--space-lg)',
+                            minWidth: '350px',
+                            maxWidth: '400px',
+                            maxHeight: '75vh',
                             overflowY: 'auto',
-                            boxShadow: 'var(--shadow-glass-hover)'
+                            boxShadow: 'var(--shadow-large)'
                         }}
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -191,20 +188,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
-                            marginBottom: 'var(--space-xl)',
-                            paddingBottom: 'var(--space-md)',
+                            marginBottom: 'var(--space-lg)',
+                            paddingBottom: 'var(--space-sm)',
                             borderBottom: '1px solid var(--border-glass)'
                         }}>
                             <h3 style={{
                                 margin: 0,
-                                fontSize: '20px',
+                                fontSize: '18px',
                                 fontWeight: 700,
                                 color: 'var(--text-primary)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 'var(--space-sm)'
                             }}>
-                                <i className="fas fa-globe" style={{ color: 'var(--accent-primary)' }} />
+                                <i className="fas fa-globe" style={{ color: 'var(--accent-primary)', fontSize: '16px' }} />
                                 Network Information
                             </h3>
                             <button
@@ -214,10 +211,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                     background: 'transparent',
                                     border: '1px solid var(--border-glass)',
                                     borderRadius: '50%',
-                                    width: '32px',
-                                    height: '32px',
+                                    width: '30px',
+                                    height: '30px',
                                     cursor: 'pointer',
-                                    fontSize: '16px',
+                                    fontSize: '14px',
                                     color: 'var(--text-secondary)',
                                     display: 'flex',
                                     alignItems: 'center',
@@ -231,11 +228,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
                         {/* Current Network Connection */}
                         <div className="glass-card" style={{
-                            background: 'rgba(6, 182, 212, 0.1)',
+                            background: 'rgba(6, 182, 212, 0.12)',
                             borderColor: 'var(--accent-primary)',
-                            marginBottom: 'var(--space-lg)',
-                            position: 'relative',
-                            overflow: 'hidden'
+                            marginBottom: 'var(--space-md)',
+                            position: 'relative'
                         }}>
                             <div style={{
                                 position: 'absolute',
@@ -246,15 +242,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                                 background: 'var(--accent-gradient)'
                             }} />
                             <h4 style={{
-                                fontSize: '16px',
-                                marginBottom: 'var(--space-md)',
+                                fontSize: '15px',
+                                marginBottom: 'var(--space-sm)',
                                 color: 'var(--text-primary)',
                                 fontWeight: 600,
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 'var(--space-sm)'
                             }}>
-                                <i className="fas fa-link" style={{ color: 'var(--accent-primary)' }} />
+                                <i className="fas fa-link" style={{ color: 'var(--accent-primary)', fontSize: '14px' }} />
                                 Current Network Connection
                             </h4>
                             <div style={{ display: 'grid', gap: 'var(--space-sm)' }}>
@@ -305,17 +301,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         </div>
 
                         {/* Network Performance */}
-                        <div className="glass-card" style={{ marginBottom: 'var(--space-lg)' }}>
+                        <div className="glass-card" style={{ marginBottom: 'var(--space-md)' }}>
                             <h4 style={{
-                                fontSize: '16px',
-                                marginBottom: 'var(--space-md)',
+                                fontSize: '15px',
+                                marginBottom: 'var(--space-sm)',
                                 color: 'var(--text-primary)',
                                 fontWeight: 600,
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 'var(--space-sm)'
                             }}>
-                                <i className="fas fa-chart-line" style={{ color: 'var(--accent-primary)' }} />
+                                <i className="fas fa-chart-line" style={{ color: 'var(--accent-primary)', fontSize: '14px' }} />
                                 Network Performance
                             </h4>
                             <div style={{ display: 'grid', gap: 'var(--space-sm)' }}>
@@ -359,17 +355,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         </div>
 
                         {/* Fee Breakdown */}
-                        <div className="glass-card" style={{ marginBottom: 'var(--space-lg)' }}>
+                        <div className="glass-card" style={{ marginBottom: 'var(--space-md)' }}>
                             <h4 style={{
-                                fontSize: '16px',
-                                marginBottom: 'var(--space-md)',
+                                fontSize: '15px',
+                                marginBottom: 'var(--space-sm)',
                                 color: 'var(--text-primary)',
                                 fontWeight: 600,
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 'var(--space-sm)'
                             }}>
-                                <i className="fas fa-coins" style={{ color: 'var(--accent-primary)' }} />
+                                <i className="fas fa-coins" style={{ color: 'var(--accent-primary)', fontSize: '14px' }} />
                                 Fee Breakdown
                             </h4>
                             <div style={{ display: 'grid', gap: 'var(--space-sm)' }}>
@@ -408,15 +404,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         {/* Protocol Statistics */}
                         <div className="glass-card">
                             <h4 style={{
-                                fontSize: '16px',
-                                marginBottom: 'var(--space-md)',
+                                fontSize: '15px',
+                                marginBottom: 'var(--space-sm)',
                                 color: 'var(--text-primary)',
                                 fontWeight: 600,
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 'var(--space-sm)'
                             }}>
-                                <i className="fas fa-chart-bar" style={{ color: 'var(--accent-primary)' }} />
+                                <i className="fas fa-chart-bar" style={{ color: 'var(--accent-primary)', fontSize: '14px' }} />
                                 Protocol Statistics
                             </h4>
                             <div style={{ display: 'grid', gap: 'var(--space-sm)' }}>
@@ -453,41 +449,23 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </div>
             )}
 
-            {/* Global Styles for Animations */}
+            {/* Simplified Global Styles */}
             <style jsx global>{`
                 .modal-overlay {
-                    animation: modalFadeIn 0.3s ease forwards;
+                    animation: modalFadeIn 0.2s ease forwards;
                 }
                 
                 @keyframes modalFadeIn {
                     from {
                         opacity: 0;
-                        backdrop-filter: blur(0px);
                     }
                     to {
                         opacity: 1;
-                        backdrop-filter: blur(8px);
                     }
                 }
                 
                 .network-status-button {
                     position: relative;
-                    overflow: hidden;
-                }
-                
-                .network-status-button::before {
-                    content: '';
-                    position: absolute;
-                    top: 0;
-                    left: -100%;
-                    width: 100%;
-                    height: 100%;
-                    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-                    transition: left 0.6s ease;
-                }
-                
-                .network-status-button:hover::before {
-                    left: 100%;
                 }
             `}</style>
         </>

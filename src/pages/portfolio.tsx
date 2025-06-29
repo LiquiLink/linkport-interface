@@ -834,63 +834,31 @@ const Portfolio: React.FC = () => {
                                     
                                     <div style={{ display: 'grid', gap: '10px' }}>
                                         <button 
-                                            className="button primary compact"
+                                            className="button button-primary button-full"
                                             onClick={handleDeposit}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '8px',
-                                                padding: '12px 16px',
-                                                fontSize: '14px'
-                                            }}
                                         >
-                                            💰 Deposit Assets
+                                            Deposit Assets
                                         </button>
                                         
                                         <button 
-                                            className="button secondary compact"
+                                            className="button button-secondary button-full"
                                             onClick={handleBridge}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '8px',
-                                                padding: '12px 16px',
-                                                fontSize: '14px'
-                                            }}
                                         >
-                                            🌉 Cross-Chain Bridge
+                                            Cross-Chain Bridge
                                         </button>
                                         
                                         <button 
-                                            className="button primary compact"
+                                            className="button button-primary button-full"
                                             onClick={handleAnalytics}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '8px',
-                                                padding: '12px 16px',
-                                                fontSize: '14px'
-                                            }}
                                         >
-                                            📊 View Analytics
+                                            View Analytics
                                         </button>
                                         
                                         <button 
-                                            className="button secondary compact"
+                                            className="button button-secondary button-full"
                                             onClick={handleBrowsePools}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '8px',
-                                                padding: '12px 16px',
-                                                fontSize: '14px'
-                                            }}
                                         >
-                                            🏊‍♂️ Browse Pools
+                                            Browse Pools
                                         </button>
                                     </div>
                                 </div>

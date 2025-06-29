@@ -70,10 +70,25 @@ const WalletConnect: React.FC = () => {
                 {isConnected && address ? (
                     <>
                         <button
-                            className=""
                             onClick={handleCopy}
                             title={address}
-                            style={{ color: 'var(--accent-color)', background: 'none', border: 'none', fontWeight: 600 }}
+                            style={{ 
+                                color: 'var(--text-primary)', 
+                                background: 'rgba(6, 182, 212, 0.1)', 
+                                border: '1px solid var(--accent-primary)', 
+                                borderRadius: 'var(--radius-md)',
+                                padding: '6px 12px',
+                                fontSize: '13px',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                transition: 'all var(--transition-normal)'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'rgba(6, 182, 212, 0.2)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'rgba(6, 182, 212, 0.1)';
+                            }}
                         >
                             {networkName && (
                                 <span className="text-xs ml-2" style={{ color: 'var(--secondary-text)' }}>
@@ -104,7 +119,27 @@ const WalletConnect: React.FC = () => {
                         )}
                         <button
                             onClick={() => disconnect()}
-                            style={{ background: 'var(--error-color)', color: 'white', padding: '2px 8px', borderRadius: '6px', fontSize: '12px', border: 'none' }}
+                            className="button"
+                            style={{ 
+                                marginLeft: 'var(--space-sm)',
+                                fontSize: '12px',
+                                padding: '8px 12px',
+                                background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.9) 0%, rgba(220, 38, 38, 0.9) 100%)',
+                                color: 'white',
+                                border: '1px solid #ef4444',
+                                borderRadius: 'var(--radius-md)',
+                                fontWeight: '600',
+                                boxShadow: '0 2px 8px rgba(239, 68, 68, 0.3)',
+                                transition: 'all var(--transition-normal)'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-1px)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.4)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(239, 68, 68, 0.3)';
+                            }}
                         >
                             Disconnect
                         </button>
@@ -113,7 +148,7 @@ const WalletConnect: React.FC = () => {
                     <>
                         <button
                             onClick={() => setShowModal(true)}
-                            style={{ background: 'var(--accent-color)', color: 'white', padding: '8px 16px', borderRadius: '8px', border: 'none', fontWeight: 500 }}
+                            className="button button-primary button-compact"
                         >
                             Connect Wallet
                         </button>

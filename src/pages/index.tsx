@@ -953,22 +953,20 @@ const Home: React.FC = () => {
             <div className="main-layout">
                 {/* Left Panel - Enhanced Trading Interface */}
                 <div className="glass-card main-trading-panel">
-                    {/* Enhanced Tab Navigation */}
+                    {/* Compact Tab Navigation */}
                     <div className="tab-navigation">
-                        <div 
+                        <button 
                             className={`tab ${activeTab === 'borrow' ? 'active' : ''}`}
                             onClick={() => handleTabChange('borrow')}
                         >
-                            <i className="fas fa-coins" />
-                            <span>Lending</span>
-                        </div>
-                        <div 
+                            Lending
+                        </button>
+                        <button 
                             className={`tab ${activeTab === 'bridge' ? 'active' : ''}`}
                             onClick={() => handleTabChange('bridge')}
                         >
-                            <i className="fas fa-bridge" />
-                            <span>Bridge</span>
-                        </div>
+                            Bridge
+                        </button>
                     </div>
 
                     {/* Lending Mode */}
@@ -976,7 +974,6 @@ const Home: React.FC = () => {
                         <div className="trading-mode active animate-fade-in">
                             {/* Step 1: Collateral Source Chain */}
                             <div className="section-title">
-                                <i className="fas fa-link" />
                                 Select Collateral Source Chain
                             </div>
                             <Dropdown
@@ -988,7 +985,6 @@ const Home: React.FC = () => {
 
                             {/* Collateral Asset Selection */}
                             <div className="section-title">
-                                <i className="fas fa-coins" />
                                 Collateral Asset
                             </div>
                             <Dropdown
@@ -1135,7 +1131,6 @@ const Home: React.FC = () => {
                             {collateralAsset && (
                                 <div className="animate-slide-in">
                                     <div className="section-title">
-                                        <i className="fas fa-calculator" />
                                         {useExistingStaking ? 'Additional Collateral Amount (Optional)' : 'Collateral Amount'}
                                     </div>
                                     <div className="input-card">
@@ -1214,9 +1209,8 @@ const Home: React.FC = () => {
                                 </div>
                             )}
 
-                            {/* Step 2: Enhanced Lending Target Chain */}
+                            {/* Step 2: Lending Target Chain */}
                             <div className="section-title">
-                                <i className="fas fa-exchange-alt" />
                                 Select Lending Target Chain
                             </div>
                             <Dropdown
@@ -1280,7 +1274,7 @@ const Home: React.FC = () => {
                                 </div>
                             )}
 
-                            {/* Enhanced Execute Button */}
+                            {/* Execute Button */}
                             <button 
                                 className={`button-primary button-full ${(selectedAssets.length === 0 || !collateralAmount || calculateHealthFactor() <= 50) ? 'disabled' : ''}`}
                                 onClick={handleLendingExecute}
@@ -1290,14 +1284,9 @@ const Home: React.FC = () => {
                                     calculateHealthFactor() <= 50
                                 }
                                 style={{
-                                    padding: '16px var(--space-lg)',
-                                    fontSize: '16px',
-                                    fontWeight: 700,
-                                    borderRadius: 'var(--radius-lg)',
                                     marginTop: 'var(--space-lg)'
                                 }}
                             >
-                                <i className="fas fa-rocket" style={{ marginRight: 'var(--space-sm)' }} />
                                 {calculateHealthFactor() <= 50 && selectedAssets.length > 0 && collateralAmount ? 
                                     'Risk Too High - Cannot Proceed' :
                                     sourceChain === targetChain ? 
@@ -1311,9 +1300,8 @@ const Home: React.FC = () => {
                     {/* Bridge Mode */}
                     {activeTab === 'bridge' && (
                         <div className="trading-mode active animate-fade-in">
-                            {/* Step 1: Enhanced Bridge Source Chain */}
+                            {/* Step 1: Bridge Source Chain */}
                             <div className="section-title">
-                                <i className="fas fa-map-marker-alt" />
                                 Select Source Chain
                             </div>
                             <Dropdown
@@ -1325,7 +1313,6 @@ const Home: React.FC = () => {
 
                             {/* Source Asset Selection */}
                             <div className="section-title">
-                                <i className="fas fa-coins" />
                                 Source Asset
                             </div>
                             <Dropdown
@@ -1339,7 +1326,6 @@ const Home: React.FC = () => {
                             {bridgeAsset && (
                                 <div className="animate-slide-in">
                                     <div className="section-title">
-                                        <i className="fas fa-calculator" />
                                         Source Amount
                                     </div>
                                     <div className="input-card">
@@ -1391,9 +1377,8 @@ const Home: React.FC = () => {
                                 </div>
                             )}
 
-                            {/* Step 2: Enhanced Target Chain */}
+                            {/* Step 2: Target Chain */}
                             <div className="section-title">
-                                <i className="fas fa-flag-checkered" />
                                 Select Target Chain
                             </div>
                             <Dropdown
@@ -1476,7 +1461,7 @@ const Home: React.FC = () => {
                                 </div>
                             )}
 
-                            {/* Enhanced Bridge Execute Button */}
+                            {/* Bridge Execute Button */}
                             <button 
                                 className={`button-primary button-full ${(bridgeTargetAssets.length === 0 || !bridgeAmount || !bridgeTargetChain || !bridgeAsset) ? 'disabled' : ''}`}
                                 onClick={handleBridgeExecute}
@@ -1487,26 +1472,20 @@ const Home: React.FC = () => {
                                     !bridgeAsset
                                 }
                                 style={{
-                                    padding: '16px var(--space-lg)',
-                                    fontSize: '16px',
-                                    fontWeight: 700,
-                                    borderRadius: 'var(--radius-lg)',
                                     marginTop: 'var(--space-lg)'
                                 }}
                             >
-                                <i className="fas fa-exchange-alt" style={{ marginRight: 'var(--space-sm)' }} />
                                 Execute Cross-Chain Bridge ({bridgeTargetAssets.length} assets)
                             </button>
                         </div>
                     )}
                 </div>
 
-                {/* Center Panel - Enhanced Multi Asset Selector */}
+                {/* Center Panel - Multi Asset Selector */}
                 <div className="center-panel">
                     {activeTab === 'borrow' && (
-                        <div className="glass-card glass-card-glow animate-slide-in">
+                        <div className="glass-card animate-slide-in">
                             <div className="section-title large">
-                                <i className="fas fa-hand-holding-usd" />
                                 Select Lending Assets
                             </div>
                             <MultiAssetSelector 
@@ -1517,9 +1496,8 @@ const Home: React.FC = () => {
                     )}
                     
                     {activeTab === 'bridge' && (
-                        <div className="glass-card glass-card-glow animate-slide-in">
+                        <div className="glass-card animate-slide-in">
                             <div className="section-title large">
-                                <i className="fas fa-target" />
                                 Select Target Assets
                             </div>
                             <CrossChainAssetSelector
@@ -1533,51 +1511,29 @@ const Home: React.FC = () => {
                     )}
                 </div>
 
-                {/* Right Panel - Enhanced Summary Dashboard */}
+                {/* Right Panel - Summary Dashboard */}
                 <div className="info-panel">
-                    <div className="glass-card glass-card-strong">
-                        {/* Enhanced Header */}
+                    <div className="glass-card">
+                        {/* Header */}
                         <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            marginBottom: 'var(--space-lg)',
-                            paddingBottom: 'var(--space-md)',
+                            marginBottom: 'var(--space-md)',
+                            paddingBottom: 'var(--space-sm)',
                             borderBottom: '1px solid var(--border-glass)'
                         }}>
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 'var(--space-sm)'
+                            <h3 style={{
+                                margin: 0,
+                                fontSize: '16px',
+                                fontWeight: 700,
+                                color: 'var(--text-primary)'
                             }}>
-                                <div style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    background: 'var(--accent-gradient)',
-                                    borderRadius: '50%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: 'white'
-                                }}>
-                                    <i className="fas fa-chart-line" />
-                                </div>
-                                <div>
-                                    <h3 style={{
-                                        margin: 0,
-                                        fontSize: '18px',
-                                        fontWeight: 700,
-                                        color: 'var(--text-primary)'
-                                    }}>
-                                        Portfolio Summary
-                                    </h3>
-                                    <div style={{
-                                        fontSize: '12px',
-                                        color: 'var(--text-secondary)'
-                                    }}>
-                                        Collateral & Lending Overview
-                                    </div>
-                                </div>
+                                Portfolio Summary
+                            </h3>
+                            <div style={{
+                                fontSize: '12px',
+                                color: 'var(--text-secondary)',
+                                marginTop: '4px'
+                            }}>
+                                Collateral & Lending Overview
                             </div>
                         </div>
 
