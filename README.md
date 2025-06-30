@@ -81,7 +81,7 @@ LinkPort leverages two main Chainlink services:
 ### 🌉 Chainlink CCIP (Cross-Chain Interoperability Protocol)
 - **Cross-chain messaging** between Ethereum Sepolia and BSC Testnet
 - **Secure asset bridging** and lending operations across chains
-- **Implementation**: [`../linkport-core/contracts/LinkPort.sol`](../linkport-core/contracts/LinkPort.sol)
+- **Implementation**: [`linkport-core/contracts/LinkPort.sol`](https://github.com/LiquiLink/linkport-core/blob/main/contracts/LinkPort.sol)
 
 ### 📊 Chainlink Price Feeds
 - **Real-time asset pricing** for ETH, BNB, LINK, USDT
@@ -130,9 +130,9 @@ This project consists of two main repositories:
 - **`linkport-core/`**: Solidity smart contracts and deployment scripts
 
 **Key Files Using Chainlink:**
-- [`../linkport-core/contracts/LinkPort.sol`](../linkport-core/contracts/LinkPort.sol) - Main protocol contract with CCIP integration
-- [`src/utils/priceService.ts`](./src/utils/priceService.ts) - Price feed service
-- [`../linkport-core/contracts/LiquidityPool.sol`](../linkport-core/contracts/LiquidityPool.sol) - Liquidity pool management
+- [`linkport-core/contracts/LinkPort.sol`](https://github.com/LiquiLink/linkport-core/blob/main/contracts/LinkPort.sol) - Main protocol contract with CCIP integration
+- [`linkport-core/contracts/LiquidityPool.sol`](https://github.com/LiquiLink/linkport-core/blob/main/contracts/LiquidityPool.sol) - Liquidity pool management
+- [`src/utils/priceService.ts`](https://github.com/LiquiLink/linkport-interface/blob/main/src/utils/priceService.ts) - Price feed service
 
 ## 📋 Quick Start
 
